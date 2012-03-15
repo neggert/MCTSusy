@@ -24,7 +24,6 @@ class LikelihoodCalculator(object):
         """Intialize with a list of hd5_files"""
         self.files = [tables.openFile(hd5_file, "r") for hd5_file in hd5_files]
         self.tables = [f.root.fit.fitdata for f in self.files]
-        self.rand_state = pylab.get_state() # save this so we can produce the same random numbers every time
         self.weights = weights
         self.eventlists = self.resample()
 
@@ -52,7 +51,6 @@ class LikelihoodCalculator(object):
     def get_data_iterator(self ) :
         """Make a copy of the iterator."""
         iterators = [[d for d in t.read() if d['relIso2'] < 0.17] for t in self.tables]
-        pylab.set_state(self.rand_state) # Make sure each time this is run it produces the same random numbers
         filtered_iterators = [self.sampled_iter(i, l) for l,i in zip(self.eventlists, iterators)]
         return itertools.chain(*filtered_iterators)
 

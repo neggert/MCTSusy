@@ -1,5 +1,6 @@
 
 import pylab
+import numpy.random
 from pylab import pi, sqrt, sin, log, exp
 from scipy.integrate import quad
 from general import *
@@ -11,34 +12,53 @@ import pdb
 from MCTPerpIntegrand import MCTPerp_integrand
 
 class LikelihoodCalculator(object):
-    """Calculator for the likelihood of the signal fraction given the data"""
+    """
+    Calculator for the likelihood of the data. There is a random element to which
+    data points are chosen, so results will vary from instance to instance, even
+    with the same constructor. The seed is saved, so results within an instance will
+    be consistant.
+    """
     sm_endpoint = 80.4
     integrand = MCTPerp_integrand()
     def __init__(self, hd5_files, weights):
         """Intialize with a list of hd5_files"""
         self.files = [tables.openFile(hd5_file, "r") for hd5_file in hd5_files]
-        self.table = [f.root.fit.fitdata for f in self.files]
+        self.tables = [f.root.fit.fitdata for f in self.files]
         self.rand_state = pylab.get_state() # save this so we can produce the same random numbers every time
         self.weights = weights
+        self.eventlists = self.resample()
 
-        self.nevents = len([x["mctype"] for x in self.get_data_iterator()])
+        # self.nevents = len([x["mctype"] for x in self.get_data_iterator()])
+
+    def resample(self) :
+        """Sample event numbers with replacement"""
+        eventlists = []
+        for i, t in enumerate(self.tables) :
+            eventlist = []
+            # a somewhat roundabout way of getting the number of events that pass the relIso cut
+            nevents_total = len([1 for d in t.read() if d['relIso2'] < 0.17])
+            nevents_select = int(nevents_total*self.weights[i])
+            for j in range(nevents_select) :
+                eventnum = numpy.random.randint(nevents_total)
+                eventlist.append(eventnum)
+            eventlists.append(eventlist)
+        return eventlists
     
-    def sampled_iter(self, sequence, p) :
-        for elem in sequence:
-            if pylab.rand() < p :
-                yield elem
+    def sampled_iter(self, sequence, eventlist) :
+        for event in eventlist:
+            yield sequence[event]
 
 
     def get_data_iterator(self ) :
-        """Make a copy of the iterator"""
-        iterators = [t.where("""relIso2 < 0.17""") for t in self.table]
+        """Make a copy of the iterator."""
+        iterators = [[d for d in t.read() if d['relIso2'] < 0.17] for t in self.tables]
         pylab.set_state(self.rand_state) # Make sure each time this is run it produces the same random numbers
-        filtered_iterators = [self.sampled_iter(i, w) for w,i in zip(self.weights, iterators)]
+        filtered_iterators = [self.sampled_iter(i, l) for l,i in zip(self.eventlists, iterators)]
         return itertools.chain(*filtered_iterators)
 
     
     def ttbar_likelihood( self, data) :
-        """return the likelihood for a single event from a single distribution"""
+        """return the likelihood for a single event to be from the ttbar distribution"""
         delta = data["delta"]
         self.integrand.set_data( data, 0.5, self.sm_endpoint)
         points = [-pi+delta, -delta, delta, pi-delta]
@@ -49,24 +69,21 @@ class LikelihoodCalculator(object):
 
     def get_nll( self ) :
         """
-        return the likelihood from two summed distributions with endpoint 1 and 2.
-        The first distribution has fraction (1-s) and the second has fraction s.
-        Note that this implementation is probably slow, since we have to call
-        single_dist_likelihood twice, and thus loop through all events twice.
+        Get the negative log likelihood summed over all events.
         """
         ll =0.
         for data in self.get_data_iterator() :
             l = log(self.ttbar_likelihood( data ))
             ll -= l
         return ll
-    
-    def __eval__ (self, s) :
+
+    def get_mcts( self ) :
         """
-        Return the marginalized likelihood of a signal value s for endpoint1 = sm_endpoint
+        return a list of mct values for each event in this sample
         """
-        pass
+        mcts = []
+        for data in self.get_data_iterator() :
+            mcts.append(data['mct'])
+        return mcts
     
 
-def run_fit( data_tuples ) :
-    """tuple should should be of the form (pickle_file, weight)"""
-    pass

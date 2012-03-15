@@ -79,9 +79,7 @@ class LikelihoodCalculator(object):
         """
         return a list of mct values for each event in this sample
         """
-        mcts = []
-        for data in self.get_data_iterator() :
-            mcts.append(data['mct'])
+        mcts = [data['mct'] for data in self.get_data_iterator()]
         return mcts
     
 

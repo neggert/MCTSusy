@@ -69,11 +69,7 @@ class LikelihoodCalculator(object):
         """
         Get the negative log likelihood summed over all events.
         """
-        ll =0.
-        for data in self.get_data_iterator() :
-            l = log(self.ttbar_likelihood( data ))
-            ll -= l
-        return ll
+        return sum(self.get_nlls())
 
     def get_mcts( self ) :
         """
@@ -81,5 +77,10 @@ class LikelihoodCalculator(object):
         """
         mcts = [data['mct'] for data in self.get_data_iterator()]
         return mcts
+
+    def get_nlls( self ) :
+        """Return a list of nll values for each event in this sample"""
+        nlls = [-log(self.ttbar_likelihood( data )) for data in self.get_data_iterator()]
+        return nlls
     
 

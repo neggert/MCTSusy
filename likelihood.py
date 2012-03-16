@@ -65,11 +65,11 @@ class LikelihoodCalculator(object):
             pdb.set_trace()
         return result[0]
 
-    def get_nll( self ) :
+    def get_nll( self, cut=-1 ) :
         """
         Get the negative log likelihood summed over all events.
         """
-        return sum(self.get_nlls())
+        return sum(self.get_nlls(cut))
 
     def get_mcts( self ) :
         """
@@ -78,9 +78,9 @@ class LikelihoodCalculator(object):
         mcts = [data['mct'] for data in self.get_data_iterator()]
         return mcts
 
-    def get_nlls( self ) :
-        """Return a list of nll values for each event in this sample"""
-        nlls = [-log(self.ttbar_likelihood( data )) for data in self.get_data_iterator()]
+    def get_nlls( self, cut=-1 ) :
+        """Return a list of nll values for each event in this sample, possibly with an MCT cut"""
+        nlls = [-log(self.ttbar_likelihood( data )) for data in self.get_data_iterator() if data['mct'] > cut]
         return nlls
     
 

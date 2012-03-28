@@ -52,6 +52,7 @@ def save_data_hdf5( input_files, output_file, mctype="mc" ):
     """Load all of the relevant data from the CMSSW files and save it using pyTables"""
     getter = events.dilepton_event.CMSDileptonEventGetter(input_files)
     getter.set_electron_collection("loosePatElectrons")
+    getter.set_electron_collection("loosePatMuons")
 
     h5file = tables.openFile(output_file, "w", "Fit Data File")
     group = h5file.createGroup("/", "fit", "Fit information")

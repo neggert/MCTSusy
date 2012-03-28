@@ -1,10 +1,10 @@
 import ROOT
-import event_counter
-import events.dilepton_event
-import general_calc
+import CMSPyLibs.event_counter as event_counter
+import CMSPyLibs.events.dilepton_event as dilepton_event
+import CMSPyLibs.general_calc as general_calc
 import pylab
 import tables
-from cmsutilities import get_TLorentzVector, get_PF_isolation, angle_0_2pi, get_upstream_phi_res
+from CMSPyLibs.cmsutilities import get_TLorentzVector, get_PF_isolation, angle_0_2pi, get_upstream_phi_res
 
 
 lm6_files = ["/Users/nic/cms/SUSY/Data/LM6/TopDilLikeSelection_LM6_v3.root"]
@@ -50,7 +50,7 @@ class FitEvent(tables.IsDescription):
 
 def save_data_hdf5( input_files, output_file, mctype="mc" ):
     """Load all of the relevant data from the CMSSW files and save it using pyTables"""
-    getter = events.dilepton_event.CMSDileptonEventGetter(input_files)
+    getter = dilepton_event.CMSDileptonEventGetter(input_files)
     getter.set_electron_collection("loosePatElectrons")
     getter.set_electron_collection("loosePatMuons")
 

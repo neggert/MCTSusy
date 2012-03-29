@@ -4,7 +4,7 @@ from data_handling import *
 
 def get_dist_mct( hdf_file, isolated=True ) :
     if isolated :
-        iterator = load_data_iterator_cut(hdf_file, """relIso2 < 0.17""")
+        iterator = load_data_iterator_iso(hdf_file)
     else :
         iterator = load_data_iterator( hdf_file )
     results = [data["mct"] for data in iterator]

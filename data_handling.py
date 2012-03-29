@@ -14,6 +14,8 @@ in a file.
 
 class FitEvent(tables.IsDescription):
     idnumber = tables.Int64Col()
+    pdg1     = tables.Int64Col()
+    pdg2     = tables.Int64Col()
     pt1      = tables.Float64Col()
     pt2      = tables.Float64Col()
     met      = tables.Float64Col()
@@ -53,6 +55,8 @@ def save_data_hdf5( input_files, output_file, mctype="mc" ):
             datarow["relIso2"] = get_PF_isolation( leptons[1])
             datarow["pt1"] = leptons[0].pt()
             datarow["pt2"] = leptons[1].pt()
+            datarow["pdg1"] = leptons[0].pdgId()
+            datarow["pdg2"] = leptons[1].pdgId()
 
             # angles
             phi1 = leptons[0].phi()
@@ -96,4 +100,5 @@ def load_data_iterator_iso( hd5_file ) :
     """Load the fit data from the pickle file with an isolation cut"""
     f = tables.openFile(hd5_file, "r")
     table = f.root.fit.fitdata
-    return table.where("""relIso2 < 0.17""")
+    isocut = """((relIso1 < 0.17 and abs(pdg1) ==11) or (relIso1 < 0.2 and abs(pdg1) == 13)) and ((relIso2 < 0.17 and abs(pdg2) ==11) or (relIso2 < 0.2 and abs(pdg2) == 13))"""
+    return table.where(isocut)

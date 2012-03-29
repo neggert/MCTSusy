@@ -1,9 +1,6 @@
-import ROOT
-import CMSPyLibs.event_counter as event_counter
 import pylab
-import tables
-from CMSPyLibs.cmsutilities import get_TLorentzVector, get_PF_isolation, angle_0_2pi, get_upstream_phi_res
 
+from data_handling import *
 
 lm6_files = ["/Users/nic/cms/SUSY/Data/LM6/TopDilLikeSelection_LM6_v3.root"]
 lm6_hd5 = "Data/lm6.hdf5"

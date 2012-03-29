@@ -1,11 +1,15 @@
 import tables
+import pylab
+import ROOT
 import CMSPyLibs.events.dilepton_event as dilepton_event
 import CMSPyLibs.general_calc as general_calc
+import CMSPyLibs.event_counter as event_counter
+from CMSPyLibs.cmsutilities import get_TLorentzVector, get_PF_isolation, angle_0_2pi, get_upstream_phi_res
 
 """
 Functions for handling fit data in the pytables hdf5 format
 Includes creating the files and different ways to iterate over data
-in a file
+in a file.
 """
 
 class FitEvent(tables.IsDescription):

@@ -1,11 +1,41 @@
 from general import *
 from math import sqrt
 import ROOT
+import pylab
 from CMSPyLibs.rootplot import *
 from data_handling import *
 from filenames import *
 
+"""
+Functions to plot variables. They can be plotted using either ROOT or matplotlib. Switch using
+set_plot_ROOT() or set_plot_mpl().
+"""
+
 ROOT.gStyle.SetPalette(1)
+
+def mpl_hist_func(*args, **kwargs) :
+    """
+    Wrapper function for pylab.hist that takes the same arguments as plot_hist_ROOT
+    """
+    name = ""
+    if 'name' in kwargs.keys() :
+        name = kwargs['name']
+        del kwargs['name']
+    pylab.hist(*args, **kwargs)
+    pylab.xlabel(name)
+
+hist_func = mpl_hist_func
+graph_func = pylab.scatter
+
+def set_plot_ROOT() :
+    global hist_func, graph_func
+    hist_func = plot_hist_ROOT
+    graph_func = plot_graph_ROOT
+
+def set_plot_mpl() :
+    global hist_func, graph_func
+    hist_func = mpl_hist_func
+    graph_func = pylab.scatter
 
 def plot_stacked_mct_hist(bins=20, histrange=(0,300)) :
     """Plot a nice stacked histogram of the mct distributions for the signal and background"""
@@ -51,8 +81,8 @@ def plot_data_hist( hdf_file, data_item, bins=30, range=(0,300)) :
     plot a distribution from an hdf file. data_item should be a string containing the
     name of the field
     """
-    data = [x[data_item] for x in load_data_iterator_iso(hdf_file)]
-    h = plot_hist_ROOT(data, bins, range=range, name=data_item)
+    data = pylab.array([x[data_item] for x in load_data_iterator_iso(hdf_file)])
+    h = hist_func(data, bins, range=range, name=data_item)
     return h
 
 def plot_ptmax_hist( hdf_file, bins=30, range=(0,300)) :
@@ -62,7 +92,7 @@ def plot_ptmax_hist( hdf_file, bins=30, range=(0,300)) :
     """
     pts = [(x["pt1"],x["pt2"]) for x in load_data_iterator_iso(hdf_file)]
     ptmax = map(max, pts)
-    h = plot_hist_ROOT(ptmax, bins, range=range, name="ptLeadingLepton")
+    h = hist_func(ptmax, bins, range=range, name="ptLeadingLepton")
     return h
 
 def plot_ptmin_hist( hdf_file, bins=30, range=(0,300)) :
@@ -72,7 +102,7 @@ def plot_ptmin_hist( hdf_file, bins=30, range=(0,300)) :
     """
     pts = [(x["pt1"],x["pt2"]) for x in load_data_iterator_iso(hdf_file)]
     ptmax = map(min, pts)
-    h = plot_hist_ROOT(ptmax, bins, range=range, name="ptLepton2")
+    h = hist_func(ptmax, bins, range=range, name="ptLepton2")
     return h
 
 def plot_ptmax_vs_ptmin( hdf_file, bins=30, range=(0,300)) :
@@ -92,7 +122,7 @@ def plot_sqrtptprod_hist( hdf_file, bins=30, range=(0,300)) :
     name of the field
     """
     ptprod = [sqrt(x["pt1"]*x["pt2"]) for x in load_data_iterator_iso(hdf_file)]
-    h = plot_hist_ROOT(ptprod, bins, range=range, name="sqrtpt1pt2")
+    h = hist_func(ptprod, bins, range=range, name="sqrtpt1pt2")
     return h
 
 def plot_phiUp_hist( hdf_file, bins=30, range=(0,3.14)) :
@@ -101,7 +131,7 @@ def plot_phiUp_hist( hdf_file, bins=30, range=(0,3.14)) :
     name of the field
     """
     phiUp = [x["phiUp"] for x in load_data_iterator_iso(hdf_file)]
-    h = plot_hist_ROOT(phiUp, bins, range=range, name="phiUp")
+    h = hist_func(phiUp, bins, range=range, name="phiUp")
     return h
 
 def plot_phiUp_vs_delta( hdf_file) :
@@ -134,7 +164,7 @@ def plot_ptprod_vs_phiUp( hdf_file) :
         else :
             phiUp2.append(2*pylab.pi - phi)
     # h = plot_hist2d_ROOT(ptprod, phiUp2, xbins=5, ybins=5, xrange=(0,150.), yrange=(0, 3.14))
-    h = plot_graph_ROOT(ptprod, phiUp2)
+    h = graph_func(ptprod, phiUp2)
     return h
 
 def plot_ptprod_vs_delta( hdf_file, bins=30, range=(0,3.14)) :
@@ -144,7 +174,7 @@ def plot_ptprod_vs_delta( hdf_file, bins=30, range=(0,3.14)) :
     """
     data = [(sqrt(x["pt1"]*x["pt2"]),x["delta"]) for x in load_data_iterator_iso(hdf_file)]
     ptprod, delta = zip(*data)
-    h = plot_graph_ROOT(ptprod, delta)
+    h = graph_func(ptprod, delta)
     return h
 
 

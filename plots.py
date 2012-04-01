@@ -39,29 +39,24 @@ def set_plot_mpl() :
 
 def plot_stacked_mct_hist(bins=20, histrange=(0,300)) :
     """Plot a nice stacked histogram of the mct distributions for the signal and background"""
-    lm6_mct   = [x["mct"] for x in load_data_iterator_cut(lm6_hd5, """(relIso2 < 0.17) & (mct > 0.5)""")]
-    tt_mct    = [x["mct"] for x in load_data_iterator_cut(tt_hd5, """(relIso2 < 0.17) & (mct > 0.5)""")]
-    wjets_mct = [x["mct"] for x in load_data_iterator_cut(wjets_hd5, """(relIso2 < 0.17) & (mct > 0.5)""")]
+    sms_mct   = [x["mct"] for x in load_data_iterator_iso(sms_hd5)]
+    tt_mct    = [x["mct"] for x in load_data_iterator_iso(tt_hd5)]
 
-    lm6_hist = ROOT.TH1D("LM6", "LM6", bins, histrange[0], histrange[1])
+    sms_hist = ROOT.TH1D("SMS", "SMS", bins, histrange[0], histrange[1])
     tt_hist = ROOT.TH1D("ttJets", "ttJets", bins, histrange[0], histrange[1])
-    wjets_hist = ROOT.TH1D("WJets", "WJets", bins, histrange[0], histrange[1])
 
-    for data,hist, weight in zip([lm6_mct, tt_mct, wjets_mct],[lm6_hist, tt_hist, wjets_hist], [lm6_w, tt_w, wjets_w]) :
+    for data,hist, weight in zip([sms_mct, tt_mct],[lm6_hist, tt_hist], [sms_w, tt_w]) :
         for d in data :
             hist.Fill(d, weight)
 
-    lm6_hist.SetFillColor(ROOT.kBlue)
+    sms_hist.SetFillColor(ROOT.kBlue)
     tt_hist.SetFillColor(ROOT.kRed+1)
-    wjets_hist.SetFillColor(ROOT.kGreen-1)
-    lm6_hist.SetLineColor(ROOT.kBlue)
+    sms_hist.SetLineColor(ROOT.kBlue)
     tt_hist.SetLineColor(ROOT.kRed+1)
-    wjets_hist.SetLineColor(ROOT.kGreen-1)
 
     stack = ROOT.THStack("stack", "MCTPerp")
-    stack.Add(wjets_hist)
     stack.Add(tt_hist)
-    stack.Add(lm6_hist)
+    stack.Add(sms_hist)
 
     ROOT.gROOT.SetStyle("Plain")
     ROOT.gStyle.SetOptLogy()
@@ -69,9 +64,8 @@ def plot_stacked_mct_hist(bins=20, histrange=(0,300)) :
     stack.Draw()
 
     l = ROOT.TLegend(0.7,0.7,0.9,0.9)
-    l.AddEntry("LM6", "LM6", "f")
+    l.AddEntry("SMS", "SMS", "f")
     l.AddEntry("ttJets", "TTJets", "f")
-    l.AddEntry("WJets", "WJets", "f")
     l.SetFillColor(ROOT.kWhite)
     l.Draw()
     raw_input("...")

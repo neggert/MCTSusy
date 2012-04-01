@@ -1,6 +1,6 @@
 import pylab
 import numpy.random
-from pylab import pi, sqrt, sin, log, exp
+from numpy import pi, sqrt, sin, log, exp, vectorize, array
 from scipy.integrate import quad
 import tables
 import itertools
@@ -78,5 +78,23 @@ class LikelihoodCalculator(object):
         """Return a list of nll values for each event in this sample, possibly with an MCT cut"""
         nlls = [-log(self.ttbar_likelihood( data )) for data in self.get_data_iterator() if data['mct'] > cut]
         return nlls
-    
+   
+def get_210_likelihood( data, endpoint ) :
+    """Get the MCTPerp 210 likelihood for an event given an endpoint"""
+    delta = data["delta"]
+    integrand = MCTPerp_integrand()
+    integrand.set_data( data, 0.5, endpoint)
+    points = [-pi+delta, -delta, delta, pi-delta]
+    result = quad( integrand, -pi, pi, limit=100, points=points)[0]
+    return result
 
+def get_SplusB_NLL( data_list, s_endpoint, b_endpoint, N_s, N_b) :
+    """(Extended) negative log likelihood for signal plus background"""
+    s_likelihoods = array([get_210_likelihood(x, s_endpoint) for x in data_list])
+    b_likelihoods = array([get_210_likelihood(x, b_endpoint) for x in data_list])
+    return sum(-log(N_b*b_likelihoods+N_s*s_likelihoods)+N_s+N_b)
+
+def get_B_NLL( data_list, b_endpoint, N_b) :
+    """(Extended) negative log likelihood for signal plus background"""
+    b_likelihoods = array([get_210_likelihood(x, b_endpoint) for x in data_list])
+    return sum(-log(N_b*b_likelihoods)+N_b)

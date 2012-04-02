@@ -37,3 +37,13 @@ def get_sig_over_sqrt_bkg_vs_mct_cut ( signal_tpl, bkg_tpl_list ) :
         b += pylab.array(get_events_vs_mct_cut( *bkg_tpl ))[1]
     print b
     return cut, s/pylab.sqrt(b)
+
+def passes_iso_cut ( event ) :
+    for i in [1,2] :
+        if abs(event["pdg"+str(i)]) == 11 :
+            if event['relIso'+str(i)] > 0.17 :
+                return False
+        elif abs(event["pdg"+str(i)] == 13) :
+            if event['relIso'+str(i)] > 0.20 :
+                return False
+    return True

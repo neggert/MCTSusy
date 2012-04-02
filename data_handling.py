@@ -1,6 +1,9 @@
 import tables
 import pylab
 import ROOT
+import itertools
+import numpy.random
+from cutcount import passes_iso_cut
 import CMSPyLibs.events.dilepton_event as dilepton_event
 import CMSPyLibs.general_calc as general_calc
 import CMSPyLibs.event_counter as event_counter
@@ -102,3 +105,52 @@ def load_data_iterator_iso( hd5_file ) :
     table = f.root.fit.fitdata
     isocut = """((relIso1 < 0.17 and abs(pdg1) ==11) or (relIso1 < 0.2 and abs(pdg1) == 13)) and ((relIso2 < 0.17 and abs(pdg2) ==11) or (relIso2 < 0.2 and abs(pdg2) == 13))"""
     return table.where(isocut)
+
+class random_sample (object) :
+    """A random sample (with replacement) of events"""
+    def __init__(self, hd5_files, weights):
+        """Intialize with a list of hd5_files"""
+        self.hd5_files = hd5_files
+        self.files = [tables.openFile(hd5_file, "r") for hd5_file in hd5_files]
+        self.tables = [f.root.fit.fitdata for f in self.files]
+        self.weights = weights
+        self.eventlists = self.resample()
+
+    def resample(self) :
+        """Sample event numbers with replacement"""
+        eventlists = []
+        for i, t in enumerate(self.tables) :
+            eventlist = []
+            # a somewhat roundabout way of getting the number of events that pass the relIso cut
+            nevents_total = t.nrows
+            nevents_select = numpy.random.poisson(t.nrows*self.weights[i])
+            print nevents_select, "events for sample", self.hd5_files[i]
+            eventlists.append(numpy.random.choice(range(nevents_total), nevents_select, replace=True))
+        return eventlists
+    
+    def sampled_iter(self, sequence, eventlist) :
+        for event in eventlist:
+            yield sequence[event]
+
+    def __call__(self ) :
+        """Make a copy of the iterator."""
+        iterators = [[d for d in t.read() ] for t in self.tables]
+        filtered_iterators = [self.sampled_iter(i, l) for l,i in zip(self.eventlists, iterators)]
+        return itertools.chain(*filtered_iterators)
+
+    def isolated( self ) :
+        """Iterate only over the events that pass isolation"""
+        for event in self() :
+            if passes_iso_cut(event) :
+                yield event
+
+    def isolated_mct_cut( self, cut) :
+        """Iterate only over events that pass isolation and mct cuts"""
+        for event in self.isolated() :
+            if event['mct'] > cut :
+                yield event
+
+
+
+
+

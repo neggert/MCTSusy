@@ -47,3 +47,9 @@ def passes_iso_cut ( event ) :
             if event['relIso'+str(i)] > 0.20 :
                 return False
     return True
+
+def passes_mct_cut( event, cut=80.) :
+    return event['mct'] > cut
+
+def passes_sig_cuts( event ) :
+    return passes_mct_cut( event ) and passes_iso_cut( event )

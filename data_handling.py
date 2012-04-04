@@ -106,6 +106,11 @@ def load_data_iterator_iso( hd5_file ) :
     isocut = """((relIso1 < 0.17 and abs(pdg1) ==11) or (relIso1 < 0.2 and abs(pdg1) == 13)) and ((relIso2 < 0.17 and abs(pdg2) ==11) or (relIso2 < 0.2 and abs(pdg2) == 13))"""
     return table.where(isocut)
 
+def get_expected_events( hd5_file, weight) :
+    f = tables.openFile(hd5_file, "r")
+    table = f.root.fit.fitdata
+    return table.nrows*weight
+
 class random_sample (object) :
     """A random sample (with replacement) of events"""
     def __init__(self, hd5_files, weights):
@@ -120,11 +125,9 @@ class random_sample (object) :
         """Sample event numbers with replacement"""
         eventlists = []
         for i, t in enumerate(self.tables) :
-            eventlist = []
-            # a somewhat roundabout way of getting the number of events that pass the relIso cut
             nevents_total = t.nrows
             nevents_select = numpy.random.poisson(t.nrows*self.weights[i])
-            print nevents_select, "events for sample", self.hd5_files[i]
+            # print nevents_select, "events for sample", self.hd5_files[i]
             eventlists.append(numpy.random.choice(range(nevents_total), nevents_select, replace=True))
         return eventlists
     
@@ -148,6 +151,11 @@ class random_sample (object) :
         """Iterate only over events that pass isolation and mct cuts"""
         for event in self.isolated() :
             if event['mct'] > cut :
+                yield event
+
+    def all_cuts(self) :
+        for event in self.isolated_mct_cut( 80. ) :
+            if event['sPhiUp'] < 0.3 :
                 yield event
 
 

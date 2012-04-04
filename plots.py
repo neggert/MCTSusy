@@ -45,7 +45,7 @@ def plot_stacked_mct_hist(bins=20, histrange=(0,300)) :
     sms_hist = ROOT.TH1D("SMS", "SMS", bins, histrange[0], histrange[1])
     tt_hist = ROOT.TH1D("ttJets", "ttJets", bins, histrange[0], histrange[1])
 
-    for data,hist, weight in zip([sms_mct, tt_mct],[lm6_hist, tt_hist], [sms_w, tt_w]) :
+    for data,hist, weight in zip([sms_mct, tt_mct],[sms_hist, tt_hist], [sms_w, tt_w]) :
         for d in data :
             hist.Fill(d, weight)
 
@@ -55,8 +55,8 @@ def plot_stacked_mct_hist(bins=20, histrange=(0,300)) :
     tt_hist.SetLineColor(ROOT.kRed+1)
 
     stack = ROOT.THStack("stack", "MCTPerp")
-    stack.Add(tt_hist)
     stack.Add(sms_hist)
+    stack.Add(tt_hist)
 
     ROOT.gROOT.SetStyle("Plain")
     ROOT.gStyle.SetOptLogy()
@@ -68,7 +68,8 @@ def plot_stacked_mct_hist(bins=20, histrange=(0,300)) :
     l.AddEntry("ttJets", "TTJets", "f")
     l.SetFillColor(ROOT.kWhite)
     l.Draw()
-    raw_input("...")
+
+    return stack
 
 def plot_data_hist( hdf_file, data_item, bins=30, range=(0,300)) :
     """

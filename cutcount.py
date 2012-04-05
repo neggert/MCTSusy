@@ -48,11 +48,40 @@ def passes_iso_cut ( event ) :
                 return False
     return True
 
-def passes_mct_cut( event, cut=120.) :
+def passes_inverted_iso_cut ( event ) :
+    """ One lepton passes isolation cut, the other fails"""
+    npass = 0
+    nfail = 0
+    for i in [1,2] :
+        if abs(event["pdg"+str(i)]) == 11 :
+            if 0.17 < event['relIso'+str(i)] < 0.4 :
+                nfail += 1
+            elif event['relIso'+str(i)] < 0.17 :
+                npass += 1
+        elif abs(event["pdg"+str(i)] == 13) :
+            if 0.20 < event['relIso'+str(i)] < 0.4 :
+                nfail += 1
+            elif event['relIso'+str(i)] < 0.20 :
+                npass += 1
+    return (npass==1 and nfail==1)
+
+def passes_mct_cut( event, cut=100.) :
     return event['mct'] > cut
 
-def passes_sig_cuts( event ) :
-    return passes_mct_cut( event ) and passes_iso_cut( event )
+def passes_bjet_veto( event ) :
+    return event['nbjets'] == 0
+
+def passes_bjet_cut( event, ntags = 2 ) :
+    return event['nbjets'] >= ntags
+
+def passes_sig_cuts( event, cut=100. ) :
+    return passes_mct_cut( event, cut) and passes_iso_cut( event ) and passes_bjet_veto( event )
+
+def passes_wjets_control_cuts( event, cut=100. ) :
+    return passes_mct_cut( event, cut) and passes_inverted_iso_cut( event ) and passes_bjet_veto( event )
+
+def passes_ttbar_control_cuts( event, cut=100., ntags=2) :
+    return passes_mct_cut( event, cut) and passes_iso_cut( event ) and passes_bjet_cut( event, ntags)
 
 def count_events( data_it ) :
     """Count events in the iterator. Warning! Destroys the iterator!"""

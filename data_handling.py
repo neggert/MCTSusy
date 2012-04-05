@@ -28,6 +28,9 @@ class FitEvent(tables.IsDescription):
     relIso1  = tables.Float64Col()
     relIso2  = tables.Float64Col()
     mct      = tables.Float64Col()
+    mct_type = tables.Int64Col()
+    njets    = tables.Int64Col()
+    nbjets   = tables.Int64Col()
     mctype   = tables.StringCol(8)
 
 def save_data_hdf5( input_files, output_file, mctype="mc" ):
@@ -46,6 +49,8 @@ def save_data_hdf5( input_files, output_file, mctype="mc" ):
 
     try :
         for event in getter.events() :
+            event.jet_btag = "combinedSecondaryVertexBJetTags"
+            event.jet_btag_cut = "0.244"
             datarow = table.row
             datarow["idnumber"] = count.eventNum
             datarow["mctype"] = mctype
@@ -60,6 +65,10 @@ def save_data_hdf5( input_files, output_file, mctype="mc" ):
             datarow["pt2"] = leptons[1].pt()
             datarow["pdg1"] = leptons[0].pdgId()
             datarow["pdg2"] = leptons[1].pdgId()
+
+            # jets
+            datarow['njets'] = len(event.get_jets())
+            datarow['nbjets'] = len(event.get_tagged_jets())
 
             # angles
             phi1 = leptons[0].phi()
@@ -78,7 +87,7 @@ def save_data_hdf5( input_files, output_file, mctype="mc" ):
             p4jet2 = ROOT.TLorentzVector(0., 0., 0., 0.)
             met = event.get_met()
             calc.setP4s(p4jet1, p4jet2, get_TLorentzVector(leptons[0]), get_TLorentzVector(leptons[1]), get_TLorentzVector(met))
-            datarow["mct"] = calc.mctPerp_210()
+            datarow["mct"], datarow['mct_type'] = calc.mctBoostCor_210()
 
             datarow["met"] = event.get_met().pt()
 

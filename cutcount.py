@@ -48,8 +48,12 @@ def passes_iso_cut ( event ) :
                 return False
     return True
 
-def passes_mct_cut( event, cut=80.) :
+def passes_mct_cut( event, cut=120.) :
     return event['mct'] > cut
 
 def passes_sig_cuts( event ) :
     return passes_mct_cut( event ) and passes_iso_cut( event )
+
+def count_events( data_it ) :
+    """Count events in the iterator. Warning! Destroys the iterator!"""
+    return sum(1 for _ in data_it)

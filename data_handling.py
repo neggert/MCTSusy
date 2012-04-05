@@ -50,7 +50,7 @@ def save_data_hdf5( input_files, output_file, mctype="mc" ):
     try :
         for event in getter.events() :
             event.jet_btag = "combinedSecondaryVertexBJetTags"
-            event.jet_btag_cut = "0.244"
+            event.jet_btag_cut = 0.244
             datarow = table.row
             datarow["idnumber"] = count.eventNum
             datarow["mctype"] = mctype

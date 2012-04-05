@@ -150,23 +150,6 @@ class random_sample (object) :
         filtered_iterators = [self.sampled_iter(i, l) for l,i in zip(self.eventlists, iterators)]
         return itertools.chain(*filtered_iterators)
 
-    def isolated( self ) :
-        """Iterate only over the events that pass isolation"""
-        for event in self() :
-            if passes_iso_cut(event) :
-                yield event
-
-    def isolated_mct_cut( self, cut) :
-        """Iterate only over events that pass isolation and mct cuts"""
-        for event in self.isolated() :
-            if event['mct'] > cut :
-                yield event
-
-    def all_cuts(self) :
-        for event in self.isolated_mct_cut( 80. ) :
-            if event['sPhiUp'] < 0.3 :
-                yield event
-
 
 
 

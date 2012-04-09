@@ -74,14 +74,17 @@ def passes_bjet_veto( event ) :
 def passes_bjet_cut( event, ntags = 2 ) :
     return event['nbjets'] >= ntags
 
+def passes_sig_but_mct( event ) :
+    return passes_bjet_veto( event ) and passes_iso_cut( event )
+
 def passes_sig_cuts( event, cut=100. ) :
     return passes_mct_cut( event, cut) and passes_iso_cut( event ) and passes_bjet_veto( event )
 
-def passes_wjets_control_cuts( event, cut=100. ) :
-    return passes_mct_cut( event, cut) and passes_inverted_iso_cut( event ) and passes_bjet_veto( event )
+def passes_wjets_control_cuts( event ) :
+    return passes_inverted_iso_cut( event ) and passes_bjet_veto( event )
 
-def passes_ttbar_control_cuts( event, cut=100., ntags=2) :
-    return passes_mct_cut( event, cut) and passes_iso_cut( event ) and passes_bjet_cut( event, ntags)
+def passes_ttbar_control_cuts( event, ntags=2) :
+    return passes_iso_cut( event ) and passes_bjet_cut( event, ntags)
 
 def count_events( data_it ) :
     """Count events in the iterator. Warning! Destroys the iterator!"""

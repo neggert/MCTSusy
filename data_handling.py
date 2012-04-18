@@ -67,6 +67,7 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         met = event.get_met()
         calc.setP4s(p4jet1, p4jet2, get_TLorentzVector(leptons[0]), get_TLorentzVector(leptons[1]), get_TLorentzVector(met))
         datarow["mct"], datarow['mct_type'] = calc.mctBoostCor_210()
+        datarow['mctperp'] = calc.mctPerp_210()
 
         # met
         datarow["metPt"] = event.get_met().pt()
@@ -77,4 +78,6 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
 
     store = pandas.HDFStore(output_file)
     df = pandas.DataFrame(datadicts)
-    store[mctype] = df
+    store.put(mctype, df)
+    store.flush()
+    store.close()

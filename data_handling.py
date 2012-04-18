@@ -3,7 +3,6 @@ import pylab
 import ROOT
 import itertools
 import numpy.random
-from cutcount import passes_iso_cut
 import CMSPyLibs.events.dilepton_event as dilepton_event
 import CMSPyLibs.general_calc as general_calc
 import CMSPyLibs.event_counter as event_counter

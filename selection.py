@@ -81,10 +81,10 @@ def get_samples( data ) :
     # combine to get signal and control samples
     # note we still haven't applied the mct cut
     outdict['wjets_ctrl'] = outdict['bjets_sig'] & outdict['isolation_ctrl']
-    outdict['1tag_ctrl'] = outdict['1tag_ctrl'] & outdict['isolation_sig']
-    outdict['2tag_ctrl'] = outdict['2tag_ctrl'] & outdict['isolation_sig']
+    outdict['1tag_ctrl'] = outdict['1_bjets'] & outdict['isolation_sig']
+    outdict['2tag_ctrl'] = outdict['2_bjets'] & outdict['isolation_sig']
     outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig']
-    outidct['iso_bjet_sig'] = outdict['bjets_sig'] & outdict['isolation_sig']
+    outdict['iso_bjet_sig'] = outdict['bjets_sig'] & outdict['isolation_sig']
 
     outdict['mct_low'] = (data.mctperp > 5.) & (data.mctperp < 100.)
     outdict['mct_high'] = data.mctperp > 100.

@@ -67,8 +67,10 @@ def get_samples( data ) :
     outdict['l1_passes_ctrl_iso'] = outdict['l1_passes_loose_iso'] & ~outdict['l1_passes_tight_iso']
     outdict['l2_passes_ctrl_iso'] = outdict['l2_passes_loose_iso'] & ~outdict['l2_passes_tight_iso']
 
-    outdict['isolation_sig'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso']
-    outdict['isolation_ctrl'] = (outdict['l1_passes_tight_iso'] & outdict['l2_passes_ctrl_iso']) | (outdict['l1_passes_ctrl_iso'] & outdict['l2_passes_tight_iso'])
+    outdict['isolation_sig'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso']# & (abs(data.pdg1.values) != abs(data.pdg2.values))
+    outdict['isolation_ctrl'] = ( (outdict['l1_passes_tight_iso'] & outdict['l2_passes_ctrl_iso']) | (outdict['l1_passes_ctrl_iso'] & outdict['l2_passes_tight_iso'])\
+         #& (abs(data.pdg1.values) != abs(data.pdg2.values)))
+         )
 
     # b-tag cuts
     outdict['0_bjets'] = data.nbjets == 0
@@ -80,11 +82,11 @@ def get_samples( data ) :
 
     # combine to get signal and control samples
     # note we still haven't applied the mct cut
-    outdict['wjets_ctrl'] = outdict['bjets_sig'] & outdict['isolation_ctrl']
-    outdict['1tag_ctrl'] = outdict['1_bjets'] & outdict['isolation_sig']
-    outdict['2tag_ctrl'] = outdict['2_bjets'] & outdict['isolation_sig']
-    outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig']
-    outdict['iso_bjet_sig'] = outdict['bjets_sig'] & outdict['isolation_sig']
+    outdict['wjets_ctrl'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & (data.metPt > 60)
+    outdict['1tag_ctrl'] = outdict['1_bjets'] & outdict['isolation_sig'] & (data.metPt > 60)
+    outdict['2tag_ctrl'] = outdict['2_bjets'] & outdict['isolation_sig'] & (data.metPt > 60)
+    outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & (data.metPt > 60)
+    outdict['iso_bjet_sig'] = outdict['bjets_sig'] & outdict['isolation_sig'] & (data.metPt > 60)
 
     outdict['mct_low'] = (data.mctperp > 5.) & (data.mctperp < 100.)
     outdict['mct_high'] = data.mctperp > 100.

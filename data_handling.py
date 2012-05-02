@@ -77,6 +77,9 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
 
     store = pandas.HDFStore(output_file)
     df = pandas.DataFrame(datadicts)
-    store.put(mctype, df)
+    if mctype in store.keys() :
+        store[mctype] = store[mctype].append(df)
+    else :
+        store.put(mctype, df)
     store.flush()
     store.close()

@@ -3,7 +3,7 @@ def get_samples( data ) :
     """
     Get different control and signal events in sample data.
 
-    Usage: 
+    Usage:
         # data is of type pandas.DataFrame
         selections = get_samples(data)
         sig_events = data[selections['signal']]
@@ -14,7 +14,7 @@ def get_samples( data ) :
 
     returns: A dict of boolean selectors selecting events that pass
         the selection described by the key. Dict keys and the corresponding
-        selections are: 
+        selections are:
 
         # isolation-related
         'l1_passes_tight_iso': Lepton 1 passes isolation cuts
@@ -60,10 +60,10 @@ def get_samples( data ) :
     outdict = {}
 
     # isolation cuts
-    outdict['l1_passes_tight_iso'] = ((abs((data.pdg1.values) == 11) & (data.relIso1 < 0.17)) | ((abs(data.pdg1.values) == 13) & (data.relIso1 < 0.2)))
-    outdict['l2_passes_tight_iso'] = ((abs((data.pdg2.values) == 11) & (data.relIso2 < 0.17)) | ((abs(data.pdg2.values) == 13) & (data.relIso2 < 0.2)))
-    outdict['l1_passes_loose_iso'] = ((abs((data.pdg1.values) == 11) & (data.relIso1 < 0.4)) | ((abs(data.pdg1.values) == 13) & (data.relIso1 < 0.4)))
-    outdict['l2_passes_loose_iso'] = ((abs((data.pdg2.values) == 11) & (data.relIso2 < 0.4)) | ((abs(data.pdg2.values) == 13) & (data.relIso2 < 0.4)))
+    outdict['l1_passes_tight_iso'] = (((abs(data.pdg1.values) == 11) & (data.relIso1 < 0.17)) | ((abs(data.pdg1.values) == 13) & (data.relIso1 < 0.2)))
+    outdict['l2_passes_tight_iso'] = (((abs(data.pdg2.values) == 11) & (data.relIso2 < 0.17)) | ((abs(data.pdg2.values) == 13) & (data.relIso2 < 0.2)))
+    outdict['l1_passes_loose_iso'] = (((abs(data.pdg1.values) == 11) & (data.relIso1 < 0.4)) | ((abs(data.pdg1.values) == 13) & (data.relIso1 < 0.4)))
+    outdict['l2_passes_loose_iso'] = (((abs(data.pdg2.values) == 11) & (data.relIso2 < 0.4)) | ((abs(data.pdg2.values) == 13) & (data.relIso2 < 0.4)))
     outdict['l1_passes_ctrl_iso'] = outdict['l1_passes_loose_iso'] & ~outdict['l1_passes_tight_iso']
     outdict['l2_passes_ctrl_iso'] = outdict['l2_passes_loose_iso'] & ~outdict['l2_passes_tight_iso']
 
@@ -71,6 +71,12 @@ def get_samples( data ) :
     outdict['isolation_ctrl'] = ( (outdict['l1_passes_tight_iso'] & outdict['l2_passes_ctrl_iso']) | (outdict['l1_passes_ctrl_iso'] & outdict['l2_passes_tight_iso'])\
          #& (abs(data.pdg1.values) != abs(data.pdg2.values)))
          )
+
+    outdict['z_window'] = (data.mll < 106) & (data.mll > 76) & (abs(data.pdg1) == abs(data.pdg2))
+    outdict['off_z_window'] = (data.mll > 106) | (data.mll < 76) | (abs(data.pdg1) != abs(data.pdg2))
+
+    outdict['pass_met'] = data.metPt > 60
+    outdict['fail_met'] = data.metPt < 60
 
     # b-tag cuts
     outdict['0_bjets'] = data.nbjets == 0
@@ -82,22 +88,25 @@ def get_samples( data ) :
 
     # combine to get signal and control samples
     # note we still haven't applied the mct cut
-    outdict['wjets_ctrl'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & (data.metPt > 60)
-    outdict['1tag_ctrl'] = outdict['1_bjets'] & outdict['isolation_sig'] & (data.metPt > 60)
-    outdict['2tag_ctrl'] = outdict['2_bjets'] & outdict['isolation_sig'] & (data.metPt > 60)
-    outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & (data.metPt > 60)
-    outdict['iso_bjet_sig'] = outdict['bjets_sig'] & outdict['isolation_sig'] & (data.metPt > 60)
+    outdict['wjets_ctrl'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window']
+    outdict['1tag_ctrl'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
+    outdict['2tag_ctrl'] = outdict['2_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
+    outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
+    outdict['z_ctrl'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window']
+    outdict['sig'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
 
     outdict['mct_low'] = (data.mctperp > 5.) & (data.mctperp < 100.)
     outdict['mct_high'] = data.mctperp > 100.
 
-    outdict['sig_mct_low'] = outdict['iso_bjet_sig'] & outdict['mct_low']
-    outdict['sig_mct_high'] = outdict['iso_bjet_sig'] & outdict['mct_high']
+    outdict['sig_mct_low'] = outdict['sig'] & outdict['mct_low']
+    outdict['sig_mct_high'] = outdict['sig'] & outdict['mct_high']
     outdict['wjets_mct_low'] = outdict['wjets_ctrl'] & outdict['mct_low']
     outdict['wjets_mct_high'] = outdict['wjets_ctrl'] & outdict['mct_high']
     outdict['top_mct_low'] = outdict['top_ctrl'] & outdict['mct_low']
     outdict['top_mct_high'] = outdict['top_ctrl'] & outdict['mct_high']
     outdict['1tag_mct_low'] = outdict['1tag_ctrl'] & outdict['mct_low']
     outdict['2tag_mct_low'] = outdict ['2tag_ctrl'] & outdict['mct_low']
+    outdict['z_mct_low'] = outdict['z_ctrl'] & outdict['mct_low']
+    outdict['z_mct_high'] = outdict['z_ctrl'] & outdict['mct_high']
 
     return outdict

@@ -14,6 +14,13 @@ Includes creating the files and different ways to iterate over data
 in a file.
 """
 
+def get_parent( gen_particle ) :
+    """Get the parent particle that comes directly from a vector boson"""
+    if abs(gen_particle.mother().pdgId()) in range(22,25) :
+        return gen_particle
+    else :
+        return get_parent(gen_particle.mother())
+
 def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
     """Load all of the relevant data from the CMSSW files and save it using pandas"""
     getter = dilepton_event.CMSDileptonEventGetter(input_files)
@@ -43,6 +50,12 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         datarow["pdg2"] = leptons[1].pdgId()
         datarow["phi1"] = leptons[0].phi()
         datarow["phi2"] = leptons[1].phi()
+        try :
+            datarow['parentPdg1'] = get_parent(leptons[0].genParticle()).pdgId()
+            datarow['parentPdg2'] = get_parent(leptons[1].genParticle()).pdgId()
+        except ReferenceError :
+            pass
+
 
         # jets
         datarow['njets'] = len(event.get_jets())

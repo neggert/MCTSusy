@@ -10,7 +10,5 @@ def stackplot( data, selection, variable, bins, range) :
         data[selection & (data.mctype=="wjets")].weight)
     bkgltpl = ("WW", "t\=t", "tW", "Z/$\gamma^*$", "W+Jets" )
     hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=range, label=bkgltpl)
-    hist( data[selection & (data.mctype=="ChiX0W_300_100")][variable], weights=data[selection & (data.mctype=="ChiX0W_300_100")].weight, \
+    hist( data[selection & (data.mctype=="300_100")][variable], weights=data[selection & (data.mctype=="300_100")].weight, \
         histtype="step", fill=False, bins=bins, range=range, label=r"$\chi^+\chi^- \to \chi^0\mathrm{W}^+\chi^0\mathrm{W}^-$", lw=2, ec="k")
-    hist( data[selection & (data.mctype=="ChilSnu_300_100")][variable], weights=data[selection & (data.mctype=="ChilSnu_300_100")].weight, \
-        histtype="step", fill=False, bins=bins, range=range, label=r"$\chi^+\chi^- \to \tilde{\nu}\ell^+\tilde{\nu}\ell^-$", lw=2, ec="#aaaaaa")

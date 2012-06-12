@@ -1,0 +1,9 @@
+*.pyc
+*.so
+.*
+Data
+_build
+build
+MCTPerpIntegrand.c
+notebooks
+*.sublime-*

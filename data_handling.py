@@ -86,12 +86,15 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         datarow['metPhi'] = event.get_met().phi()
         datarow['weight'] = weight
 
+        # invariant mass
+        datarow["mll"] = (get_TLorentzVector(leptons[0])+get_TLorentzVector(leptons[1])).M()
+
         datadicts.append(datarow)
 
     store = pandas.HDFStore(output_file)
     df = pandas.DataFrame(datadicts)
     if mctype in store.keys() :
-        store[mctype] = store[mctype].append(df)
+        store[mctype] = store[mctype].append(df, ignore_index=True)
     else :
         store.put(mctype, df)
     store.flush()

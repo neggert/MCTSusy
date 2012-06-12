@@ -1,5 +1,5 @@
 
-def get_samples( data ) :
+def get_samples( data, mctcut=100.) :
     """
     Get different control and signal events in sample data.
 
@@ -95,8 +95,8 @@ def get_samples( data ) :
     outdict['z_ctrl'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window']
     outdict['sig'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
 
-    outdict['mct_low'] = (data.mctperp > 5.) & (data.mctperp < 100.)
-    outdict['mct_high'] = data.mctperp > 100.
+    outdict['mct_low'] = (data.mctperp > 5.) & (data.mctperp < mctcut)
+    outdict['mct_high'] = data.mctperp > mctcut
 
     outdict['sig_mct_low'] = outdict['sig'] & outdict['mct_low']
     outdict['sig_mct_high'] = outdict['sig'] & outdict['mct_high']

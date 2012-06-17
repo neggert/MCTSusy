@@ -1,5 +1,5 @@
 import pandas
-import pylab
+import numpy
 import ROOT
 import itertools
 import numpy.random
@@ -68,7 +68,7 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         phiUpSigMatrix = event.get_met().getSignificanceMatrix()
         gamma = angle_0_2pi((phi1+phi2)/2) # average of visible angles
         twodelta = abs(phi1-phi2)
-        if twodelta > pylab.pi : twodelta = 2*pylab.pi-twodelta
+        if twodelta > numpy.pi : twodelta = 2*numpy.pi-twodelta
         datarow["delta"] = twodelta/2
         datarow["phiUp"] = angle_0_2pi(phiUp - gamma)
         datarow["sPhiUp"] = get_upstream_phi_res(event.upstream_of_leptons(), phiUpSigMatrix)

@@ -1,3 +1,6 @@
 [submodule "CMSPyLibs"]
 	path = CMSPyLibs
 	url = git@github.com:neggert/CMSPyLibs.git
+[submodule "cmsscripts"]
+	path = cmsscripts
+	url = https://github.com/neggert/cmsscripts.git

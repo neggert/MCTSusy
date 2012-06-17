@@ -68,7 +68,6 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
       selz = get_samples( mcz, cut)
       seltw = get_samples( mctw, cut)
       selwz = get_samples( mcwz, cut)
-      print sel.keys()
 
       # <markdowncell>
 
@@ -184,8 +183,6 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
       n_2tag = sum(data[sel['2tag_mct_low']].weight)
       eff = 2.*n_2tag/(n_1tag_tt+2*n_2tag)
       seff = eff*sqrt(1./2/n_2tag - 1./(n_1tag_tt+2*n_2tag))
-      print "Estimated B-tagging Efficiency"
-      print eff, "+-", seff
 
       # <markdowncell>
 
@@ -201,9 +198,9 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
 
       ntop_pred = n_1tag/2.*(1-eff)/eff
       ntop_pred_err = ntop_pred*sqrt(2./n_1tag+4*seff**2/eff**2)
-      print "Number of ttbar/tW events for constraint"
-      print "Actual:", ntop_low_mct_true
-      print "Predicted:", ntop_pred, "+-", ntop_pred_err
+      # print "Number of ttbar/tW events for constraint"
+      # print "Actual:", ntop_low_mct_true
+      # print "Predicted:", ntop_pred, "+-", ntop_pred_err
 
       # <markdowncell>
 
@@ -312,8 +309,6 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
       nzz_ctrl_low_err = r.RooRealVar("nzz_ctrl_low_err", "nzz_ctrl_low_err", nzz_ctrl_low_err_val)
       nzz_ctrl_low_constraint = r.RooGaussian("nzz_ctrl_low_constraint", "nzz_ctrl_low_constraint", nzz_ctrl_low_var,
                                                  nzz_ctrl_low_obs, nzz_ctrl_low_err)
-      print nz_ctrl_high_val, nz_ctrl_high_err_val
-      print nwjets_ctrl_high_val, nwjets_ctrl_low_val
 
       # <codecell>
 
@@ -427,43 +422,24 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
       nzz_low_mct_err = nzz.getError()
       nz_low_mct = nz.getVal()
       nz_low_mct_err = nz.getError()
-      print "Results in control region"
-      print "True, Fit, Error"
-      print ntop_low_mct_true, ntop_low_mct, ntop_low_mct_err
-      print nwjets_low_mct_true, nwjets_low_mct, nwjets_low_mct_err
-      print nww_low_mct_true, nww_low_mct, nww_low_mct_err
-      print nzz_low_mct_true, nzz_low_mct, nzz_low_mct_err
-      print nz_low_mct_true, nz_low_mct, nz_low_mct_err
 
-      # <markdowncell>
+      pred_high_dict = {}
+      pred_high_dict['Total'] = (ntot_sig_pred.getVal(), ntot_sig_pred.getPropagatedError(results))
+      pred_high_dict['Top'] = (ntop_sig_pred.getVal(), ntop_sig_pred.getPropagatedError(results))
+      pred_high_dict['WV'] = (nww_sig_pred.getVal(), nww_sig_pred.getPropagatedError(results))
+      pred_high_dict['ZZ'] = (nzz_sig_pred.getVal(), nzz_sig_pred.getPropagatedError(results))
+      pred_high_dict['DY'] = (nz_sig_pred.getVal(), nz_sig_pred.getPropagatedError(results))
+      pred_high_dict['W'] = (nwjets_sig_pred.getVal(), nwjets_sig_pred.getPropagatedError(results))
 
-      # Look at the results
+      pred_low_dict = {}
+      pred_low_dict['Top'] = (ntop.getVal(), ntop.getError())
+      pred_low_dict['WV'] = (nww.getVal(), nww.getError())
+      pred_low_dict['ZZ'] = (nzz.getVal(), nzz.getError())
+      pred_low_dict['DY'] = (nz.getVal(), nz.getError())
+      pred_low_dict['W'] = (nwjets.getVal(), nwjets.getError())
 
-      # <codecell>
 
-      print "Actual Background: ",  sum(data[sel['sig_mct_high']].weight)
-      print "Predicted Total:", ntot_sig_pred.getVal(), "+-", ntot_sig_pred.getPropagatedError(results)
-      print "Actual Top: ",  sum(data[sel['sig_mct_high'] & ((data.mctype=="ttbar") | (data.mctype=='tW'))].weight)
-      print "Predicted Top:", ntop_sig_pred.getVal(), "+-", ntop_sig_pred.getPropagatedError(results)
-      print "Actual WW: ",  sum(data[sel['sig_mct_high'] & ((data.mctype=="WW") | (data.mctype=="WZ"))].weight)
-      print "Predicted WW:", nww_sig_pred.getVal(), "+-", nww_sig_pred.getPropagatedError(results)
-      print "Actual ZZ: ",  sum(data[sel['sig_mct_high'] & (data.mctype=="ZZ")].weight)
-      print "Predicted ZZ:", nzz_sig_pred.getVal(), "+-", nzz_sig_pred.getPropagatedError(results)
-      print "Actual Z: ",  sum(data[sel['sig_mct_high'] & (data.mctype=="DY")].weight)
-      print "Predicted Z:", nz_sig_pred.getVal(), "+-", nz_sig_pred.getPropagatedError(results)
-      print "Actual W: ",  sum(data[sel['sig_mct_high'] & (data.mctype=="wjets")].weight)
-      print "Predicted W:", nwjets_sig_pred.getVal(), "+-", nwjets_sig_pred.getPropagatedError(results)
 
-      # <codecell>
-
-      outdict = {}
-      outdict['Total'] = (ntot_sig_pred.getVal(), ntot_sig_pred.getPropagatedError(results))
-      outdict['Top'] = (ntop_sig_pred.getVal(), ntop_sig_pred.getPropagatedError(results))
-      outdict['WV'] = (nww_sig_pred.getVal(), nww_sig_pred.getPropagatedError(results))
-      outdict['ZZ'] = (nzz_sig_pred.getVal(), nzz_sig_pred.getPropagatedError(results))
-      outdict['DY'] = (nz_sig_pred.getVal(), nz_sig_pred.getPropagatedError(results))
-      outdict['W'] = (nwjets_sig_pred.getVal(), nwjets_sig_pred.getPropagatedError(results))
-
-      return outdict
+      return {'low':pred_low_dict, 'high':pred_high_dict}
 
 

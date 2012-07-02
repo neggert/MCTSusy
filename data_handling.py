@@ -3,7 +3,7 @@ import numpy
 import ROOT
 import itertools
 import numpy.random
-import CMSPyLibs.events.dilepton_event as dilepton_event
+import CMSPyLibs.events
 import CMSPyLibs.general_calc as general_calc
 import CMSPyLibs.event_counter as event_counter
 from CMSPyLibs.cmsutilities import get_TLorentzVector, get_PF_isolation, angle_0_2pi, get_upstream_phi_res
@@ -23,7 +23,7 @@ def get_parent( gen_particle ) :
 
 def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
     """Load all of the relevant data from the CMSSW files and save it using pandas"""
-    getter = dilepton_event.CMSDileptonEventGetter(input_files)
+    getter = CMSPyLibs.events.CMSDileptonEventGetter(input_files)
     getter.set_electron_collection("loosePatElectrons")
     getter.set_muon_collection("loosePatMuons")
 
@@ -32,12 +32,22 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
 
     datadicts = []
 
+    eventids = set()
+
     for event in getter.events() :
+        count.Increment()
+
+        if event.eventID in eventids :
+            print "Duplicate event, skipping..."
+        else :
+            eventids.add(event.eventID)
         event.jet_btag = "combinedSecondaryVertexBJetTags"
         event.jet_btag_cut = 0.244
         datarow = {}
         datarow["mctype"] = mctype
-        count.Increment()
+        datarow['run'] = event.eventID.run_number
+        datarow['lumi'] = event.eventID.luminosity_block
+        datarow['event'] = event.eventID.event_number
 
         # lepton info
         leptons = event.get_leptons()
@@ -50,6 +60,8 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         datarow["pdg2"] = leptons[1].pdgId()
         datarow["phi1"] = leptons[0].phi()
         datarow["phi2"] = leptons[1].phi()
+        datarow["eta1"] = leptons[0].eta()
+        datarow["eta2"] = leptons[1].eta()
         try :
             datarow['parentPdg1'] = get_parent(leptons[0].genParticle()).pdgId()
             datarow['parentPdg2'] = get_parent(leptons[1].genParticle()).pdgId()

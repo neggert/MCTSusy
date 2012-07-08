@@ -87,12 +87,12 @@ def get_samples( data, mctcut=100.) :
                                   & outdict['opposite_sign']
 
 
-    outdict['z_window'] = (data.mll < 96) & (data.mll > 86) & (abs(data.pdg1) == abs(data.pdg2))
+    outdict['z_window'] = (data.mll < 106) & (data.mll > 76) & (abs(data.pdg1) == abs(data.pdg2))
     #outdict['off_z_window'] = (data.mll > 106) | (data.mll < 76) | (abs(data.pdg1) != abs(data.pdg2))
     outdict['off_z_window'] = ~outdict['z_window']
 
-    outdict['pass_met'] = data.metPt > 80
-    outdict['fail_met'] = data.metPt < 80
+    outdict['pass_met'] = data.metPt > 60
+    outdict['fail_met'] = data.metPt < 60
 
     # b-tag cuts
     outdict['0_bjets'] = data.nbjets == 0

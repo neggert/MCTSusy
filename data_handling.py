@@ -27,6 +27,7 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
     getter.set_electron_collection("loosePatElectrons")
     getter.set_muon_collection("loosePatMuons")
     getter.do_PU = (mctype != 'data')
+    getter.do_SMS = ('sms' in mctype)
 
     count = event_counter.EventCounter()
     calc = general_calc.VarCalculator()
@@ -51,7 +52,13 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         datarow['event'] = event.eventID.event_number
 
         datarow['nvertices'] =len(event.get_vertices())
-        datarow['nPuVertices'] = event.metadata['num_pu_vertices']
+
+        if 'num_pu_vertices' in event.metadata.keys() :
+            datarow['nPuVertices'] = event.metadata['num_pu_vertices']
+
+        if 'modelParams' in event.metadata.keys() :
+            datarow['mass1'] = event.metadata['modelParams'][0]
+            datarow['mass2'] = event.metadata['modelParams'][1]
 
         # lepton info
         leptons = event.get_leptons()

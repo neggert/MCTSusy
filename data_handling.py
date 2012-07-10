@@ -50,7 +50,7 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         datarow['event'] = event.eventID.event_number
 
         datarow['nvertices'] =len(event.get_vertices())
-        datarow['nPuVertices'] = event.metadata['num_pu_vertices']
+        #datarow['nPuVertices'] = event.metadata['num_pu_vertices']
 
         # lepton info
         leptons = event.get_leptons()

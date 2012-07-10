@@ -17,4 +17,15 @@ for ds in datasets :
 
 files = [prefix+f for f in files]
 
-save_data_pandas( files, "/home/uscms33/data.hdf5", mctype="data")
+from itertools import *
+
+def grouper(n, iterable, fillvalue=None):
+    "Collect data into fixed-length chunks or blocks"
+    # grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx"
+    args = [iter(iterable)] * n
+    return izip_longest(fillvalue=fillvalue, *args)
+
+for group in grouper(100, files) :
+	thesefiles = list(filter(None,group))
+	print thesefiles[0]
+	save_data_pandas( thesefiles, "/home/uscms33/dataLoose.hdf5", mctype="data")

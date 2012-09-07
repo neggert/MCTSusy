@@ -1,4 +1,5 @@
 import pandas
+import logging
 import numpy
 import ROOT
 import itertools
@@ -106,19 +107,26 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
 
         # met
         datarow["metPt"] = event.get_met().pt()
+        if event.get_met().pt() < 30 :
+            logging.debug("Skipping event with MET "+str(event.get_met().pt()))
+            continue
         datarow['metPhi'] = event.get_met().phi()
         datarow['weight'] = weight
 
         # invariant mass
         datarow["mll"] = (get_TLorentzVector(leptons[0])+get_TLorentzVector(leptons[1])).M()
 
+        logging.debug("Adding event")
         datadicts.append(datarow)
 
+    logging.info("Saving to "+output_file)
     store = pandas.HDFStore(output_file)
     df = pandas.DataFrame(datadicts)
     if mctype in store.keys() :
+	logging.debug( mctype+" already exists. Appending.")
         store[mctype] = store[mctype].append(df, ignore_index=True)
     else :
+	logging.debug("Creating new DataFrame")
         store.put(mctype, df)
     store.flush()
     store.close()

@@ -3,11 +3,12 @@ import logging
 import numpy
 import ROOT
 import itertools
+import functools
 import numpy.random
 import CMSPyLibs.events
 import CMSPyLibs.general_calc as general_calc
 import CMSPyLibs.event_counter as event_counter
-from CMSPyLibs.cmsutilities import get_TLorentzVector, get_PF_isolation, angle_0_2pi, get_upstream_phi_res
+from CMSPyLibs.cmsutilities import get_TLorentzVector, get_5_X_isolation, angle_0_2pi, get_upstream_phi_res
 
 """
 Functions for handling fit data in the pytables hdf5 format
@@ -25,8 +26,11 @@ def get_parent( gen_particle ) :
 def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
     """Load all of the relevant data from the CMSSW files and save it using pandas"""
     getter = CMSPyLibs.events.CMSDileptonEventGetter(input_files)
-    getter.set_electron_collection("loosePatElectrons")
-    getter.set_muon_collection("loosePatMuons")
+    getter.set_electron_collection("nonIsolatedPatElectrons")
+    getter.set_muon_collection("nonIsolatedPatMuons")
+    getter.set_jet_collection("selectedPatJets")
+    getter.vertex_collection = "offlinePrimaryVertices"
+    getter.set_met_collection("patMETs")
     getter.do_PU = (mctype != 'data')
     getter.do_SMS = ('sms' in mctype)
 
@@ -45,7 +49,7 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         else :
             eventids.add(event.eventID)
         event.jet_btag = "combinedSecondaryVertexBJetTags"
-        event.jet_btag_cut = 0.244
+        event.jet_btag_cut = 0.679
         datarow = {}
         datarow["mctype"] = mctype
         datarow['run'] = event.eventID.run_number
@@ -62,10 +66,11 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
             datarow['mass2'] = event.metadata['modelParams'][1]
 
         # lepton info
+        get_isolation = functools.partial(get_5_X_isolation, rho = event.metadata['rho'])
         leptons = event.get_leptons()
-        leptons.sort(key = get_PF_isolation)
-        datarow["relIso1"] = get_PF_isolation( leptons[0])
-        datarow["relIso2"] = get_PF_isolation( leptons[1])
+        leptons.sort(key = get_isolation)
+        datarow["relIso1"] = get_isolation( leptons[0] )
+        datarow["relIso2"] = get_isolation( leptons[1] )
         datarow["pt1"] = leptons[0].pt()
         datarow["pt2"] = leptons[1].pt()
         datarow["pdg1"] = leptons[0].pdgId()
@@ -79,7 +84,11 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
             datarow['parentPdg2'] = get_parent(leptons[1].genParticle()).pdgId()
         except ReferenceError :
             pass
-
+        # is there a third isolated lepton?
+        datarow['ThirdLepton'] = False
+        if len(leptons) > 2:
+            if get_isolation(leptons[2]) < 0.15:
+                datarow['ThirdLepton'] = True
 
         # jets
         datarow['njets'] = len(event.get_jets())
@@ -107,9 +116,9 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
 
         # met
         datarow["metPt"] = event.get_met().pt()
-        if event.get_met().pt() < 30 :
-            logging.debug("Skipping event with MET "+str(event.get_met().pt()))
-            continue
+        # if event.get_met().pt() < 30 :
+        #     logging.debug("Skipping event with MET "+str(event.get_met().pt()))
+        #     continue
         datarow['metPhi'] = event.get_met().phi()
         datarow['weight'] = weight
 

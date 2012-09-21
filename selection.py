@@ -69,12 +69,12 @@ def get_samples( data, mctcut=100.) :
 
 
     # isolation cuts
-    outdict['l1_passes_tight_iso'] = (((abs(data.pdg1.values) == 11) & (data.relIso1 < 0.17)) | ((abs(data.pdg1.values) == 13) & (data.relIso1 < 0.2)))
-    outdict['l2_passes_tight_iso'] = (((abs(data.pdg2.values) == 11) & (data.relIso2 < 0.17)) | ((abs(data.pdg2.values) == 13) & (data.relIso2 < 0.2)))
+    outdict['l1_passes_tight_iso'] = data.relIso1 < 0.15
+    outdict['l2_passes_tight_iso'] = data.relIso2 < 0.15
     # outdict['l1_passes_tight_iso'] = (data.relIso1 < 0.2)
     # outdict['l2_passes_tight_iso'] = (data.relIso2 < 0.2)
-    outdict['l1_passes_loose_iso'] = (((abs(data.pdg1.values) == 11) & (data.relIso1 < 0.4)) | ((abs(data.pdg1.values) == 13) & (data.relIso1 < 0.4)))
-    outdict['l2_passes_loose_iso'] = (((abs(data.pdg2.values) == 11) & (data.relIso2 < 0.4)) | ((abs(data.pdg2.values) == 13) & (data.relIso2 < 0.4)))
+    outdict['l1_passes_loose_iso'] = data.relIso1 < 0.3
+    outdict['l2_passes_loose_iso'] = data.relIso2 < 0.3
     outdict['l1_passes_ctrl_iso'] = outdict['l1_passes_loose_iso'] & ~outdict['l1_passes_tight_iso']
     outdict['l2_passes_ctrl_iso'] = outdict['l2_passes_loose_iso'] & ~outdict['l2_passes_tight_iso']
 

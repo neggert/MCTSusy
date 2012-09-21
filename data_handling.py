@@ -56,6 +56,12 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         datarow['lumi'] = event.eventID.luminosity_block
         datarow['event'] = event.eventID.event_number
 
+        if mctype == 'data':
+            datarow['DoubleEle_Trigger'] = event.passes_HLT("HLT_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_v*")
+            datarow['DoubleMu_Trigger'] = event.passes_HLT("HLT_Mu17_Mu8_v*")
+            datarow['EMu_Trigger'] = event.passes_HLT("HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_v*")\
+                                    or event.passes_HLT("HLT_Mu17_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_v*")
+
         datarow['nvertices'] =len(event.get_vertices())
 
         if 'num_pu_vertices' in event.metadata.keys() :

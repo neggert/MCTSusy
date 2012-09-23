@@ -126,7 +126,7 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         #     logging.debug("Skipping event with MET "+str(event.get_met().pt()))
         #     continue
         datarow['metPhi'] = event.get_met().phi()
-        datarow['weight'] = weight
+        datarow['weight'] = float(weight)
 
         # invariant mass
         datarow["mll"] = (get_TLorentzVector(leptons[0])+get_TLorentzVector(leptons[1])).M()
@@ -137,11 +137,11 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
     logging.info("Saving to "+output_file)
     store = pandas.HDFStore(output_file)
     df = pandas.DataFrame(datadicts)
-    if mctype in store.keys() :
-	logging.debug( mctype+" already exists. Appending.")
-        store[mctype] = store[mctype].append(df, ignore_index=True)
+    if "data" in store.keys() :
+	logging.debug( "data already exists. Appending.")
+        store['data'] = store["data"].append(df, ignore_index=True)
     else :
 	logging.debug("Creating new DataFrame")
-        store.put(mctype, df)
+        store.put("data", df)
     store.flush()
     store.close()

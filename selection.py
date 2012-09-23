@@ -59,7 +59,7 @@ def get_samples( data, mctcut=100.) :
     """
     outdict = {}
 
-    outdict['opposite_sign'] = (data.pdg1*data.pdg2 < 0)
+    outdict['opposite_sign'] = (data.pdg1*data.pdg2 < 0) & (~data.ThirdLepton)
     outdict['ee'] = (abs(data.pdg1) == 11) & ((abs(data.pdg2) == 11))
     outdict['mumu'] = (abs(data.pdg1) == 13) & ((abs(data.pdg2) == 13))
     outdict['emu'] = abs(data.pdg1) != abs(data.pdg2)

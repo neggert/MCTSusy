@@ -11,6 +11,8 @@ from selection import *
 from rootutils import *
 from collections import defaultdict
 
+import json
+
 # <codecell>
 
 import ROOT as r
@@ -21,37 +23,10 @@ r.gSystem.Load("libRooStats")
 
 # <codecell>
 
-def make_mc_dataset() :
-      store = HDFStore("/Users/nic/cms/MCTSusy/notebooks/Data/background.hdf5")
-      data1 = store['ttbar']
-      data2 = store['tW']
-      data3 = store['WW'][:store['WW'].weight.count()/2]
-      data3.weight *= 2
-      data4 = store['wjets']
-      data5 = store['DY'][:store['DY'].weight.count()/2]
-      data5.weight *= 2
-      data6 = store['WZ']
-      data7 = store['ZZ'][:store['ZZ'].weight.count()/2]
-      data7.weight *= 2
-      data = data1.append(data2, ignore_index=True)
-      data = data.append(data3, ignore_index=True)
-      data = data.append(data4, ignore_index=True)
-      data = data.append(data5, ignore_index=True)
-      data = data.append(data6, ignore_index=True)
-      data = data.append(data7, ignore_index=True)
-      return data
+def do_bkg_fit(data, mc, mctcut=100., ntop_syst=0.15, plot=False) :
 
-def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True, plot=False) :
-      store = HDFStore("/Users/nic/cms/MCTSusy/notebooks/Data/background.hdf5")
-
-      mcww = store['WW'][store['WW'].weight.count()/2:]
-      mcww.weight *= 2
-      mcz = store['DY'][store['DY'].weight.count()/2:]
-      mcz.weight *= 2
-      mczz = store['ZZ'][store['ZZ'].weight.count()/2:]
-      mczz.weight *= 2
-      mctw = store['tW']
-      mcwz = store['WZ']
+      mcvv = mc[(mc.mc_cat=='WV') | (mc.mc_cat=='ZZ')]
+      mcz = mc[mc.mc_cat=='DY']
 
       # <markdowncell>
 
@@ -63,23 +38,14 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
 
       cut = mctcut
       sel = get_samples( data, cut)
-      selww = get_samples( mcww, cut)
-      selzz = get_samples( mczz, cut)
+      selvv = get_samples( mcvv, cut)
       selz = get_samples( mcz, cut)
-      seltw = get_samples( mctw, cut)
-      selwz = get_samples( mcwz, cut)
 
       # <markdowncell>
 
       # Get the true number of events from each mc type in the low $M_{\text{CT}}$ control region with b-jet veto and isolation cuts applied
 
       # <codecell>
-
-      ntop_low_mct_true =  sum(data[sel['sig_mct_low'] & (data.mctype=="ttbar")].weight) + sum(data[sel['sig_mct_low'] & (data.mctype=="tW")].weight)
-      nwjets_low_mct_true =  sum(data[sel['sig_mct_low'] & (data.mctype=="wjets")].weight)
-      nww_low_mct_true =  sum(data[sel['sig_mct_low'] & ((data.mctype=="WW") | (data.mctype=="WZ"))].weight)
-      nzz_low_mct_true =  sum(data[sel['sig_mct_low'] & (data.mctype=="ZZ")].weight)
-      nz_low_mct_true =  sum(data[sel['sig_mct_low'] & (data.mctype=="DY")].weight)
 
       # <markdowncell>
 
@@ -117,20 +83,17 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
       # first make a TH1
       topshapehistTH1 = create_TH1( data[sel['top_mct_low']].mctperp, data[sel['top_mct_low']].weight, "top")
       wjetsshapehistTH1 = create_TH1( data[sel['wjets_mct_low']].mctperp, data[sel['wjets_mct_low']].weight, "wjets")
-      wwshapehistTH1 = create_TH1( mcww[selww['sig_mct_low']].mctperp, mcww[selww['sig_mct_low']].weight, "ww")
-      zzshapehistTH1 = create_TH1( mczz[selzz['sig_mct_low']].mctperp, mczz[selzz['sig_mct_low']].weight, "zz")
+      vvshapehistTH1 = create_TH1( mcvv[selvv['sig_mct_low']].mctperp, mcvv[selvv['sig_mct_low']].weight, "vv")
       zshapehistTH1 = create_TH1( mcz[selz['sig_mct_low']].mctperp, mcz[selz['sig_mct_low']].weight, "Z")
       # Then convert to a RooDataHist
       topshapehist = r.RooDataHist("topHist", "topHist", r.RooArgList(mct), topshapehistTH1)
       wjetsshapehist = r.RooDataHist("wjetsHist", "wjetsHist", r.RooArgList(mct), wjetsshapehistTH1)
-      wwshapehist = r.RooDataHist("wwHst", "wwHist", r.RooArgList(mct), wwshapehistTH1)
-      zzshapehist = r.RooDataHist("zzHst", "zzHist", r.RooArgList(mct), zzshapehistTH1)
+      vvshapehist = r.RooDataHist("vvHst", "vvHist", r.RooArgList(mct), vvshapehistTH1)
       zshapehist = r.RooDataHist("zHist", "zHist", r.RooArgList(mct), zshapehistTH1)
       # and create a PDF from the RooDataHist
       topshape = r.RooHistPdf( "top", "top", r.RooArgSet(mct), topshapehist)
       wjetsshape = r.RooHistPdf( "wjets", "wjets", r.RooArgSet(mct), wjetsshapehist)
-      wwshape = r.RooHistPdf( "ww", "ww", r.RooArgSet(mct), wwshapehist)
-      zzshape = r.RooHistPdf( "zz", "zz", r.RooArgSet(mct), zzshapehist)
+      vvshape = r.RooHistPdf( "vv", "vv", r.RooArgSet(mct), vvshapehist)
       zshape = r.RooHistPdf("z", "z", r.RooArgSet(mct), zshapehist)
 
       # <codecell>
@@ -138,13 +101,10 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
       # build the extended PDFs
       ntop = r.RooRealVar("ntop", "ntop", 514, -10000., 10000.)
       topext = r.RooExtendPdf( "topext", "topext", topshape, ntop)
-      nwjets = r.RooRealVar("nwjets", "nwjets", 300, -10000., 10000.)
+      nwjets = r.RooRealVar("nwjets", "nwjets", 300, 0., 10000.)
       wjetsext = r.RooExtendPdf( "wjetsext", "wjetsext", wjetsshape, nwjets)
-      nww = r.RooRealVar("nww", "nww", 600, -10000., 10000.)
-      wwext = r.RooExtendPdf( "wwext", "ww", wwshape, nww)
-      #nzz = r.RooFormulaVar("nzz", "nww*"+str(sum(mczz[selzz['sig_mct_low']].weight)/(sum(mcww[selww['sig_mct_low']].weight)+sum(mcwz[selwz['sig_mct_low']].weight))), r.RooArgList(nww))
-      nzz = r.RooRealVar("nzz", "nzz", 600, -10000., 10000.)
-      zzext = r.RooExtendPdf( "zzext", "zz", zzshape, nzz)
+      nvv = r.RooRealVar("nvv", "nvv", 600, -10000., 10000.)
+      vvext = r.RooExtendPdf( "vvext", "vv", vvshape, nvv)
       nz = r.RooRealVar("nz", "nz", 300, -10000, 10000)
       zext = r.RooExtendPdf("zext", "z", zshape, nz)
 
@@ -154,13 +114,13 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
 
       # <codecell>
 
-      model = r.RooAddPdf("model", "model", r.RooArgList(topext, wjetsext, wwext, zzext, zext))
+      model = r.RooAddPdf("model", "model", r.RooArgList(topext, wjetsext, vvext, zext))
 
       # <markdowncell>
 
       # Using b-tagging efficiency to constrain $N_\mathrm{top}$
       # ========================================================
-      # Because the top and WW shapes are very similar in the low $M_{CT}$ region, the fit tends to have very large uncertainties on these numbers. We can improve this by providing an indpendent estimate of $N_{\text{top}}$ and putting it in the fit as a Gaussian constraint.
+      # Because the top and vv shapes are very similar in the low $M_{CT}$ region, the fit tends to have very large uncertainties on these numbers. We can improve this by providing an indpendent estimate of $N_{\text{top}}$ and putting it in the fit as a Gaussian constraint.
       #
       # First we estimate the b-tagging efficiency. Assume that any event that has at least 1 b-tag actually has 2 b-tags. Let $N_x$ be the number of events with exactly $x$ b-tags and $\epsilon$ be the b-tagging efficiency. Then
       #
@@ -178,11 +138,13 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
 
       # <codecell>
 
-      n_1tag_tt = sum(data[sel['1tag_mct_low']].weight) - sum(mctw[seltw['1tag_mct_low']].weight)
+      # n_1tag_tt = sum(data[sel['1tag_mct_low']].weight) - sum(mctw[seltw['1tag_mct_low']].weight)
       n_1tag = sum(data[sel['1tag_mct_low']].weight)
       n_2tag = sum(data[sel['2tag_mct_low']].weight)
-      eff = 2.*n_2tag/(n_1tag_tt+2*n_2tag)
-      seff = eff*sqrt(1./2/n_2tag - 1./(n_1tag_tt+2*n_2tag))
+      # eff = 2.*n_2tag/(n_1tag_tt+2*n_2tag)
+      eff = 2.*n_2tag/(n_1tag+2*n_2tag)
+
+      # seff = eff*sqrt(1./2/n_2tag - 1./(n_1tag_tt+2*n_2tag))
 
       # <markdowncell>
 
@@ -196,8 +158,10 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
 
       # <codecell>
 
-      ntop_pred = n_1tag/2.*(1-eff)/eff
-      ntop_pred_err = ntop_pred*sqrt(2./n_1tag+4*seff**2/eff**2)
+      corr = 0.93
+      ntop_pred = n_1tag/2.*(1-eff)/eff*0.93
+      print "Predicted ntop:", ntop_pred
+      ntop_pred_err = ntop_pred*ntop_syst
       # print "Number of ttbar/tW events for constraint"
       # print "Actual:", ntop_low_mct_true
       # print "Predicted:", ntop_pred, "+-", ntop_pred_err
@@ -208,7 +172,7 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
 
       # <codecell>
 
-      # make a Gaussian constraint on nww
+      # make a Gaussian constraint on nvv
       topMean = r.RooRealVar("topMean","topMean", ntop_pred)
       topSigma = r.RooRealVar("topSigma","topSigma", ntop_pred_err)
       topConstraint = r.RooGaussian("topConstraint","topContraint",ntop,topMean,topSigma)
@@ -224,14 +188,6 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
       # ##Constrain ratio of WW+WZ to ZZ using MC
 
       # <codecell>
-
-      nwv_to_nzz_ratio = sum(mczz[selzz['sig_mct_low']].weight)/(sum(mcww[selww['sig_mct_low']].weight)+sum(mcwz[selwz['sig_mct_low']].weight))
-      zzMean = r.RooFormulaVar("zzMean", "nww*"+str(nwv_to_nzz_ratio), r.RooArgList(nww))
-      zzSigma = r.RooFormulaVar("zzSigma", "sqrt(nww)*"+str(nwv_to_nzz_ratio), r.RooArgList(nww))
-      zzConstraint = r.RooGaussian("zzConstraint", "zzConstraint", nzz, zzMean, zzSigma)
-      nzz.setVal(zzMean.getVal())
-      nzz.setError(zzSigma.getVal())
-      nzz.setConstant(False)
 
       # <markdowncell>
 
@@ -268,7 +224,10 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
       nz_ctrl_low_constraint = r.RooGaussian("nz_ctrl_low_constraint", "nz_ctrl_low_constraint", nz_ctrl_low_var,
                                                  nz_ctrl_low_obs, nz_ctrl_low_err)
       nwjets_ctrl_high_val = sum(data[sel['wjets_mct_high']].weight)
-      nwjets_ctrl_high_err_val = scipy.stats.poisson.std(nwjets_ctrl_high_val)
+      if nwjets_ctrl_high_val == 0:
+            nwjets_ctrl_high_err_val = 0.1
+      else:
+            nwjets_ctrl_high_err_val = scipy.stats.poisson.std(nwjets_ctrl_high_val)
       nwjets_ctrl_high_var = r.RooRealVar("nwjets_ctrl_high", "nwjets_ctrl_high", nwjets_ctrl_high_val, -10000, 10000)
       nwjets_ctrl_high_obs = r.RooRealVar("nwjets_ctrl_high_obs", "nwjets_ctrl_high_obs", nwjets_ctrl_high_val)
       nwjets_ctrl_high_err = r.RooRealVar("nwjets_ctrl_high_err", "nwjets_ctrl_high_err", nwjets_ctrl_high_err_val)
@@ -281,43 +240,28 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
       nwjets_ctrl_low_err = r.RooRealVar("nwjets_ctrl_low_err", "nwjets_ctrl_low_err", nwjets_ctrl_low_err_val)
       nwjets_ctrl_low_constraint = r.RooGaussian("nwjets_ctrl_low_constraint", "nwjets_ctrl_low_constraint", nwjets_ctrl_low_var,
                                                  nwjets_ctrl_low_obs, nwjets_ctrl_low_err)
-      nww_ctrl_high_val = sum(mcww[selww['sig_mct_high']].weight)
-      nww_ctrl_high_err_val = scipy.stats.poisson.std(nww_ctrl_high_val)
-      nww_ctrl_high_var = r.RooRealVar("nww_ctrl_high", "nww_ctrl_high", nww_ctrl_high_val, 0, 10000)
-      nww_ctrl_high_obs = r.RooRealVar("nww_ctrl_high_obs", "nww_ctrl_high_obs", nww_ctrl_high_val)
-      nww_ctrl_high_err = r.RooRealVar("nww_ctrl_high_err", "nww_ctrl_high_err", nww_ctrl_high_err_val)
-      nww_ctrl_high_constraint = r.RooGaussian("nww_ctrl_high_constraint", "nww_ctrl_high_constraint", nww_ctrl_high_var,
-                                                 nww_ctrl_high_obs, nww_ctrl_high_err)
-      nww_ctrl_low_val = sum(mcww[selww['sig_mct_low']].weight)
-      nww_ctrl_low_err_val = scipy.stats.poisson.std(nww_ctrl_low_val)
-      nww_ctrl_low_var = r.RooRealVar("nww_ctrl_low", "nww_ctrl_low", nww_ctrl_low_val, 0, 10000)
-      nww_ctrl_low_obs = r.RooRealVar("nww_ctrl_low_obs", "nww_ctrl_low_obs", nww_ctrl_low_val)
-      nww_ctrl_low_err = r.RooRealVar("nww_ctrl_low_err", "nww_ctrl_low_err", nww_ctrl_low_err_val)
-      nww_ctrl_low_constraint = r.RooGaussian("nww_ctrl_low_constraint", "nww_ctrl_low_constraint", nww_ctrl_low_var,
-                                                 nww_ctrl_low_obs, nww_ctrl_low_err)
-      nzz_ctrl_high_val = sum(mczz[selzz['sig_mct_high']].weight)
-      nzz_ctrl_high_err_val = scipy.stats.poisson.std(nzz_ctrl_high_val)
-      nzz_ctrl_high_var = r.RooRealVar("nzz_ctrl_high", "nzz_ctrl_high", nzz_ctrl_high_val, 0, 10000)
-      nzz_ctrl_high_obs = r.RooRealVar("nzz_ctrl_high_obs", "nzz_ctrl_high_obs", nzz_ctrl_high_val)
-      nzz_ctrl_high_err = r.RooRealVar("nzz_ctrl_high_err", "nzz_ctrl_high_err", nzz_ctrl_high_err_val)
-      nzz_ctrl_high_constraint = r.RooGaussian("nzz_ctrl_high_constraint", "nzz_ctrl_high_constraint", nzz_ctrl_high_var,
-                                                 nzz_ctrl_high_obs, nzz_ctrl_high_err)
-      nzz_ctrl_low_val = sum(mczz[selzz['sig_mct_low']].weight)
-      nzz_ctrl_low_err_val = scipy.stats.poisson.std(nzz_ctrl_low_val)
-      nzz_ctrl_low_var = r.RooRealVar("nzz_ctrl_low", "nzz_ctrl_low", nzz_ctrl_low_val, 0, 10000)
-      nzz_ctrl_low_obs = r.RooRealVar("nzz_ctrl_low_obs", "nzz_ctrl_low_obs", nzz_ctrl_low_val)
-      nzz_ctrl_low_err = r.RooRealVar("nzz_ctrl_low_err", "nzz_ctrl_low_err", nzz_ctrl_low_err_val)
-      nzz_ctrl_low_constraint = r.RooGaussian("nzz_ctrl_low_constraint", "nzz_ctrl_low_constraint", nzz_ctrl_low_var,
-                                                 nzz_ctrl_low_obs, nzz_ctrl_low_err)
+      nvv_ctrl_high_val = sum(mcvv[selvv['sig_mct_high']].weight)
+      nvv_ctrl_high_err_val = scipy.stats.poisson.std(nvv_ctrl_high_val)
+      nvv_ctrl_high_var = r.RooRealVar("nvv_ctrl_high", "nvv_ctrl_high", nvv_ctrl_high_val, 0, 10000)
+      nvv_ctrl_high_obs = r.RooRealVar("nvv_ctrl_high_obs", "nvv_ctrl_high_obs", nvv_ctrl_high_val)
+      nvv_ctrl_high_err = r.RooRealVar("nvv_ctrl_high_err", "nvv_ctrl_high_err", nvv_ctrl_high_err_val)
+      nvv_ctrl_high_constraint = r.RooGaussian("nvv_ctrl_high_constraint", "nvv_ctrl_high_constraint", nvv_ctrl_high_var,
+                                                 nvv_ctrl_high_obs, nvv_ctrl_high_err)
+      nvv_ctrl_low_val = sum(mcvv[selvv['sig_mct_low']].weight)
+      nvv_ctrl_low_err_val = scipy.stats.poisson.std(nvv_ctrl_low_val)
+      nvv_ctrl_low_var = r.RooRealVar("nvv_ctrl_low", "nvv_ctrl_low", nvv_ctrl_low_val, 0, 10000)
+      nvv_ctrl_low_obs = r.RooRealVar("nvv_ctrl_low_obs", "nvv_ctrl_low_obs", nvv_ctrl_low_val)
+      nvv_ctrl_low_err = r.RooRealVar("nvv_ctrl_low_err", "nvv_ctrl_low_err", nvv_ctrl_low_err_val)
+      nvv_ctrl_low_constraint = r.RooGaussian("nvv_ctrl_low_constraint", "nvv_ctrl_low_constraint", nvv_ctrl_low_var,
+                                                 nvv_ctrl_low_obs, nvv_ctrl_low_err)
 
       # <codecell>
 
       all_pdfs = r.RooArgList(ntop_ctrl_low_constraint, ntop_ctrl_high_constraint, nz_ctrl_low_constraint, nz_ctrl_high_constraint,
-                                     nwjets_ctrl_low_constraint, nwjets_ctrl_high_constraint, nww_ctrl_low_constraint, nww_ctrl_high_constraint)
-      all_pdfs.add(r.RooArgList(nzz_ctrl_low_constraint, nzz_ctrl_high_constraint, model))
+                                     nwjets_ctrl_low_constraint, nwjets_ctrl_high_constraint, nvv_ctrl_low_constraint, nvv_ctrl_high_constraint)
+      all_pdfs.add(r.RooArgList(model))
       constraint_vars = r.RooArgSet(ntop_ctrl_low_var, ntop_ctrl_high_var, nz_ctrl_low_var, nz_ctrl_high_var,
-                                    nwjets_ctrl_low_var, nwjets_ctrl_high_var, nww_ctrl_low_var, nww_ctrl_high_var)
-      constraint_vars.add(r.RooArgSet(nzz_ctrl_low_var, nzz_ctrl_high_var))
+                                    nwjets_ctrl_low_var, nwjets_ctrl_high_var, nvv_ctrl_low_var, nvv_ctrl_high_var)
 
       # <codecell>
 
@@ -329,11 +273,7 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
 
       # <codecell>
 
-      constraints = r.RooArgSet()
-      if doTopConstraint :
-            constraints.add(topConstraint)
-      if doZZConstraint :
-            constraints.add(zzConstraint)
+      constraints = r.RooArgSet(topConstraint)
 
       results = model_c.fitTo( ds, r.RooFit.ExternalConstraints(constraints),
                                r.RooFit.Constrain(constraint_vars), r.RooFit.Save())
@@ -348,14 +288,12 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
                                       r.RooArgList(ntop, ntop_ctrl_high_var, ntop_ctrl_low_var))
       nz_sig_pred = r.RooFormulaVar("nz_sig_pred", "nz_sig_pred", "nz*nz_ctrl_high/nz_ctrl_low",
                                       r.RooArgList(nz, nz_ctrl_high_var, nz_ctrl_low_var))
-      nww_sig_pred = r.RooFormulaVar("nww_sig_pred", "nww_sig_pred", "nww*nww_ctrl_high/nww_ctrl_low",
-                                      r.RooArgList(nww, nww_ctrl_high_var, nww_ctrl_low_var))
-      nzz_sig_pred = r.RooFormulaVar("nzz_sig_pred", "nzz_sig_pred", "nzz*nzz_ctrl_high/nzz_ctrl_low",
-                                      r.RooArgList(nzz, nzz_ctrl_high_var, nzz_ctrl_low_var))
+      nvv_sig_pred = r.RooFormulaVar("nvv_sig_pred", "nvv_sig_pred", "nvv*nvv_ctrl_high/nvv_ctrl_low",
+                                      r.RooArgList(nvv, nvv_ctrl_high_var, nvv_ctrl_low_var))
       nwjets_sig_pred = r.RooFormulaVar("nwjets_sig_pred", "nwjets_sig_pred", "nwjets*nwjets_ctrl_high/nwjets_ctrl_low",
                                       r.RooArgList(nwjets, nwjets_ctrl_high_var, nwjets_ctrl_low_var))
-      ntot_sig_pred = r.RooFormulaVar("ntot_sig_pred", "ntot_sig_pred", "ntop_sig_pred+nz_sig_pred+nww_sig_pred+nwjets_sig_pred+nzz_sig_pred",
-                                      r.RooArgList(ntop_sig_pred, nz_sig_pred, nww_sig_pred, nwjets_sig_pred, nzz_sig_pred))
+      ntot_sig_pred = r.RooFormulaVar("ntot_sig_pred", "ntot_sig_pred", "ntop_sig_pred+nz_sig_pred+nvv_sig_pred+nwjets_sig_pred",
+                                      r.RooArgList(ntop_sig_pred, nz_sig_pred, nvv_sig_pred, nwjets_sig_pred))
 
       # <markdowncell>
 
@@ -374,10 +312,8 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
                 r.RooFit.LineColor(2), r.RooFit.LineStyle(r.kDashed), r.RooFit.FillColor(2))
             model.plotOn(f, r.RooFit.Normalization( 1.0, r.RooAbsReal.RelativeExpected), r.RooFit.Components("wjetsext"),\
                 r.RooFit.LineColor(r.kGreen-1), r.RooFit.LineStyle(r.kDashed))
-            model.plotOn(f, r.RooFit.Normalization( 1.0, r.RooAbsReal.RelativeExpected), r.RooFit.Components("wwext"),\
+            model.plotOn(f, r.RooFit.Normalization( 1.0, r.RooAbsReal.RelativeExpected), r.RooFit.Components("vvext"),\
                 r.RooFit.LineColor(r.kRed+1), r.RooFit.LineStyle(r.kDashed))
-            model.plotOn(f, r.RooFit.Normalization( 1.0, r.RooAbsReal.RelativeExpected), r.RooFit.Components("zzext"),\
-                r.RooFit.LineColor(r.kYellow+1), r.RooFit.LineStyle(r.kDashed))
             model.plotOn(f, r.RooFit.Normalization( 1.0, r.RooAbsReal.RelativeExpected), r.RooFit.Components("zext"),\
                 r.RooFit.LineColor(r.kBlue+1), r.RooFit.LineStyle(r.kDashed))
             f.Draw()
@@ -391,12 +327,8 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
             e.SetLineColor(r.kGreen-1)
             e.SetLineStyle(r.kDashed)
             e.SetLineWidth(3)
-            e = l1.AddEntry("wwext","WW","l")
+            e = l1.AddEntry("vvext","vv","l")
             e.SetLineColor(r.kRed+1)
-            e.SetLineStyle(r.kDashed)
-            e.SetLineWidth(3)
-            e = l1.AddEntry("zzext","ZZ","l")
-            e.SetLineColor(r.kYellow+1)
             e.SetLineStyle(r.kDashed)
             e.SetLineWidth(3)
             e=l1.AddEntry("zext","Z/#gamma^{*}","l")
@@ -416,30 +348,29 @@ def do_bkg_fit(data, mctcut=100., doTopConstraint = True, doZZConstraint = True,
       ntop_low_mct_err = ntop.getError()
       nwjets_low_mct = nwjets.getVal()
       nwjets_low_mct_err = nwjets.getError()
-      nww_low_mct = nww.getVal()
-      nww_low_mct_err = nww.getError()
-      nzz_low_mct = nzz.getVal()
-      nzz_low_mct_err = nzz.getError()
+      nvv_low_mct = nvv.getVal()
+      nvv_low_mct_err = nvv.getError()
       nz_low_mct = nz.getVal()
       nz_low_mct_err = nz.getError()
 
       pred_high_dict = {}
       pred_high_dict['Total'] = (ntot_sig_pred.getVal(), ntot_sig_pred.getPropagatedError(results))
       pred_high_dict['Top'] = (ntop_sig_pred.getVal(), ntop_sig_pred.getPropagatedError(results))
-      pred_high_dict['WV'] = (nww_sig_pred.getVal(), nww_sig_pred.getPropagatedError(results))
-      pred_high_dict['ZZ'] = (nzz_sig_pred.getVal(), nzz_sig_pred.getPropagatedError(results))
+      pred_high_dict['WV'] = (nvv_sig_pred.getVal(), nvv_sig_pred.getPropagatedError(results))
       pred_high_dict['DY'] = (nz_sig_pred.getVal(), nz_sig_pred.getPropagatedError(results))
       pred_high_dict['W'] = (nwjets_sig_pred.getVal(), nwjets_sig_pred.getPropagatedError(results))
 
       pred_low_dict = {}
       pred_low_dict['Top'] = (ntop.getVal(), ntop.getError())
-      pred_low_dict['WV'] = (nww.getVal(), nww.getError())
-      pred_low_dict['ZZ'] = (nzz.getVal(), nzz.getError())
+      pred_low_dict['WV'] = (nvv.getVal(), nvv.getError())
       pred_low_dict['DY'] = (nz.getVal(), nz.getError())
       pred_low_dict['W'] = (nwjets.getVal(), nwjets.getError())
 
+      result = {'low':pred_low_dict, 'high':pred_high_dict}
+      fout = open("results.json", 'w')
+      json.dump(result, fout)
+      fout.close()
 
-
-      return {'low':pred_low_dict, 'high':pred_high_dict}
+      return result
 
 

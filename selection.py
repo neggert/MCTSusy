@@ -1,5 +1,5 @@
 
-def get_samples( data, mctcut=100.) :
+def get_samples( data, mctcut=100., real_data=False) :
     """
     Get different control and signal events in sample data.
 
@@ -59,13 +59,19 @@ def get_samples( data, mctcut=100.) :
     """
     outdict = {}
 
+    if real_data:
+        outdict['ee'] = (abs(data.pdg1) == 11) & (abs(data.pdg2) == 11) & (data.DoubleEle_Trigger)
+        outdict['mumu'] = (abs(data.pdg1) == 13) & (abs(data.pdg2) == 13) & (data.DoubleMu_Trigger)
+        outdict['emu'] = abs(data.pdg1) != abs(data.pdg2) & (data.EMu_Trigger)
+    else :
+        outdict['ee'] = (abs(data.pdg1) == 11) & (abs(data.pdg2) == 11)
+        outdict['mumu'] = (abs(data.pdg1) == 13) & (abs(data.pdg2) == 13)
+        outdict['emu'] = abs(data.pdg1) != abs(data.pdg2)
     outdict['opposite_sign'] = (data.pdg1*data.pdg2 < 0) & (~data.ThirdLepton)
-    outdict['ee'] = (abs(data.pdg1) == 11) & ((abs(data.pdg2) == 11))
-    outdict['mumu'] = (abs(data.pdg1) == 13) & ((abs(data.pdg2) == 13))
-    outdict['emu'] = abs(data.pdg1) != abs(data.pdg2)
     outdict['opposite_sign_ee'] = outdict['opposite_sign'] & outdict['ee']
     outdict['opposite_sign_mumu'] = outdict['opposite_sign'] & outdict['mumu']
     outdict['opposite_sign_emu'] = outdict['opposite_sign'] & outdict['emu']
+    outdict['preselection'] = (outdict['opposite_sign_ee'] | outdict['opposite_sign_mumu'] | outdict['opposite_sign_emu']) & (~data.ThirdLepton) & (data.mll > 12)
 
 
     # isolation cuts
@@ -73,23 +79,23 @@ def get_samples( data, mctcut=100.) :
     outdict['l2_passes_tight_iso'] = data.relIso2 < 0.15
     # outdict['l1_passes_tight_iso'] = (data.relIso1 < 0.2)
     # outdict['l2_passes_tight_iso'] = (data.relIso2 < 0.2)
-    outdict['l1_passes_loose_iso'] = data.relIso1 < 0.3
-    outdict['l2_passes_loose_iso'] = data.relIso2 < 0.3
+    outdict['l1_passes_loose_iso'] = (data.relIso1 > 0.2) & (data.relIso1 < 0.3)
+    outdict['l2_passes_loose_iso'] = (data.relIso2 > 0.2) & (data.relIso2 < 0.3)
     outdict['l1_passes_ctrl_iso'] = outdict['l1_passes_loose_iso'] & ~outdict['l1_passes_tight_iso']
     outdict['l2_passes_ctrl_iso'] = outdict['l2_passes_loose_iso'] & ~outdict['l2_passes_tight_iso']
 
-    outdict['isolation_sig'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['opposite_sign']
-    outdict['isolation_sig_ee'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['opposite_sign'] & outdict['ee']
-    outdict['isolation_sig_mumu'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['opposite_sign'] & outdict['mumu']
-    outdict['isolation_sig_emu'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['opposite_sign'] & outdict['emu']
+    outdict['isolation_sig'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection']
+    outdict['isolation_sig_ee'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection'] & outdict['ee']
+    outdict['isolation_sig_mumu'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection'] & outdict['mumu']
+    outdict['isolation_sig_emu'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection'] & outdict['emu']
 
     outdict['isolation_ctrl'] = ( (outdict['l1_passes_tight_iso'] & outdict['l2_passes_ctrl_iso']) | (outdict['l1_passes_ctrl_iso'] & outdict['l2_passes_tight_iso']) )\
-                                  & outdict['opposite_sign']
+                                  & outdict['preselection']
 
 
     outdict['z_window'] = (data.mll < 106) & (data.mll > 76) & (abs(data.pdg1) == abs(data.pdg2))
     #outdict['off_z_window'] = (data.mll > 106) | (data.mll < 76) | (abs(data.pdg1) != abs(data.pdg2))
-    outdict['off_z_window'] = ~outdict['z_window']
+    outdict['off_z_window'] = ~outdict['z_window'] & (data.mll > 12)
 
     outdict['pass_met'] = data.metPt > 60
     outdict['fail_met'] = data.metPt < 60

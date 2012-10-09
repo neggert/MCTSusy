@@ -3,12 +3,11 @@ import logging
 import sys
 from data_handling import *
 
+print sys.argv
 
 files = []
 
-inputdslist = open(sys.argv[1], 'r')
-datasets = inputdslist.read().splitlines()
-inputdslist.close()
+ds = sys.argv[1]
 
 
 outfile=sys.argv[2]
@@ -20,14 +19,13 @@ except IndexError :
 
 logging.basicConfig(filename='/home/uscms33/'+mctype+".log", level=logging.INFO)
 
-logging.info( datasets )
-logging.info( outfile )
-logging.info( mctype )
+logging.info( "Dataset: "+ds )
+logging.info( "Output File"+outfile )
+logging.info( "MCType"+mctype )
 
 files = []
 prefix = "root://osg-se.cac.cornell.edu//xrootd/path/cms"
-for ds in datasets :
-    files.extend(das_utils.get_files_from_dataset(ds))
+files.extend(das_utils.get_files_from_dataset(ds))
 
 logging.info( str(len(files))+ " files")
 

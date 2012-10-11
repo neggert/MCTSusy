@@ -92,6 +92,9 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['isolation_ctrl'] = ( (outdict['l1_passes_tight_iso'] & outdict['l2_passes_ctrl_iso']) | (outdict['l1_passes_ctrl_iso'] & outdict['l2_passes_tight_iso']) )\
                                   & outdict['preselection']
 
+    outdict['sf'] = outdict['ee'] | outdict['mumu']
+    outdict['of'] = outdict['emu']
+
 
     outdict['z_window'] = (data.mll < 106) & (data.mll > 76) & (abs(data.pdg1) == abs(data.pdg2))
     #outdict['off_z_window'] = (data.mll > 106) | (data.mll < 76) | (abs(data.pdg1) != abs(data.pdg2))
@@ -117,12 +120,19 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['z_ctrl'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window']
     outdict['sig'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
 
-    outdict['wjets_ctrl'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window']
-    outdict['1tag_ctrl'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
-    outdict['2tag_ctrl'] = outdict['2_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
-    outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
-    outdict['z_ctrl'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window']
-    outdict['sig'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
+    outdict['wjets_ctrl_sf'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
+    outdict['1tag_ctrl_sf'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
+    outdict['2tag_ctrl_sf'] = outdict['2_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
+    outdict['top_ctrl_sf'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
+    outdict['z_ctrl_sf'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window'] & outdict['sf']
+    outdict['sig_sf'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
+
+    outdict['wjets_ctrl_of'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
+    outdict['1tag_ctrl_of'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
+    outdict['2tag_ctrl_of'] = outdict['2_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
+    outdict['top_ctrl_of'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
+    outdict['z_ctrl_of'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window'] & outdict['of']
+    outdict['sig_of'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
 
     outdict['wjets_ctrl_ee'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['ee']
     outdict['1tag_ctrl_ee'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['ee']
@@ -158,5 +168,28 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['2tag_mct_low'] = outdict ['2tag_ctrl'] & outdict['mct_low']
     outdict['z_mct_low'] = outdict['z_ctrl'] & outdict['mct_low']
     outdict['z_mct_high'] = outdict['z_ctrl'] & outdict['mct_high']
+
+    outdict['sig_mct_low_sf'] = outdict['sig'] & outdict['mct_low'] & outdict['sf']
+    outdict['sig_mct_high_sf'] = outdict['sig'] & outdict['mct_high'] & outdict['sf']
+    outdict['wjets_mct_low_sf'] = outdict['wjets_ctrl'] & outdict['mct_low'] & outdict['sf']
+    outdict['wjets_mct_high_sf'] = outdict['wjets_ctrl'] & outdict['mct_high'] & outdict['sf']
+    outdict['top_mct_low_sf'] = outdict['top_ctrl'] & outdict['mct_low'] & outdict['sf']
+    outdict['top_mct_high_sf'] = outdict['top_ctrl'] & outdict['mct_high'] & outdict['sf']
+    outdict['1tag_mct_low_sf'] = outdict['1tag_ctrl'] & outdict['mct_low'] & outdict['sf']
+    outdict['2tag_mct_low_sf'] = outdict ['2tag_ctrl'] & outdict['mct_low'] & outdict['sf']
+    outdict['z_mct_low_sf'] = outdict['z_ctrl'] & outdict['mct_low'] & outdict['sf']
+    outdict['z_mct_high_sf'] = outdict['z_ctrl'] & outdict['mct_high'] & outdict['sf']
+
+    outdict['sig_mct_low_of'] = outdict['sig'] & outdict['mct_low'] & outdict['of']
+    outdict['sig_mct_high_of'] = outdict['sig'] & outdict['mct_high'] & outdict['of']
+    outdict['wjets_mct_low_of'] = outdict['wjets_ctrl'] & outdict['mct_low'] & outdict['of']
+    outdict['wjets_mct_high_of'] = outdict['wjets_ctrl'] & outdict['mct_high'] & outdict['of']
+    outdict['top_mct_low_of'] = outdict['top_ctrl'] & outdict['mct_low'] & outdict['of']
+    outdict['top_mct_high_of'] = outdict['top_ctrl'] & outdict['mct_high'] & outdict['of']
+    outdict['1tag_mct_low_of'] = outdict['1tag_ctrl'] & outdict['mct_low'] & outdict['of']
+    outdict['2tag_mct_low_of'] = outdict ['2tag_ctrl'] & outdict['mct_low'] & outdict['of']
+    outdict['z_mct_low_of'] = outdict['z_ctrl'] & outdict['mct_low'] & outdict['of']
+    outdict['z_mct_high_of'] = outdict['z_ctrl'] & outdict['mct_high'] & outdict['of']
+
 
     return outdict

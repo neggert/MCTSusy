@@ -23,7 +23,7 @@ r.gSystem.Load("libRooStats")
 
 # <codecell>
 
-def do_bkg_fit(data, mc, mctcut=100., ntop_syst=0.15, plot=False) :
+def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.07, plot=False) :
 
       mcvv = mc[(mc.mc_cat=='WV') | (mc.mc_cat=='ZZ')]
       mcz = mc[mc.mc_cat=='DY']
@@ -72,7 +72,7 @@ def do_bkg_fit(data, mc, mctcut=100., ntop_syst=0.15, plot=False) :
 
       mct = r.RooRealVar("mct", "mct", 5., 100.)
       w = r.RooRealVar("w", "w", 0., 10.)
-      ds = create_roodataset( data[sel['sig_mct_low']].mctperp, data[sel['sig_mct_low']].weight, mct, w, title="data")
+      ds = create_roodataset( data[sel['sig_mct_low'+flavor]].mctperp, data[sel['sig_mct_low'+flavor]].weight, mct, w, title="data")
 
       # <markdowncell>
 
@@ -81,10 +81,10 @@ def do_bkg_fit(data, mc, mctcut=100., ntop_syst=0.15, plot=False) :
       # <codecell>
 
       # first make a TH1
-      topshapehistTH1 = create_TH1( data[sel['top_mct_low']].mctperp, data[sel['top_mct_low']].weight, "top")
-      wjetsshapehistTH1 = create_TH1( data[sel['wjets_mct_low']].mctperp, data[sel['wjets_mct_low']].weight, "wjets")
-      vvshapehistTH1 = create_TH1( mcvv[selvv['sig_mct_low']].mctperp, mcvv[selvv['sig_mct_low']].weight, "vv")
-      zshapehistTH1 = create_TH1( mcz[selz['sig_mct_low']].mctperp, mcz[selz['sig_mct_low']].weight, "Z")
+      topshapehistTH1 = create_TH1( data[sel['top_mct_low'+flavor]].mctperp, data[sel['top_mct_low'+flavor]].weight, "top")
+      wjetsshapehistTH1 = create_TH1( data[sel['wjets_mct_low'+flavor]].mctperp, data[sel['wjets_mct_low'+flavor]].weight, "wjets")
+      vvshapehistTH1 = create_TH1( mcvv[selvv['sig_mct_low'+flavor]].mctperp, mcvv[selvv['sig_mct_low'+flavor]].weight, "vv")
+      zshapehistTH1 = create_TH1( mcz[selz['sig_mct_low'+flavor]].mctperp, mcz[selz['sig_mct_low'+flavor]].weight, "Z")
       # Then convert to a RooDataHist
       topshapehist = r.RooDataHist("topHist", "topHist", r.RooArgList(mct), topshapehistTH1)
       wjetsshapehist = r.RooDataHist("wjetsHist", "wjetsHist", r.RooArgList(mct), wjetsshapehistTH1)
@@ -139,8 +139,8 @@ def do_bkg_fit(data, mc, mctcut=100., ntop_syst=0.15, plot=False) :
       # <codecell>
 
       # n_1tag_tt = sum(data[sel['1tag_mct_low']].weight) - sum(mctw[seltw['1tag_mct_low']].weight)
-      n_1tag = sum(data[sel['1tag_mct_low']].weight)
-      n_2tag = sum(data[sel['2tag_mct_low']].weight)
+      n_1tag = sum(data[sel['1tag_mct_low'+flavor]].weight)
+      n_2tag = sum(data[sel['2tag_mct_low'+flavor]].weight)
       # eff = 2.*n_2tag/(n_1tag_tt+2*n_2tag)
       eff = 2.*n_2tag/(n_1tag+2*n_2tag)
 
@@ -195,35 +195,35 @@ def do_bkg_fit(data, mc, mctcut=100., ntop_syst=0.15, plot=False) :
 
       # <codecell>
 
-      ntop_ctrl_high_val = sum(data[sel['top_mct_high']].weight)
+      ntop_ctrl_high_val = sum(data[sel['top_mct_high'+flavor]].weight)
       ntop_ctrl_high_err_val = scipy.stats.poisson.std(ntop_ctrl_high_val)
       ntop_ctrl_high_var = r.RooRealVar("ntop_ctrl_high", "ntop_ctrl_high", ntop_ctrl_high_val, 0, 10000)
       ntop_ctrl_high_obs = r.RooRealVar("ntop_ctrl_high_obs", "ntop_ctrl_high_obs", ntop_ctrl_high_val)
       ntop_ctrl_high_err = r.RooRealVar("ntop_ctrl_high_err", "ntop_ctrl_high_err", ntop_ctrl_high_err_val)
       ntop_ctrl_high_constraint = r.RooGaussian("ntop_ctrl_high_constraint", "ntop_ctrl_high_constraint", ntop_ctrl_high_var,
                                                  ntop_ctrl_high_obs, ntop_ctrl_high_err)
-      ntop_ctrl_low_val = sum(data[sel['top_mct_low']].weight)
+      ntop_ctrl_low_val = sum(data[sel['top_mct_low'+flavor]].weight)
       ntop_ctrl_low_err_val = scipy.stats.poisson.std(ntop_ctrl_low_val)
       ntop_ctrl_low_var = r.RooRealVar("ntop_ctrl_low", "ntop_ctrl_low", ntop_ctrl_low_val, 0, 10000)
       ntop_ctrl_low_obs = r.RooRealVar("ntop_ctrl_low_obs", "ntop_ctrl_low_obs", ntop_ctrl_low_val)
       ntop_ctrl_low_err = r.RooRealVar("ntop_ctrl_low_err", "ntop_ctrl_low_err", ntop_ctrl_low_err_val)
       ntop_ctrl_low_constraint = r.RooGaussian("ntop_ctrl_low_constraint", "ntop_ctrl_low_constraint", ntop_ctrl_low_var,
                                                  ntop_ctrl_low_obs, ntop_ctrl_low_err)
-      nz_ctrl_high_val = sum(mcz[selz['sig_mct_high']].weight)
+      nz_ctrl_high_val = sum(mcz[selz['sig_mct_high'+flavor]].weight)
       nz_ctrl_high_err_val = scipy.stats.poisson.std(nz_ctrl_high_val) if nz_ctrl_high_val > 0 else 1
       nz_ctrl_high_var = r.RooRealVar("nz_ctrl_high", "nz_ctrl_high", nz_ctrl_high_val, -10000, 10000)
       nz_ctrl_high_obs = r.RooRealVar("nz_ctrl_high_obs", "nz_ctrl_high_obs", nz_ctrl_high_val)
       nz_ctrl_high_err = r.RooRealVar("nz_ctrl_high_err", "nz_ctrl_high_err", nz_ctrl_high_err_val)
       nz_ctrl_high_constraint = r.RooGaussian("nz_ctrl_high_constraint", "nz_ctrl_high_constraint", nz_ctrl_high_var,
                                                  nz_ctrl_high_obs, nz_ctrl_high_err)
-      nz_ctrl_low_val = sum(mcz[selz['sig_mct_low']].weight)
+      nz_ctrl_low_val = sum(mcz[selz['sig_mct_low'+flavor]].weight)
       nz_ctrl_low_err_val = scipy.stats.poisson.std(nz_ctrl_low_val)
       nz_ctrl_low_var = r.RooRealVar("nz_ctrl_low", "nz_ctrl_low", nz_ctrl_low_val, 0, 10000)
       nz_ctrl_low_obs = r.RooRealVar("nz_ctrl_low_obs", "nz_ctrl_low_obs", nz_ctrl_low_val)
       nz_ctrl_low_err = r.RooRealVar("nz_ctrl_low_err", "nz_ctrl_low_err", nz_ctrl_low_err_val)
       nz_ctrl_low_constraint = r.RooGaussian("nz_ctrl_low_constraint", "nz_ctrl_low_constraint", nz_ctrl_low_var,
                                                  nz_ctrl_low_obs, nz_ctrl_low_err)
-      nwjets_ctrl_high_val = sum(data[sel['wjets_mct_high']].weight)
+      nwjets_ctrl_high_val = sum(data[sel['wjets_mct_high'+flavor]].weight)
       if nwjets_ctrl_high_val == 0:
             nwjets_ctrl_high_err_val = 0.1
       else:
@@ -233,21 +233,21 @@ def do_bkg_fit(data, mc, mctcut=100., ntop_syst=0.15, plot=False) :
       nwjets_ctrl_high_err = r.RooRealVar("nwjets_ctrl_high_err", "nwjets_ctrl_high_err", nwjets_ctrl_high_err_val)
       nwjets_ctrl_high_constraint = r.RooGaussian("nwjets_ctrl_high_constraint", "nwjets_ctrl_high_constraint", nwjets_ctrl_high_var,
                                                  nwjets_ctrl_high_obs, nwjets_ctrl_high_err)
-      nwjets_ctrl_low_val = sum(data[sel['wjets_mct_low']].weight)
+      nwjets_ctrl_low_val = sum(data[sel['wjets_mct_low'+flavor]].weight)
       nwjets_ctrl_low_err_val = scipy.stats.poisson.std(nwjets_ctrl_low_val)
       nwjets_ctrl_low_var = r.RooRealVar("nwjets_ctrl_low", "nwjets_ctrl_low", nwjets_ctrl_low_val, 0, 10000)
       nwjets_ctrl_low_obs = r.RooRealVar("nwjets_ctrl_low_obs", "nwjets_ctrl_low_obs", nwjets_ctrl_low_val)
       nwjets_ctrl_low_err = r.RooRealVar("nwjets_ctrl_low_err", "nwjets_ctrl_low_err", nwjets_ctrl_low_err_val)
       nwjets_ctrl_low_constraint = r.RooGaussian("nwjets_ctrl_low_constraint", "nwjets_ctrl_low_constraint", nwjets_ctrl_low_var,
                                                  nwjets_ctrl_low_obs, nwjets_ctrl_low_err)
-      nvv_ctrl_high_val = sum(mcvv[selvv['sig_mct_high']].weight)
+      nvv_ctrl_high_val = sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
       nvv_ctrl_high_err_val = scipy.stats.poisson.std(nvv_ctrl_high_val)
       nvv_ctrl_high_var = r.RooRealVar("nvv_ctrl_high", "nvv_ctrl_high", nvv_ctrl_high_val, 0, 10000)
       nvv_ctrl_high_obs = r.RooRealVar("nvv_ctrl_high_obs", "nvv_ctrl_high_obs", nvv_ctrl_high_val)
       nvv_ctrl_high_err = r.RooRealVar("nvv_ctrl_high_err", "nvv_ctrl_high_err", nvv_ctrl_high_err_val)
       nvv_ctrl_high_constraint = r.RooGaussian("nvv_ctrl_high_constraint", "nvv_ctrl_high_constraint", nvv_ctrl_high_var,
                                                  nvv_ctrl_high_obs, nvv_ctrl_high_err)
-      nvv_ctrl_low_val = sum(mcvv[selvv['sig_mct_low']].weight)
+      nvv_ctrl_low_val = sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
       nvv_ctrl_low_err_val = scipy.stats.poisson.std(nvv_ctrl_low_val)
       nvv_ctrl_low_var = r.RooRealVar("nvv_ctrl_low", "nvv_ctrl_low", nvv_ctrl_low_val, 0, 10000)
       nvv_ctrl_low_obs = r.RooRealVar("nvv_ctrl_low_obs", "nvv_ctrl_low_obs", nvv_ctrl_low_val)
@@ -367,7 +367,7 @@ def do_bkg_fit(data, mc, mctcut=100., ntop_syst=0.15, plot=False) :
       pred_low_dict['W'] = (nwjets.getVal(), nwjets.getError())
 
       result = {'low':pred_low_dict, 'high':pred_high_dict}
-      fout = open("results.json", 'w')
+      fout = open("results"+flavor+".json", 'w')
       json.dump(result, fout)
       fout.close()
 

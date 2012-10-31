@@ -23,7 +23,7 @@ r.gSystem.Load("libRooStats")
 
 # <codecell>
 
-def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.07, plot=False) :
+def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
 
       mcvv = mc[(mc.mc_cat=='WV') | (mc.mc_cat=='ZZ')]
       mcz = mc[mc.mc_cat=='DY']
@@ -143,6 +143,9 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.07, plot=False) :
       n_2tag = sum(data[sel['2tag_mct_low'+flavor]].weight)
       # eff = 2.*n_2tag/(n_1tag_tt+2*n_2tag)
       eff = 2.*n_2tag/(n_1tag+2*n_2tag)
+      seff = eff*sqrt(1./2/n_2tag - 1./(n_1tag+2*n_2tag))
+      print "Eff: {} +- {}".format(eff, seff)
+      corr_eff = 1.057*eff
 
       # seff = eff*sqrt(1./2/n_2tag - 1./(n_1tag_tt+2*n_2tag))
 
@@ -158,8 +161,7 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.07, plot=False) :
 
       # <codecell>
 
-      corr = 0.93
-      ntop_pred = n_1tag/2.*(1-eff)/eff*0.93
+      ntop_pred = n_1tag/2.*(1-corr_eff)/corr_eff
       print "Predicted ntop:", ntop_pred
       ntop_pred_err = ntop_pred*ntop_syst
       # print "Number of ttbar/tW events for constraint"
@@ -255,6 +257,8 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.07, plot=False) :
       nvv_ctrl_low_constraint = r.RooGaussian("nvv_ctrl_low_constraint", "nvv_ctrl_low_constraint", nvv_ctrl_low_var,
                                                  nvv_ctrl_low_obs, nvv_ctrl_low_err)
 
+
+
       # <codecell>
 
       all_pdfs = r.RooArgList(ntop_ctrl_low_constraint, ntop_ctrl_high_constraint, nz_ctrl_low_constraint, nz_ctrl_high_constraint,
@@ -275,8 +279,14 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.07, plot=False) :
 
       constraints = r.RooArgSet(topConstraint)
 
+      # turn off logging from the module used to do the multicore pdf evaluation
+      r.RooMsgService.instance().getStream(1).removeTopic(r.RooFit.Minimization)
+      r.RooMsgService.instance().getStream(1).removeTopic(r.RooFit.Eval)
+
       results = model_c.fitTo( ds, r.RooFit.ExternalConstraints(constraints),
-                               r.RooFit.Constrain(constraint_vars), r.RooFit.Save())
+                               r.RooFit.Constrain(constraint_vars), r.RooFit.Save(),
+                               r.RooFit.NumCPU(8), r.RooFit.PrintLevel(-1), r.RooFit.PrintEvalErrors(-1),
+                               r.RooFit.Verbose(False))
 
       # <markdowncell>
 
@@ -294,6 +304,23 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.07, plot=False) :
                                       r.RooArgList(nwjets, nwjets_ctrl_high_var, nwjets_ctrl_low_var))
       ntot_sig_pred = r.RooFormulaVar("ntot_sig_pred", "ntot_sig_pred", "ntop_sig_pred+nz_sig_pred+nvv_sig_pred+nwjets_sig_pred",
                                       r.RooArgList(ntop_sig_pred, nz_sig_pred, nvv_sig_pred, nwjets_sig_pred))
+
+      ww_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mctype.isin(['WWW','WWG','WWTo2L2Nu']))].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
+      wz_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mctype=='WZTo3LNu')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
+      zz_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mctype=='ZZTo2L2Nu')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
+
+      ww_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mctype.isin(['WWW','WWG','WWTo2L2Nu']))].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
+      wz_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mctype=='WZTo3LNu')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
+      zz_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mctype=='ZZTo2L2Nu')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
+
+      nww = r.RooFormulaVar("nww", 'nww', "nvv*"+str(ww_frac_low), r.RooArgList(nvv))
+      nwz = r.RooFormulaVar("nwz", 'nwz', "nvv*"+str(wz_frac_low), r.RooArgList(nvv))
+      nzz = r.RooFormulaVar("nzz", 'nzz', "nvv*"+str(zz_frac_low), r.RooArgList(nvv))
+
+      nww_sig_pred = r.RooFormulaVar("nww_sig_pred", "nww_sig_pred", "nvv_sig_pred*"+str(ww_frac_high), r.RooArgList(nvv_sig_pred))
+      nwz_sig_pred = r.RooFormulaVar("nwz_sig_pred", "nwz_sig_pred", "nvv_sig_pred*"+str(wz_frac_high), r.RooArgList(nvv_sig_pred))
+      nzz_sig_pred = r.RooFormulaVar("nzz_sig_pred", "nzz_sig_pred", "nvv_sig_pred*"+str(zz_frac_high), r.RooArgList(nvv_sig_pred))
+
 
       # <markdowncell>
 
@@ -344,25 +371,32 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.07, plot=False) :
 
       # <codecell>
 
-      ntop_low_mct = ntop.getVal()
-      ntop_low_mct_err = ntop.getError()
-      nwjets_low_mct = nwjets.getVal()
-      nwjets_low_mct_err = nwjets.getError()
-      nvv_low_mct = nvv.getVal()
-      nvv_low_mct_err = nvv.getError()
-      nz_low_mct = nz.getVal()
-      nz_low_mct_err = nz.getError()
+      # ntop_low_mct = ntop.getVal()
+      # ntop_low_mct_err = ntop.getError()
+      # nwjets_low_mct = nwjets.getVal()
+      # nwjets_low_mct_err = nwjets.getError()
+      # nvv_low_mct = nvv.getVal()
+      # nvv_low_mct_err = nvv.getError()
+      # nz_low_mct = nz.getVal()
+      # nz_low_mct_err = nz.getError()
+      # nww_low_mct = nww.getPropagatedError(results)
 
       pred_high_dict = {}
       pred_high_dict['Total'] = (ntot_sig_pred.getVal(), ntot_sig_pred.getPropagatedError(results))
       pred_high_dict['Top'] = (ntop_sig_pred.getVal(), ntop_sig_pred.getPropagatedError(results))
-      pred_high_dict['WV'] = (nvv_sig_pred.getVal(), nvv_sig_pred.getPropagatedError(results))
+      pred_high_dict['VV'] = (nvv_sig_pred.getVal(), nvv_sig_pred.getPropagatedError(results))
+      pred_high_dict['WW'] = (nww_sig_pred.getVal(), nww_sig_pred.getPropagatedError(results))
+      pred_high_dict['WZ'] = (nwz_sig_pred.getVal(), nwz_sig_pred.getPropagatedError(results))
+      pred_high_dict['ZZ'] = (nzz_sig_pred.getVal(), nzz_sig_pred.getPropagatedError(results))
       pred_high_dict['DY'] = (nz_sig_pred.getVal(), nz_sig_pred.getPropagatedError(results))
       pred_high_dict['W'] = (nwjets_sig_pred.getVal(), nwjets_sig_pred.getPropagatedError(results))
 
       pred_low_dict = {}
       pred_low_dict['Top'] = (ntop.getVal(), ntop.getError())
-      pred_low_dict['WV'] = (nvv.getVal(), nvv.getError())
+      pred_low_dict['VV'] = (nvv.getVal(), nvv.getError())
+      pred_low_dict['WW'] = (nww.getVal(), nww.getPropagatedError(results))
+      pred_low_dict['WZ'] = (nwz.getVal(), nwz.getPropagatedError(results))
+      pred_low_dict['ZZ'] = (nzz.getVal(), nzz.getPropagatedError(results))
       pred_low_dict['DY'] = (nz.getVal(), nz.getError())
       pred_low_dict['W'] = (nwjets.getVal(), nwjets.getError())
 

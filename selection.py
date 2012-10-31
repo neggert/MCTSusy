@@ -117,6 +117,7 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['1tag_ctrl'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['2tag_ctrl'] = outdict['2_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
+    outdict['moretag_ctrl'] = outdict['more_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['z_ctrl'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window']
     outdict['sig'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
 
@@ -124,6 +125,7 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['1tag_ctrl_sf'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
     outdict['2tag_ctrl_sf'] = outdict['2_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
     outdict['top_ctrl_sf'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
+    outdict['moretag_ctrl_sf'] = outdict['more_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
     outdict['z_ctrl_sf'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window'] & outdict['sf']
     outdict['sig_sf'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
 
@@ -131,6 +133,7 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['1tag_ctrl_of'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
     outdict['2tag_ctrl_of'] = outdict['2_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
     outdict['top_ctrl_of'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
+    outdict['moretag_ctrl_of'] = outdict['more_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
     outdict['z_ctrl_of'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window'] & outdict['of']
     outdict['sig_of'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
 
@@ -191,5 +194,22 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['z_mct_low_of'] = outdict['z_ctrl'] & outdict['mct_low'] & outdict['of']
     outdict['z_mct_high_of'] = outdict['z_ctrl'] & outdict['mct_high'] & outdict['of']
 
+    try:
+        outdict['pass_met_scaleup'] = data.metPt_up > 60
+        outdict['pass_met_scaledown'] = data.metPt_down > 60
+
+        outdict['sig_scaleup'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met_scaleup'] & outdict['off_z_window']
+        outdict['sig_scaledown'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met_scaledown'] & outdict['off_z_window']
+
+        outdict['mct_high_scaleup'] = data.mctperp_up > mctcut
+        outdict['mct_high_scaledown'] = data.mctperp_down > mctcut
+        outdict['sig_mct_high_scaleup'] = outdict['sig_scaleup'] & outdict['mct_high_scaleup']
+        outdict['sig_mct_high_scaledown'] = outdict['sig_scaledown'] & outdict['mct_high_scaledown']
+        outdict['sig_mct_high_scaleup_sf'] = outdict['sig_scaleup'] & outdict['mct_high_scaleup'] & outdict['sf']
+        outdict['sig_mct_high_scaledown_sf'] = outdict['sig_scaledown'] & outdict['mct_high_scaledown'] & outdict['sf']
+        outdict['sig_mct_high_scaleup_of'] = outdict['sig_scaleup'] & outdict['mct_high_scaleup'] & outdict['of']
+        outdict['sig_mct_high_scaledown_of'] = outdict['sig_scaledown'] & outdict['mct_high_scaledown'] & outdict['of']
+    except AttributeError:
+        pass
 
     return outdict

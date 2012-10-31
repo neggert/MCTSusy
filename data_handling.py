@@ -9,6 +9,13 @@ import CMSPyLibs.events
 import CMSPyLibs.general_calc as general_calc
 import CMSPyLibs.event_counter as event_counter
 from CMSPyLibs.cmsutilities import get_TLorentzVector, get_5_X_isolation, angle_0_2pi, get_upstream_phi_res
+from math import sqrt, isnan
+
+ROOT.gSystem.Load("libFWCoreFWLite.so")
+ROOT.AutoLibraryLoader.enable()
+ROOT.gSystem.Load("libCondFormatsJetMETObjects.so")
+
+from ROOT import std
 
 """
 Functions for handling fit data in the pytables hdf5 format
@@ -33,6 +40,15 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
     getter.set_met_collection("patMETs")
     getter.do_PU = (mctype != 'data')
     getter.do_SMS = ('sms' in mctype)
+
+    jec_parameters = ROOT.JetCorrectorParameters("/home/uscms33/MCTSusy/JEC/Summer12_V2_DATA_AK5PF_UncertaintySources.txt", "SubTotalDataMC")
+    jec_uncertainty = ROOT.JetCorrectionUncertainty(jec_parameters)
+
+    jec_resid_parameters = ROOT.JetCorrectorParameters("/home/uscms33/MCTSusy/JEC/GR_R_52_V9_L2L3Residual_AK5PF.txt")
+    jec_resid_parameters_v = std.vector(ROOT.JetCorrectorParameters)(0)
+    jec_resid_parameters_v.push_back(jec_resid_parameters)
+
+    jec_resid = ROOT.FactorizedJetCorrector(jec_resid_parameters_v)
 
     count = event_counter.EventCounter()
     calc = general_calc.VarCalculator()
@@ -100,18 +116,6 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         datarow['njets'] = len(event.get_jets())
         datarow['nbjets'] = len(event.get_tagged_jets())
 
-        # angles
-        phi1 = leptons[0].phi()
-        phi2 = leptons[1].phi()
-        phiUp = event.upstream_of_leptons().Phi()
-        phiUpSigMatrix = event.get_met().getSignificanceMatrix()
-        gamma = angle_0_2pi((phi1+phi2)/2) # average of visible angles
-        twodelta = abs(phi1-phi2)
-        if twodelta > numpy.pi : twodelta = 2*numpy.pi-twodelta
-        datarow["delta"] = twodelta/2
-        datarow["phiUp"] = angle_0_2pi(phiUp - gamma)
-        datarow["sPhiUp"] = get_upstream_phi_res(event.upstream_of_leptons(), phiUpSigMatrix)
-
         # mct
         p4jet1 = ROOT.TLorentzVector(0., 0., 0., 0.)
         p4jet2 = ROOT.TLorentzVector(0., 0., 0., 0.)
@@ -130,6 +134,87 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
 
         # invariant mass
         datarow["mll"] = (get_TLorentzVector(leptons[0])+get_TLorentzVector(leptons[1])).M()
+
+        # MET Uncertainty stuff
+        if "sms" in mctype:
+            scaled_mets = [datarow["metPt"]]
+            scaled_mctperps = [datarow["mctperp"]]
+
+            p4met = get_TLorentzVector(met)
+            # loop through jets
+            p4met_up = p4met
+            p4met_down = p4met
+            for jet in event.get_jets():
+                # get uncorrected jet
+                jet_u = get_TLorentzVector(jet.correctedJet(0))
+
+                # add it to the MET vector
+                p4met_up += jet_u
+                p4met_down += jet_u
+
+                # get its uncertainty
+                # want to use corrected kinematics here
+                jec_uncertainty.setJetPt(jet.pt())
+                jec_uncertainty.setJetEta(jet.eta())
+                jec_unc_val = jec_uncertainty.getUncertainty(True)
+
+                # get its residual correction
+                # use uncorrected kinematics
+                jec_resid.setJetPt(jet_u.Pt())
+                jec_resid.setJetEta(jet_u.Eta())
+                jec_resid_val = abs(1-jec_resid.getCorrection())
+
+                # add them in quadrature
+                unc = sqrt(jec_unc_val**2+jec_resid_val**2)
+
+                # scale the jet by that amount
+                jet_scaleup = jet_u*(1+unc)
+                jet_scaledown = jet_u*(1-unc)
+
+                # subtract it back from the MET
+                p4met_up -= jet_scaleup
+                p4met_down -= jet_scaledown
+
+            # calculate MCTPerp with the modified MET
+            calc.setP4s(p4jet1, p4jet2, get_TLorentzVector(leptons[0]), get_TLorentzVector(leptons[1]), p4met_up)
+            up = calc.mctPerp_210()
+            calc.setP4s(p4jet1, p4jet2, get_TLorentzVector(leptons[0]), get_TLorentzVector(leptons[1]), p4met_down)
+            down = calc.mctPerp_210()
+
+            scaled_mctperps.extend([up, down])
+
+            scaled_mets.extend([p4met_up.Pt(), p4met_down.Pt()])
+
+            # now move on to unclustered met
+            # add up the clustered pt
+            clustered_p4 = ROOT.TLorentzVector(0., 0., 0., 0.)
+            for jet in event.get_jets():
+                # get uncorrected jet
+                clustered_p4 += get_TLorentzVector(jet.correctedJet(0))
+
+            for lepton in event.get_leptons():
+                clustered_p4 += get_TLorentzVector(lepton)
+
+            p4met_without_clustered = p4met+clustered_p4
+
+            # scale what's left by 10% and subtract the clustered met
+            p4met_up = p4met_without_clustered*1.1-clustered_p4
+            p4met_down = p4met_without_clustered*0.9-clustered_p4
+
+            # calculate MCTPerp with the modified MET
+            calc.setP4s(p4jet1, p4jet2, get_TLorentzVector(leptons[0]), get_TLorentzVector(leptons[1]), p4met_up)
+            up = calc.mctPerp_210()
+            calc.setP4s(p4jet1, p4jet2, get_TLorentzVector(leptons[0]), get_TLorentzVector(leptons[1]), p4met_down)
+            down = calc.mctPerp_210()
+
+            scaled_mctperps.extend([up, down])
+
+            scaled_mets.extend([p4met_up.Pt(), p4met_down.Pt()])
+
+            datarow['mctperp_up'] = max(scaled_mctperps)
+            datarow['mctperp_down'] = min(scaled_mctperps)
+            datarow['metPt_up'] = max(scaled_mets)
+            datarow['metPt_down'] = min(scaled_mets)
 
         logging.debug("Adding event")
         datadicts.append(datarow)

@@ -6,6 +6,7 @@ from data import *
 from matplotlib.pyplot import *
 
 def plot_fake_closure(flavor):
+    """Make closure plot for the fake lepton control sample"""
     faketruth = smc['sig'+flavor] & (mc.mc_cat=='fake')
 
     nbins=5

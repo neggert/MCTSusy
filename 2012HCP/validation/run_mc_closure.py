@@ -11,6 +11,10 @@ from data import *
 
 
 def run_mc_closure(flavor):
+    """
+    Check MC closure for a range of MCT cuts. Writes a latex table containing the results
+    """
+
     # all mc except diboson and DY
     test_mc = mc[((mc.mc_cat != 'WV') & (mc.mc_cat != 'ZZ') & (mc.mc_cat != 'DY'))]
 

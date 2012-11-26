@@ -1,3 +1,5 @@
+"""Check the closure of the top veto efficiency estimate"""
+
 n_1tag = sum(mc[smc['1tag_mct_low']].weight)
 n_2tag = sum(mc[smc['2tag_mct_low']].weight)
 eff = 2.*n_2tag/(n_1tag+2*n_2tag)

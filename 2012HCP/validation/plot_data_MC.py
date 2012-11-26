@@ -10,6 +10,16 @@ switch_backend("pdf")
 
 
 def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
+    """
+    Make a plot comparing the histogram of variable between data and simulation
+
+    Arguments:
+    selection_name -- name of the selection to be plotted. Should be one of those in the dict returned by get_samples in selection.pyplot
+    variable -- variable to make a histogram of
+    bins -- number of bins for the histogram (default 20)
+    plotrange -- range to plot (default (0,100))
+    """
+
     selected = mc[smc[selection_name]]
     data_selected = data[sd[selection_name]]
 
@@ -47,6 +57,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     return fig, fig2
 
 def make_data_mc_plots( flavor):
+    """Make all of the data-MC comparison plots for the given channel"""
 
     f,f2 = compare_data_mc('sig'+flavor, 'mctperp', 30, (0,300))
     f.set_yscale('log', nonposy='clip')

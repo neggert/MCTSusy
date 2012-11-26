@@ -7,6 +7,7 @@ from data import *
 from matplotlib.pyplot import *
 
 def plot_top_closure(flavor):
+    """Make closure plot for the top control sample"""
     toptruth = smc['sig'+flavor] & (mc.mc_cat == 'top') &(mc.mctype!='tW')
     twtruth = smc['sig'+flavor] & (mc.mctype=='tW')
 

@@ -1,3 +1,9 @@
+"""
+This file contains the function that is used to make the "money plot". It reads
+background fit information from the json files, so make sure those are up-to-date.
+"""
+
+
 import numpy as np
 import json
 from matplotlib import rc

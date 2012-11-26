@@ -6,6 +6,7 @@ from data import *
 from matplotlib.pyplot import *
 
 def plot_wgamma_shape(flavor):
+    """Compare the shapes of the wgamma and WZ backgrounds"""
     nbins=10
     prange=(0,200)
 

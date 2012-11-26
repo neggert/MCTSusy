@@ -1,5 +1,9 @@
 import json
 
+"""
+This script parses the results json files and writes a results table in latex format
+"""
+
 f = open("results_of.json")
 results_of = json.load(f)
 f.close()

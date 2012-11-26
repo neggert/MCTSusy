@@ -1,3 +1,7 @@
+"""
+Utility for filtering events based on good run list
+"""
+
 import json
 
 f = open("Cert_190456-201678_8TeV_PromptReco_Collisions12_JSON_remove2012C-v1_197770_198913.txt")
@@ -14,6 +18,7 @@ for key in rl.keys():
 
 
 def good_lumi(event):
+    """Return true if event has a good run and lumi, false otherwise"""
     try :
         return event['lumi'] in my_rl[event['run']]
     except KeyError:

@@ -1,13 +1,12 @@
 from pandas import *
-from parameters import *
+from config.parameters import *
 import sys
-sys.path.append("../")
 import selection
 reload(selection)
 
-s = HDFStore("Data/mc2012_201211108.hdf5")
+s = HDFStore("work/mc/mc2012_201211108.hdf5")
 mc = s['all_cat']
-t = HDFStore("Data/good_data_triggers.hdf5")
+t = HDFStore("work/data/good_data_triggers.hdf5")
 data = t['data']
 
 # apply trigger efficiencies
@@ -23,8 +22,8 @@ mc.weight *= (smc['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta
 
 sd = selection.get_samples(data, 100., False)
 
-schi = HDFStore("Data/sms_chi.hdf5")
-chi = schi['data']
+# schi = HDFStore("Data/sms_chi.hdf5")
+# chi = schi['data']
 
-sslep = HDFStore("Data/sms_slep.hdf5")
-slep = sslep['data']
+# sslep = HDFStore("Data/sms_slep.hdf5")
+# slep = sslep['data']

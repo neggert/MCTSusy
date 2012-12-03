@@ -6,12 +6,12 @@ def categorize(mctype):
         return 'WV'
     elif mctype.lower() in ['zzto2l2nu']:
         return 'ZZ'
-    elif mctype.lower() in ['dyjets_m-50', 'wz', 'zzto2l2q', 'wwznogstar', 'zzznogstar', 'zzto4l']:
+    elif mctype.lower() in ['dy_m10', 'dyjets_m-50', 'wz', 'zzto2l2q', 'wwznogstar', 'zzznogstar', 'zzto4l']:
         return 'DY'
     elif mctype.lower() in ['wjets']:
         return 'fake'
     else :
         raise RuntimeError("Unrecognied mctype "+mctype)
 
-cats = s['all'].mctype.apply(categorize)
-d = s['all'].insert(len(s['all'].columns), 'mc_cat', cats)
+# cats = s['all'].mctype.apply(categorize)
+# d = s['all'].insert(len(s['all'].columns), 'mc_cat', cats)

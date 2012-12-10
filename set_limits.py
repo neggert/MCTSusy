@@ -24,8 +24,8 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
 
     meas.SetOutputFilePrefix(prefix)
     meas.SetPOI("sig_strength")
-    meas.AddConstantParam("n_of_top")
-    meas.AddConstantParam("n_sf_top")
+    # meas.AddConstantParam("n_of_top")
+    # meas.AddConstantParam("n_sf_top")
 
     temp_file = R.TFile("templates.root")
 
@@ -58,7 +58,7 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
             template = R.RooStats.HistFactory.Sample("{}_{}".format(bkg, ch), "{}_template_{}".format(bkg, ch), "templates.root")
             template.SetNormalizeByTheory(False)
             template.ActivateStatError()
-            if bkg == 'top':
+            if bkg == 'banana':
                 ntop_pred = temp_file.Get("ntop_"+ch)[0]
                 template.AddNormFactor("n_{}_{}".format(ch, bkg), ntop_pred, 0, 2*ntop_pred, True)
                 template.AddOverallSys("top_norm_"+ch, 0.88, 1.12)

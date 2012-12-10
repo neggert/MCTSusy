@@ -89,7 +89,7 @@ def asymptotic_limit(filename, coarse):
     R.RooStats.RemoveConstantParameters(constr)
 
     # run the initial fit
-    sbmodel.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.NumCPU(8))
+    sbmodel.GetPdf().fitTo(data, R.RooFit.Constrain(constr))
 
     sbmodel.SetSnapshot(sbmodel.GetParametersOfInterest())
     sbmodel.Print()
@@ -116,7 +116,7 @@ def asymptotic_limit(filename, coarse):
 
     return res
 
-def frequentist_limit(prefix, ncpu, coarse):
+def frequentist_limit(filename, ncpu, coarse):
     rfile = R.TFile(filename)
 
     ws = rfile.Get("combined")
@@ -129,7 +129,7 @@ def frequentist_limit(prefix, ncpu, coarse):
     R.RooStats.RemoveConstantParameters(constr)
 
     # run the initial fit
-    sbmodel.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.NumCPU(8))
+    sbmodel.GetPdf().fitTo(data, R.RooFit.Constrain(constr))
 
     sbmodel.SetSnapshot(sbmodel.GetParametersOfInterest())
 
@@ -171,13 +171,18 @@ if __name__ == '__main__':
 
     args = docopt(__doc__)
 
+    print args
+
     m1 = int(args['<mass1>'])
     m2 = int(args['<mass2>'])
 
     sig_file = args['<signal_file>']
 
     prefix = "limits/"+sig_file[:-5]+"_{}_{}".format(m1, m2)
-    chans = args['--channels'].split(",")
+    try:
+        chans = args['--channels'].split(",")
+    except AttributeError:
+        chans = ['of', 'sf']
 
 
     create_histfactory(sig_file, prefix, m1, m2, chans)

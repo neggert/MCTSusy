@@ -201,6 +201,12 @@ def get_samples( data, mctcut=100., real_data=False) :
         outdict['sig_scaleup'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met_scaleup'] & outdict['off_z_window']
         outdict['sig_scaledown'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met_scaledown'] & outdict['off_z_window']
 
+        outdict['sig_scaleup_sf'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met_scaleup'] & outdict['off_z_window'] & outdict['sf']
+        outdict['sig_scaledown_sf'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met_scaledown'] & outdict['off_z_window'] & outdict['sf']
+
+        outdict['sig_scaleup_of'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met_scaleup'] & outdict['off_z_window'] & outdict['of']
+        outdict['sig_scaledown_of'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met_scaledown'] & outdict['off_z_window'] & outdict['of']
+
         outdict['mct_high_scaleup'] = data.mctperp_up > mctcut
         outdict['mct_high_scaledown'] = data.mctperp_down > mctcut
         outdict['sig_mct_high_scaleup'] = outdict['sig_scaleup'] & outdict['mct_high_scaleup']

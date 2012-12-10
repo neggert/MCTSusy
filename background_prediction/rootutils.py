@@ -10,8 +10,11 @@ def create_roodataset( data, weights, roovar, rooweightvar, title="dataset") :
         ds.add(r.RooArgSet(roovar), w)
     return ds
 
-def create_TH1( data, weights, name="hist") :
-    h = r.TH1D(name, name, 19, 5., 100.)
+def create_TH1( data, weights, name="hist", nbins=19, range=(5,100), norm=False) :
+    h = r.TH1D(name, name, nbins, range[0], range[1])
+    h.SetBinErrorOption(h.kPoisson)
     for d, w in zip(data, weights) :
         h.Fill(d, w)
+    if norm:
+        h.Scale(1./h.Integral())
     return h

@@ -20,7 +20,7 @@ reload(selection)
 
 import ROOT as R
 import os
-from pandas import *
+import numpy as np
 
 channels = ['of', 'sf']
 backgrounds = ['top', 'vv', 'wjets', 'z']
@@ -68,6 +68,24 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
         z = mcz[selz['sig_'+ch]]
         templates['z_'+ch] = rootutils.create_TH1(z.mctperp, z.weight, "z_template_"+ch, bins, histrange, True)
+
+        if ch == 'sf':
+            # systematic on Z monte carlo
+            mc_onz = mc[smc['z_ctrl_sf']]
+            data_onz = data[sd['z_ctrl_sf']]
+
+            mc_hist, mc_edges = np.histogram(mc_onz.mctperp, weights=mc_onz.weight, bins=bins, range=histrange, normed=True)
+            d_hist, d_edges = np.histogram(data_onz.mctperp, weights=data_onz.weight, bins=bins, range=histrange, normed=True)
+
+            err = abs(mc_hist[:10]-d_hist[:10])
+
+            # make a TH1 out of it
+            rhist = R.TH1D("z_syst", "z_syst", bins, histrange[0], histrange[1])
+            for i, val in enumerate(err):
+                rhist.SetBinContent(i+1, val)
+
+            templates['z_syst'] = rhist
+
 
         n_1tag = sum(mc[smc['1tag_ctrl_'+ch] & (mc.mctperp>5.)].weight)
         n_2tag = sum(mc[smc['2tag_ctrl_'+ch] & (mc.mctperp>5.)].weight)

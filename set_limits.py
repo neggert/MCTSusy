@@ -39,12 +39,12 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
     for ch in channels:
         channel_confs[ch] = R.RooStats.HistFactory.Channel(ch)
         channel_confs[ch].SetData("data_"+ch, "data.root")
-        channel_confs[ch].SetStatErrorConfig(0.05, "Poisson")
+        channel_confs[ch].SetStatErrorConfig(0.1, "Poisson")
 
         # signal sample
         signal = R.RooStats.HistFactory.Sample("signal_"+ch, "sms_template_{}_{}_{}".format(ch, m1, m2), signal_file)
         signal.SetNormalizeByTheory(True)
-        signal.AddNormFactor("sig_strength", 0.1, 0., 10)
+        signal.AddNormFactor("sig_strength", 1., 0., 100.)
         signal.ActivateStatError()
         signal.AddOverallSys("trigger", 0.95, 1.05)
         signal.AddOverallSys("id_and_selection", 0.98, 1.02)
@@ -64,6 +64,9 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
                 template.AddOverallSys("top_norm_"+ch, 0.88, 1.12)
             else :
                 template.AddNormFactor("n_{}_{}".format(ch, bkg), 2000, 0, 5000)
+
+            if bkg == 'z':
+                template.AddShapeSys("z_syst_"+ch, R.RooStats.HistFactory.Constraint.Gaussian, "z_syst", "templates.root")
 
 
             samples[ch][bkg] = template
@@ -166,38 +169,45 @@ def frequentist_limit(filename, ncpu, coarse):
 
     return res
 
+def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, coarse):
+    prefix = "limits/"+sig_file[:-5]+"_{}_{}".format(mass1, mass2)
+
+    # try:
+    create_histfactory(sig_file, prefix, mass1, mass2, chans)
+    # except:
+        # return None
+
+    if asymptotic:
+        res = asymptotic_limit(prefix+"_combined_meas_model.root", coarse)
+    else:
+        res = frequentist_limit(prefix+"_combined_meas_model.root", ncpu, coarse)
+
+    return (res.GetExpectedUpperLimit(), res.UpperLimit())
+
 if __name__ == '__main__':
     from docopt import docopt
 
     args = docopt(__doc__)
-
-    print args
 
     m1 = int(args['<mass1>'])
     m2 = int(args['<mass2>'])
 
     sig_file = args['<signal_file>']
 
-    prefix = "limits/"+sig_file[:-5]+"_{}_{}".format(m1, m2)
     try:
         chans = args['--channels'].split(",")
     except AttributeError:
         chans = ['of', 'sf']
 
-
-    create_histfactory(sig_file, prefix, m1, m2, chans)
-
     asym = bool(args['--asymptotic'])
 
     coarse = bool(args['--coarse'])
 
-    if asym:
-        res = asymptotic_limit(prefix+"_combined_meas_model.root", coarse)
-    else:
-        res = frequentist_limit(prefix+"_combined_meas_model.root", int(args['--ncpu']), coarse)
+    ncpu = int(args['--ncpu'])
 
-    exp = res.GetExpectedUpperLimit()
-    obs = res.UpperLimit()
+    res = run_limit(sig_file, m1, m2, chans, ncpu, asym, coarse)
+
+    exp, obs = res
 
     print "95% CL CLs upper limit"
     print "Expected: {:.2f}\tObserved: {:.2f}".format(exp, obs)

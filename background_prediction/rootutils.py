@@ -12,7 +12,7 @@ def create_roodataset( data, weights, roovar, rooweightvar, title="dataset") :
 
 def create_TH1( data, weights, name="hist", nbins=19, range=(5,100), norm=False) :
     h = r.TH1D(name, name, nbins, range[0], range[1])
-    h.SetBinErrorOption(h.kPoisson)
+    h.Sumw2()
     for d, w in zip(data, weights) :
         h.Fill(d, w)
     if norm:

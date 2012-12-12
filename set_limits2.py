@@ -74,10 +74,10 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
 def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, coarse):
     prefix = "limits/"+sig_file[:-5]+"_{}_{}".format(mass1, mass2)
 
-    # try:
-    create_histfactory(sig_file, prefix, mass1, mass2, chans)
-    # except:
-        # return None
+    try:
+        create_histfactory(sig_file, prefix, mass1, mass2, chans)
+    except:
+        return None
 
     if asymptotic:
         res = asymptotic_limit(prefix+"_combined_meas_model.root", coarse)

@@ -2,3 +2,5 @@
 *.so
 *.sublime-*
 work/*
+limits/*
+*.root

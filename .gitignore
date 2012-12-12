@@ -4,3 +4,5 @@
 work/*
 limits/*
 *.root
+*.json
+2012HCP

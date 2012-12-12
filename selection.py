@@ -158,7 +158,7 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['z_ctrl_emu'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window'] & outdict['emu']
     outdict['sig_emu'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['emu']
 
-    outdict['mct_low'] = (data.mctperp > 5.) & (data.mctperp < mctcut)
+    outdict['mct_low'] = (data.mctperp > 10.)
     outdict['mct_high'] = data.mctperp > mctcut
 
     outdict['sig_mct_low'] = outdict['sig'] & outdict['mct_low']

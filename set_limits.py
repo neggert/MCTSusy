@@ -42,31 +42,31 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
         channel_confs[ch].SetStatErrorConfig(0.1, "Poisson")
 
         # signal sample
-        signal = R.RooStats.HistFactory.Sample("signal_"+ch, "sms_template_{}_{}_{}".format(ch, m1, m2), signal_file)
+        signal = R.RooStats.HistFactory.Sample("signal_"+ch, "sms_template_{0}_{1}_{2}".format(ch, m1, m2), signal_file)
         signal.SetNormalizeByTheory(True)
         signal.AddNormFactor("sig_strength", 1., 0., 100.)
         signal.ActivateStatError()
         signal.AddOverallSys("trigger", 0.95, 1.05)
         signal.AddOverallSys("id_and_selection", 0.98, 1.02)
         signal.AddOverallSys("b_veto", 0.94, 1.06)
-        signal.AddHistoSys("jes", "sms_template_jes_down_{}_{}_{}".format(ch, m1, m2), signal_file, "",
-                           "sms_template_jes_up_{}_{}_{}".format(ch, m1, m2), signal_file, "")
+        signal.AddHistoSys("jes", "sms_template_jes_down_{0}_{1}_{2}".format(ch, m1, m2), signal_file, "",
+                           "sms_template_jes_up_{0}_{1}_{2}".format(ch, m1, m2), signal_file, "")
         channel_confs[ch].AddSample(signal)
 
         # add the background samples
         for bkg in backgrounds:
-            template = R.RooStats.HistFactory.Sample("{}_{}".format(bkg, ch), "{}_template_{}".format(bkg, ch), "templates.root")
+            template = R.RooStats.HistFactory.Sample("{0}_{1}".format(bkg, ch), "{0}_template_{1}".format(bkg, ch), "templates.root")
             template.SetNormalizeByTheory(False)
             template.ActivateStatError()
             if bkg == 'banana':
                 ntop_pred = temp_file.Get("ntop_"+ch)[0]
-                template.AddNormFactor("n_{}_{}".format(ch, bkg), ntop_pred, 0, 2*ntop_pred, True)
+                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), ntop_pred, 0, 2*ntop_pred, True)
                 template.AddOverallSys("top_norm_"+ch, 0.88, 1.12)
             else :
-                template.AddNormFactor("n_{}_{}".format(ch, bkg), 2000, 0, 5000)
+                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 5000)
 
             if bkg == 'z':
-                template.AddShapeSys("z_syst_"+ch, R.RooStats.HistFactory.Constraint.Gaussian, "z_syst", "templates.root")
+                template.AddShapeSys("z_syst_"+ch, 0, "z_syst", "templates.root")
 
 
             samples[ch][bkg] = template
@@ -170,7 +170,7 @@ def frequentist_limit(filename, ncpu, coarse):
     return res
 
 def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, coarse):
-    prefix = "limits/"+sig_file[:-5]+"_{}_{}".format(mass1, mass2)
+    prefix = "limits/"+sig_file[:-5]+"_{0}_{1}".format(mass1, mass2)
 
     # try:
     create_histfactory(sig_file, prefix, mass1, mass2, chans)
@@ -210,6 +210,6 @@ if __name__ == '__main__':
     exp, obs = res
 
     print "95% CL CLs upper limit"
-    print "Expected: {:.2f}\tObserved: {:.2f}".format(exp, obs)
+    print "Expected: {0:.2f}\tObserved: {1:.2f}".format(exp, obs)
 
 

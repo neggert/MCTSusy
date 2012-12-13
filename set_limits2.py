@@ -40,26 +40,26 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
     channel_conf.SetStatErrorConfig(0.1, "Poisson")
 
     # signal sample
-    signal = R.RooStats.HistFactory.Sample("signal_sf", "sms_template_sf_{}_{}".format(m1, m2), signal_file)
+    signal = R.RooStats.HistFactory.Sample("signal_sf", "sms_template_sf_{0}_{1}".format(m1, m2), signal_file)
     signal.SetNormalizeByTheory(True)
     signal.AddNormFactor("sig_strength", 1., 0., 100.)
     signal.ActivateStatError()
     signal.AddOverallSys("trigger", 0.95, 1.05)
     signal.AddOverallSys("id_and_selection", 0.98, 1.02)
     signal.AddOverallSys("b_veto", 0.94, 1.06)
-    signal.AddHistoSys("jes", "sms_template_jes_down_sf_{}_{}".format(m1, m2), signal_file, "",
-                       "sms_template_jes_up_sf_{}_{}".format(m1, m2), signal_file, "")
+    signal.AddHistoSys("jes", "sms_template_jes_down_sf_{0}_{1}".format(m1, m2), signal_file, "",
+                       "sms_template_jes_up_sf_{0}_{1}".format(m1, m2), signal_file, "")
     channel_conf.AddSample(signal)
 
     # add the background samples
     for bkg in backgrounds:
-        template = R.RooStats.HistFactory.Sample("{}".format(bkg), "{}_template".format(bkg), "templates2.root")
+        template = R.RooStats.HistFactory.Sample("{0}".format(bkg), "{0}_template".format(bkg), "templates2.root")
         template.SetNormalizeByTheory(False)
         template.ActivateStatError()
-        template.AddNormFactor("n_{}".format(bkg), 2000, 0, 5000)
+        template.AddNormFactor("n_{0}".format(bkg), 2000, 0, 5000)
 
         if bkg == 'z':
-            template.AddShapeSys("z_syst", R.RooStats.HistFactory.Constraint.Gaussian, "z_syst", "templates.root")
+            template.AddShapeSys("z_syst", 0, "z_syst", "templates.root")
 
         samples[bkg] = template
         channel_conf.AddSample(samples[bkg])
@@ -72,7 +72,7 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
     R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
 
 def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, coarse):
-    prefix = "limits/"+sig_file[:-5]+"_{}_{}".format(mass1, mass2)
+    prefix = "limits/"+sig_file[:-5]+"_{0}_{1}".format(mass1, mass2)
 
     # try:
     create_histfactory(sig_file, prefix, mass1, mass2, chans)
@@ -112,6 +112,6 @@ if __name__ == '__main__':
     exp, obs = res
 
     print "95% CL CLs upper limit"
-    print "Expected: {:.2f}\tObserved: {:.2f}".format(exp, obs)
+    print "Expected: {0:.2f}\tObserved: {1:.2f}".format(exp, obs)
 
 

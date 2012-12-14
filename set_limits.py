@@ -17,6 +17,7 @@ Options:
 backgrounds = ['top', 'vv', 'wjets', 'z']
 
 import ROOT as R
+import json
 from collections import defaultdict
 
 def create_histfactory(signal_file, prefix, m1, m2, channels):

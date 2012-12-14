@@ -4,6 +4,7 @@
 
 Usage:
     set_limits.py <signal_file> <mass1> <mass2> [-hac] [--ncpu=<c>] [--channels=<c1,c2>]
+    set_limits.py batch <signal_file> <mass_file> <jobnum> <output_file> [-ah] [--channels=<c1,c2>]
 
 Options:
     -h --help        Show this screen.
@@ -13,7 +14,6 @@ Options:
     --channels=<c1,c2> Channels to use [default: of,sf]
 
 """
-
 backgrounds = ['top', 'vv', 'wjets', 'z']
 
 import ROOT as R
@@ -189,8 +189,13 @@ if __name__ == '__main__':
 
     args = docopt(__doc__)
 
-    m1 = int(args['<mass1>'])
-    m2 = int(args['<mass2>'])
+    if not args['batch']:
+        m1 = int(args['<mass1>'])
+        m2 = int(args['<mass2>'])
+    else:
+        with open(args['<mass_file>']) as f:
+            masses = json.load(f)
+        m1, m2 = masses[int(args['<jobnum>'])]
 
     sig_file = args['<signal_file>']
 
@@ -209,7 +214,11 @@ if __name__ == '__main__':
 
     exp, obs = res
 
-    print "95% CL CLs upper limit"
-    print "Expected: {0:.2f}\tObserved: {1:.2f}".format(exp, obs)
+    if not args['batch']:
+        print "95% CL CLs upper limit"
+        print "Expected: {0:.2f}\tObserved: {1:.2f}".format(exp, obs)
+    else:
+        with open(args['<output_file>'], 'w') as f:
+            f.write("{0}\t{1}\t{2:.2f}\t{3:.2f}\n".format(m1, m2, exp, obs))
 
 

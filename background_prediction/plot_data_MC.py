@@ -1,13 +1,21 @@
 import sys
 sys.path.append("../../")
-sys.path.append("../")
+sys.path.append("import/")
 from CMSPyLibs.plot import *
-from data import *
+from config.data import *
 
+
+from matplotlib import rc
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+rc('text', usetex=True)
+rc('text.latex', preamble = '\usepackage{amsmath}')
 
 from matplotlib.pyplot import *
+from matplotlib.font_manager import *
 switch_backend("pdf")
 
+fontp = FontProperties(family="Helvetica", size=12)
+fontpb = FontProperties(family="Helvetica", size=12, weight="book")
 
 def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     """
@@ -40,8 +48,12 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     if len(bkgtpl) == 0:
         raise RuntimeError('No Events')
 
-    figure(figsize=(6,6))
+    f = figure(figsize=(6,6))
+    f.set_facecolor('w')
     fig = subplot2grid((4,1),(0,0), rowspan=3)
+    fig.set_yscale('log', nonposy='clip')
+    fig.set_ylim(0.001, 10000)
+    fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
 
     h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl)
     print sum([sum(weights) for weights in bkgwtpl])
@@ -50,10 +62,29 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     he.set_label("Data")
     fig.set_axisbelow(False)
 
-    legend()
+    # move data to top of legend
+    handles, labels = fig.get_legend_handles_labels()
+    handles.insert(0,handles.pop())
+    labels.insert(0,labels.pop())
+
+    legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=2)
+    fig.set_axisbelow(False)
+
+    minorticks = MultipleLocator(10)
+    fig.xaxis.set_minor_locator(minorticks)
 
     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
     hist_ratio(data_selected[variable], selected[variable], selected.weight, bins=bins, range=plotrange)
+
+    axhline(1, color="k")
+    fig2.set_ylim(0.5,1.5)
+    fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')
+
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
+
+    figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=9.2\;\text{fb}^{-1}$", color='k',
+             fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
+
     return fig, fig2
 
 def make_data_mc_plots( flavor):
@@ -158,7 +189,7 @@ def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
 
     return fig
 
-if __name__ == '__main__':
-    make_data_mc_plots('')
+# if __name__ == '__main__':
+#     make_data_mc_plots('')
 
 

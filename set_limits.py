@@ -45,7 +45,7 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
         # signal sample
         signal = R.RooStats.HistFactory.Sample("signal_"+ch, "sms_template_{0}_{1}_{2}".format(ch, m1, m2), signal_file)
         signal.SetNormalizeByTheory(True)
-        signal.AddNormFactor("sig_strength", 1., 0., 100.)
+        signal.AddNormFactor("sig_strength", 1., 0., 1000.)
         signal.ActivateStatError()
         signal.AddOverallSys("trigger", 0.95, 1.05)
         signal.AddOverallSys("id_and_selection", 0.98, 1.02)
@@ -121,6 +121,9 @@ def asymptotic_limit(filename, coarse):
     return res
 
 def frequentist_limit(filename, ncpu, coarse):
+    # First run the asymptotic limit to get a rough idea
+    a_exp = asymptotic_limit(filename, coarse).GetExpectedUpperLimit()
+
     rfile = R.TFile(filename)
 
     ws = rfile.Get("combined")
@@ -154,6 +157,8 @@ def frequentist_limit(filename, ncpu, coarse):
 
     if coarse:
         hypo.SetFixedScan(10, 0, 10)
+    else:
+        hypo.SetFixedScan(10, a_exp/10, a_exp*10, True)
 
     toymc = calc.GetTestStatSampler()
 
@@ -161,6 +166,7 @@ def frequentist_limit(filename, ncpu, coarse):
     prof_l.SetOneSided(True)
 
     toymc.SetTestStatistic(prof_l)
+    toymc.SetMaxToys(1000) # needed because of https://savannah.cern.ch/bugs/?93360
 
     if ncpu > 1:
         pc = R.RooStats.ProofConfig(ws, ncpu, "")

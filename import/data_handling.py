@@ -30,7 +30,7 @@ def get_parent( gen_particle ) :
     else :
         return get_parent(gen_particle.mother())
 
-def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
+def save_data_pandas( input_files, output_file, mctype="mc", mc_cat="mc_cat", x_eff=1.):
     """Load all of the relevant data from the CMSSW files and save it using pandas"""
     getter = CMSPyLibs.events.CMSDileptonEventGetter(input_files)
     getter.set_electron_collection("nonIsolatedPatElectrons")
@@ -130,7 +130,8 @@ def save_data_pandas( input_files, output_file, mctype="mc", weight=1.):
         #     logging.debug("Skipping event with MET "+str(event.get_met().pt()))
         #     continue
         datarow['metPhi'] = event.get_met().phi()
-        datarow['weight'] = float(weight)
+        datarow['x_eff'] = float(x_eff)
+        datarow['mc_cat'] = mc_cat
 
         # invariant mass
         datarow["mll"] = (get_TLorentzVector(leptons[0])+get_TLorentzVector(leptons[1])).M()

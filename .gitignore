@@ -6,3 +6,4 @@ limits/*
 *.root
 *.json
 2012HCP
+batch/*.sh.*

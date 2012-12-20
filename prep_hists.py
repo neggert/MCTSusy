@@ -18,13 +18,16 @@ reload(rootutils)
 import selection
 reload(selection)
 
+from config.parameters import lumi
+from config.data import *
+
+
 import ROOT as R
 import os
 import numpy as np
 
 channels = ['of', 'sf']
-backgrounds = ['top', 'vv', 'wjets', 'z']
-lumi = 9200. # in fb
+backgrounds = ['of', 'vv', 'wjets', 'z']
 
 def load_xsec(filename):
     """
@@ -44,7 +47,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     Create a ROOT file containing all of the background templates
     """
 
-    mcvv = mc[(mc.mc_cat=='WV') | (mc.mc_cat=='ZZ')]
+    mcvv = mc[(mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=='WZ')]
     mcz = mc[mc.mc_cat=='DY']
     selvv = selection.get_samples( mcvv, 100.)
     selz = selection.get_samples( mcz, 100.)
@@ -195,8 +198,6 @@ if __name__ == '__main__':
     args = docopt(__doc__)
 
     print(args)
-
-    from config.data import *
 
     bins = int(args['--bins'])
     histrange = (float(args['--low']), float(args['--high']))

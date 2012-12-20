@@ -15,6 +15,9 @@ Options:
 
 from prep_hists import *
 
+from config.data import *
+
+
 backgrounds = ['of', 'vv', 'wjets', 'z']
 
 def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)):
@@ -22,7 +25,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     Create a ROOT file containing all of the background templates
     """
 
-    mcvv = mc[(mc.mc_cat=='WV') | (mc.mc_cat=='ZZ')]
+    mcvv = mc[(mc.mc_cat=='ZZ')]
     mcz = mc[mc.mc_cat=='DY']
     selvv = selection.get_samples( mcvv, 100.)
     selz = selection.get_samples( mcz, 100.)
@@ -71,8 +74,6 @@ if __name__ == '__main__':
     args = docopt(__doc__)
 
     print(args)
-
-    from config.data import *
 
     bins = int(args['--bins'])
     histrange = (float(args['--low']), float(args['--high']))

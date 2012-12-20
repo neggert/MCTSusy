@@ -68,6 +68,8 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
 
             if bkg == 'z':
                 template.AddShapeSys("z_syst_"+ch, 0, "z_syst", "templates.root")
+            if bkg == 'wjets':
+                template.AddShapeSys("wjets_syst_"+ch, 0, "wjets_syst_"+ch, "templates.root")
 
 
             samples[ch][bkg] = template

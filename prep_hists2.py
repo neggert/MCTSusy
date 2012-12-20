@@ -40,6 +40,12 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
     wjets = data[sd['wjets_ctrl_sf']]
     templates['wjets'] = rootutils.create_TH1(wjets.mctperp, wjets.weight, "wjets_template", bins, histrange, True)
+    # systematic on w+jets template
+    rhist = R.TH1D("wjets_syst", "wjets_syst", bins, histrange[0], histrange[1])
+    for i in xrange(bins):
+        if templates['wjets'].GetBinContent(i+1) > 0: #only do non-zero bins
+            rhist.SetBinContent(i+1, 0.5) # 50% systematic
+    templates['wjets_syst'] = rhist
 
     vv = mcvv[selvv['sig_sf']]
     templates['vv'] = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template", bins, histrange, True)
@@ -54,7 +60,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     mc_hist, mc_edges = np.histogram(mc_onz.mctperp, weights=mc_onz.weight, bins=bins, range=histrange, normed=True)
     d_hist, d_edges = np.histogram(data_onz.mctperp, weights=data_onz.weight, bins=bins, range=histrange, normed=True)
 
-    err = abs(mc_hist[:10]-d_hist[:10])
+    err = abs(mc_hist[:11]-d_hist[:11])
 
     # make a TH1 out of it
     rhist = R.TH1D("z_syst", "z_syst", bins, histrange[0], histrange[1])

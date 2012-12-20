@@ -64,7 +64,7 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
                 template.AddNormFactor("n_{0}_{1}".format(ch, bkg), ntop_pred, 0, 2*ntop_pred, True)
                 template.AddOverallSys("top_norm_"+ch, 0.88, 1.12)
             else :
-                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 5000)
+                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 10000)
 
             if bkg == 'z':
                 template.AddShapeSys("z_syst_"+ch, 0, "z_syst", "templates.root")

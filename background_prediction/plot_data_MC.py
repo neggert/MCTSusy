@@ -1,8 +1,8 @@
 import sys
-sys.path.append("../../")
 sys.path.append("import/")
 from CMSPyLibs.plot import *
 from config.data import *
+from config.parameters import bkg_colors, bkg_labels
 
 
 from matplotlib import rc
@@ -33,17 +33,19 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
 
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WV', 'ZZ', 'DY', 'fake']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'DY', 'wjets']
 
     bkgtpl = []
     bkgwtpl = []
     bkgltpl = []
+    bkgctpl = []
 
     for name in group_order:
         if selected[(selected.mc_cat==name) & (selected[variable] > plotrange[0])&(selected[variable] < plotrange[1])][variable].count() > 0:
             bkgtpl.append( selected[selected.mc_cat==name][variable])
             bkgwtpl.append( selected[selected.mc_cat==name].weight)
-            bkgltpl.append(name)
+            bkgltpl.append(bkg_labels[name])
+            bkgctpl.append(bkg_colors[name])
 
     if len(bkgtpl) == 0:
         raise RuntimeError('No Events')
@@ -52,10 +54,10 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     f.set_facecolor('w')
     fig = subplot2grid((4,1),(0,0), rowspan=3)
     fig.set_yscale('log', nonposy='clip')
-    fig.set_ylim(0.001, 10000)
+    # fig.set_ylim(0.001, 10000)
     fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
 
-    h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl)
+    h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, color=bkgctpl, linewidth=0.5)
     print sum([sum(weights) for weights in bkgwtpl])
 
     he = hist_errorbars( data_selected[variable], xerrs=False, bins=bins, range=plotrange)
@@ -67,7 +69,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     handles.insert(0,handles.pop())
     labels.insert(0,labels.pop())
 
-    legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=2)
+    legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
     fig.set_axisbelow(False)
 
     minorticks = MultipleLocator(10)
@@ -82,83 +84,59 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
 
     xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
 
-    figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=9.2\;\text{fb}^{-1}$", color='k',
+    figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=18.1\;\text{fb}^{-1}$", color='k',
              fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
 
     return fig, fig2
 
-def make_data_mc_plots( flavor):
+def make_data_mc_plots():
     """Make all of the data-MC comparison plots for the given channel"""
 
-    f,f2 = compare_data_mc('sig'+flavor, 'mctperp', 30, (0,300))
-    f.set_yscale('log', nonposy='clip')
-    f.set_ylim(0.01, 100000)
-    f2.set_ylim(0.5, 1.5)
-    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
-    savefig("plots/data_mc_sig{}.pdf".format(flavor))
+    channels = ['of', 'sf']
 
-    try:
-        f,f2 = compare_data_mc('z_ctrl'+flavor, 'mctperp', 30, (0,300))
+    for flavor in channels:
+        f,f2 = compare_data_mc('sig_'+flavor, 'mctperp', 29, (10,300))
         f.set_yscale('log', nonposy='clip')
         f.set_ylim(0.01, 100000)
-        f2.set_ylim(0.5, 1.5)
+        f2.set_ylim(0, 2)
         xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
-        savefig("plots/data_mc_z{}.pdf".format(flavor))
+        savefig("plots/data_mc_sig_{}.pdf".format(flavor))
 
-        f,f2 = compare_data_mc('z_ctrl'+flavor, 'mctperp', 19, (5,100))
-        f.set_yscale('log', nonposy='clip')
-        f.set_ylim(1, 1000)
-        f2.set_ylabel("Data/MC")
-        f2.set_ylim(0.5, 1.5)
-        xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
-        savefig("plots/data_mc_z_lowmct{}.pdf".format(flavor))
-    except RuntimeError:
-        pass
-
-    try :
-        f,f2 = compare_data_mc('wjets_ctrl'+flavor, 'mctperp', 10, (0,100))
+        f,f2 = compare_data_mc('top_ctrl_'+flavor, 'mctperp', 29, (10,300))
         f.set_yscale('log', nonposy='clip')
         f.set_ylim(0.01, 100000)
-        f2.set_ylim(0.5, 1.5)
+        f2.set_ylim(0, 2)
         xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
-        savefig("plots/data_mc_fake{}.pdf".format(flavor))
-    except RuntimeError:
-        pass
+        savefig("plots/data_mc_top_{}.pdf".format(flavor))
 
-    f,f2 = compare_data_mc('top_ctrl'+flavor, 'mctperp', 20, (0,200))
+    f,f2 = compare_data_mc('z_ctrl_sf', 'mctperp', 29, (10,300))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(0.01, 10000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_sf', 'mctperp', 9, (10,100))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(1, 10000)
+    f2.set_ylabel("Data/MC")
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_lowmct.pdf")
+
+    f,f2 = compare_data_mc('wjets_ctrl_sf', 'mctperp', 9, (10,100))
     f.set_yscale('log', nonposy='clip')
     f.set_ylim(0.01, 100000)
-    f2.set_ylim(0.5, 1.5)
+    f2.set_ylim(0, 2)
     xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
-    savefig("plots/data_mc_top{}.pdf".format(flavor))
+    savefig("plots/data_mc_fake.pdf")
 
-    f,f2 = compare_data_mc('3lep_ctrl'+flavor, 'mctperp', 20, (0,200))
+    f,f2 = compare_data_mc('wz_ctrl', 'mctperp', 29, (10,300))
     f.set_yscale('log', nonposy='clip')
-    f.set_ylim(0.01, 100000)
-    f2.set_ylim(0.5, 1.5)
+    f.set_ylim(0.01, 100)
+    f2.set_ylim(0, 2)
     xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
-    savefig("plots/data_mc_3l{}.pdf".format(flavor))
-
-    f,f2 = compare_data_mc('1tag_ctrl'+flavor, 'mctperp', 20, (0,200))
-    f.set_yscale('log', nonposy='clip')
-    f.set_ylim(0.01, 100000)
-    f2.set_ylim(0.5, 1.5)
-    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
-    savefig("plots/data_mc_1tag{}.pdf".format(flavor))
-
-    f,f2 = compare_data_mc('2tag_ctrl'+flavor, 'mctperp', 20, (0,200))
-    f.set_yscale('log', nonposy='clip')
-    f.set_ylim(0.01, 100000)
-    f2.set_ylim(0.5, 1.5)
-    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
-    savefig("plots/data_mc_2tag{}.pdf".format(flavor))
-
-    f,f2 = compare_data_mc('moretag_ctrl'+flavor, 'mctperp', 20, (0,200))
-    f.set_yscale('log', nonposy='clip')
-    f.set_ylim(0.01, 100000)
-    f2.set_ylim(0.5, 1.5)
-    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
-    savefig("plots/data_mc_moretag{}.pdf".format(flavor))
+    savefig("plots/data_mc_3l.pdf")
 
 def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     selected = mc[smc[selection_name]]
@@ -189,7 +167,7 @@ def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
 
     return fig
 
-# if __name__ == '__main__':
-#     make_data_mc_plots('')
+if __name__ == '__main__':
+    make_data_mc_plots()
 
 

@@ -92,7 +92,7 @@ def make_money_plot():
     handles.insert(0,handles.pop())
     labels.insert(0,labels.pop())
 
-    legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=2)
+    legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
     fig.set_axisbelow(False)
 
     minorticks = MultipleLocator(10)

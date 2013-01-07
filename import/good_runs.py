@@ -4,7 +4,7 @@ Utility for filtering events based on good run list
 
 import json
 
-f = open("Cert_190456-201678_8TeV_PromptReco_Collisions12_JSON_remove2012C-v1_197770_198913.txt")
+f = open("Cert_190456-207898_8TeV_PromptReco_Collisions12_JSON.txt")
 
 rl = json.load(f)
 

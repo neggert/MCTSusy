@@ -22,7 +22,7 @@ import json
 bkgs = ['of', 'vv', 'wjets', 'z']
 
 def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
-    prefix = "limits/"+sig_file[:-5]+"_{}_{}".format(mass1, mass2)
+    prefix = "limits/"+sig_file[:-5]+"_{}_{}_2".format(mass1, mass2)
 
     try:
         create_histfactory(sig_file, prefix, mass1, mass2, chans)

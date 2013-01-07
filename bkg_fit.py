@@ -43,8 +43,13 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
     model.GetParametersOfInterest().first().setVal(0.)
     model.GetParametersOfInterest().first().setConstant()
 
+    pars = model.GetNuisanceParameters()
+
+    err_pars = R.RooArgSet(pars.find("n_of_top"), pars.find("n_of_vv"), pars.find("n_of_z"), pars.find("n_of_wjets"),
+                       pars.find("n_sf_top"), pars.find("n_sf_vv"), pars.find("n_sf_z"), pars.find("n_sf_wjets"))
+
     # run the fit
-    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save())
+    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.NumCPU(8), R.RooFit.Minos(err_pars))
 
     fitPars = res.floatParsFinal()
 
@@ -64,20 +69,18 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
     # none of this works
     # Need to use a test statistic that doesn't require an alternative hypothesis
 
-    # model.GetParametersOfInterest().first().setConstant(False)
-    # model.GetParametersOfInterest().first().setVal(0.)
     # model.SetSnapshot(model.GetParametersOfInterest())
 
-    # prof_l = R.RooStats.ProfileLikelihoodTestStat(model.GetPdf())
-    # prof_l.SetOneSidedDiscovery()
+    # nll = R.RooStats.MinNLLTestStat(model.GetPdf())
+    # nll.SetOneSidedDiscovery()
 
     # # get the test statistic on data
-    # prof_l.SetPrintLevel(2)
-    # ts = prof_l.Evaluate(data, model.GetParametersOfInterest())
+    # nll.SetPrintLevel(2)
+    # ts = nll.Evaluate(data, model.GetParametersOfInterest())
 
     # if get_p:
 
-    #     sampler = R.RooStats.ToyMCSampler(prof_l, 1000)
+    #     sampler = R.RooStats.ToyMCSampler(nll, 1000)
     #     sampler.SetPdf(model.GetPdf())
     #     sampler.SetObservables(model.GetObservables())
     #     sampler.SetGlobalObservables(model.GetGlobalObservables())

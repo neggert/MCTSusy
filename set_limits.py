@@ -166,7 +166,7 @@ def frequentist_limit(filename, ncpu, coarse):
     prof_l.SetOneSided(True)
 
     toymc.SetTestStatistic(prof_l)
-    toymc.SetMaxToys(1000) # needed because of https://savannah.cern.ch/bugs/?93360
+    toymc.SetMaxToys(500) # needed because of https://savannah.cern.ch/bugs/?93360
 
     if ncpu > 1:
         pc = R.RooStats.ProofConfig(ws, ncpu, "")
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     else:
         with open(args['<mass_file>']) as f:
             masses = json.load(f)
-        m1, m2 = masses[int(args['<jobnum>'])]
+        m1, m2 = [int(m) for m in masses[int(args['<jobnum>'])]]
 
     sig_file = args['<signal_file>']
 

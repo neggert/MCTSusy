@@ -61,7 +61,9 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
         template.AddNormFactor("n_{0}".format(bkg), 2000, 0, 5000)
 
         if bkg == 'z':
-            template.AddShapeSys("z_syst", 0, "z_syst", "templates.root")
+            template.AddShapeSys("z_syst", 0, "z_syst", "templates2.root")
+        if bkg == 'wjets':
+            template.AddShapeSys("wjets_syst", 0, "wjets_syst", "templates2.root")
 
         samples[bkg] = template
         channel_conf.AddSample(samples[bkg])
@@ -74,7 +76,7 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
     R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
 
 def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, coarse):
-    prefix = "limits/"+sig_file[:-5]+"_{0}_{1}".format(mass1, mass2)
+    prefix = "limits/"+sig_file[:-5]+"_{0}_{1}_2".format(mass1, mass2)
 
     try:
         create_histfactory(sig_file, prefix, mass1, mass2, chans)

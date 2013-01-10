@@ -20,7 +20,7 @@ import ROOT as R
 import json
 from collections import defaultdict
 
-def create_histfactory(signal_file, prefix, m1, m2, channels):
+def create_histfactory(signal_file, prefix, m1, m2, channels, data_file_name="data.root", data_prefix="data"):
     meas = R.RooStats.HistFactory.Measurement("meas", "meas")
 
     meas.SetOutputFilePrefix(prefix)
@@ -39,7 +39,7 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
 
     for ch in channels:
         channel_confs[ch] = R.RooStats.HistFactory.Channel(ch)
-        channel_confs[ch].SetData("data_"+ch, "data.root")
+        channel_confs[ch].SetData(data_prefix+"_"+ch, data_file_name)
         channel_confs[ch].SetStatErrorConfig(0.1, "Poisson")
 
         # signal sample
@@ -64,10 +64,12 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
                 template.AddNormFactor("n_{0}_{1}".format(ch, bkg), ntop_pred, 0, 2*ntop_pred, True)
                 template.AddOverallSys("top_norm_"+ch, 0.88, 1.12)
             else :
-                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 5000)
+                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 10000)
 
             if bkg == 'z':
                 template.AddShapeSys("z_syst_"+ch, 0, "z_syst", "templates.root")
+            if bkg == 'wjets':
+                template.AddShapeSys("wjets_syst_"+ch, 0, "wjets_syst_"+ch, "templates.root")
 
 
             samples[ch][bkg] = template

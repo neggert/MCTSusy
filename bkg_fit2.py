@@ -15,17 +15,17 @@ Options:
 
 """
 
-from set_limits import *
+from set_limits2 import *
 from collections import defaultdict
 import json
 
-bkgs = ['top', 'vv', 'wjets', 'z']
+bkgs = ['of', 'vv', 'wjets', 'z']
 
-def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data", data_file_name="data.root"):
-    prefix = "limits/"+sig_file[:-5]+"_{}_{}".format(mass1, mass2)
+def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
+    prefix = "limits/"+sig_file[:-5]+"_{}_{}_2".format(mass1, mass2)
 
     try:
-        create_histfactory(sig_file, prefix, mass1, mass2, chans, data_prefix=data_prefix, data_file_name=data_file_name)
+        create_histfactory(sig_file, prefix, mass1, mass2, chans)
     except:
         return None
 
@@ -43,23 +43,17 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data"
     model.GetParametersOfInterest().first().setVal(0.)
     model.GetParametersOfInterest().first().setConstant()
 
-    pars = model.GetNuisanceParameters()
-
-    err_pars = R.RooArgSet(pars.find("n_of_top"), pars.find("n_of_vv"), pars.find("n_of_z"), pars.find("n_of_wjets"),
-                       pars.find("n_sf_top"), pars.find("n_sf_vv"), pars.find("n_sf_z"), pars.find("n_sf_wjets"))
-
     # run the fit
-    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.NumCPU(8))
+    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save())
 
     fitPars = res.floatParsFinal()
 
-    fitresults = defaultdict(dict)
-    for ch in chans:
-        for b in bkgs:
-            fitvar = fitPars.find('n_{}_{}'.format(ch, b))
-            fitresults[ch][b] = (fitvar.getVal(), fitvar.getError())
+    fitresults = {}
+    for b in bkgs:
+        fitvar = fitPars.find('n_{}'.format(b))
+        fitresults[b] = (fitvar.getVal(), fitvar.getError())
 
-    f = open("fit_results.json", 'w')
+    f = open("fit_results2.json", 'w')
 
     json.dump(fitresults, f, indent=3)
 
@@ -69,18 +63,20 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data"
     # none of this works
     # Need to use a test statistic that doesn't require an alternative hypothesis
 
+    # model.GetParametersOfInterest().first().setConstant(False)
+    # model.GetParametersOfInterest().first().setVal(0.)
     # model.SetSnapshot(model.GetParametersOfInterest())
 
-    # nll = R.RooStats.MinNLLTestStat(model.GetPdf())
-    # nll.SetOneSidedDiscovery()
+    # prof_l = R.RooStats.ProfileLikelihoodTestStat(model.GetPdf())
+    # prof_l.SetOneSidedDiscovery()
 
     # # get the test statistic on data
-    # nll.SetPrintLevel(2)
-    # ts = nll.Evaluate(data, model.GetParametersOfInterest())
+    # prof_l.SetPrintLevel(2)
+    # ts = prof_l.Evaluate(data, model.GetParametersOfInterest())
 
     # if get_p:
 
-    #     sampler = R.RooStats.ToyMCSampler(nll, 1000)
+    #     sampler = R.RooStats.ToyMCSampler(prof_l, 1000)
     #     sampler.SetPdf(model.GetPdf())
     #     sampler.SetObservables(model.GetObservables())
     #     sampler.SetGlobalObservables(model.GetGlobalObservables())
@@ -108,8 +104,6 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data"
     #     raw_input("...")
 
     # print "Test statistic on data: {:.7f}".format(ts)
-
-    return fitresults
 
 
 

@@ -64,14 +64,15 @@ def get_samples( data, mctcut=100., real_data=False) :
         outdict['mumu'] = (abs(data.pdg1) == 13) & (abs(data.pdg2) == 13) & (data.DoubleMu_Trigger)
         outdict['emu'] = abs(data.pdg1) != abs(data.pdg2) & (data.EMu_Trigger)
     else :
-        outdict['ee'] = (abs(data.pdg1) == 11) & (abs(data.pdg2) == 11)
-        outdict['mumu'] = (abs(data.pdg1) == 13) & (abs(data.pdg2) == 13)
-        outdict['emu'] = abs(data.pdg1) != abs(data.pdg2)
-    outdict['opposite_sign'] = (data.pdg1*data.pdg2 < 0) & (~data.ThirdLepton)
+        outdict['ee'] = ((abs(data.pdg1) == 11) & (abs(data.pdg2) == 11))
+        outdict['mumu'] = ((abs(data.pdg1) == 13) & (abs(data.pdg2) == 13))
+        outdict['emu'] = (abs(data.pdg1) != abs(data.pdg2))
+    outdict['opposite_sign'] = (data.pdg1*data.pdg2 < 0)
     outdict['opposite_sign_ee'] = outdict['opposite_sign'] & outdict['ee']
     outdict['opposite_sign_mumu'] = outdict['opposite_sign'] & outdict['mumu']
     outdict['opposite_sign_emu'] = outdict['opposite_sign'] & outdict['emu']
     outdict['preselection'] = (outdict['opposite_sign_ee'] | outdict['opposite_sign_mumu'] | outdict['opposite_sign_emu']) & (~data.ThirdLepton) & (data.mll > 12)
+    outdict['3leptons'] = outdict['opposite_sign'] & (data.ThirdLepton) & (data.mll > 12)
 
 
     # isolation cuts
@@ -85,6 +86,7 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['l2_passes_ctrl_iso'] = outdict['l2_passes_loose_iso'] & ~outdict['l2_passes_tight_iso']
 
     outdict['isolation_sig'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection']
+    outdict['isolation_3l'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['3leptons']
     outdict['isolation_sig_ee'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection'] & outdict['ee']
     outdict['isolation_sig_mumu'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection'] & outdict['mumu']
     outdict['isolation_sig_emu'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection'] & outdict['emu']
@@ -119,6 +121,7 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['moretag_ctrl'] = outdict['more_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['z_ctrl'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window']
+    outdict['wz_ctrl'] = outdict['bjets_sig'] & outdict['isolation_3l'] & outdict['pass_met'] & outdict['z_window']
     outdict['sig'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
 
     outdict['wjets_ctrl_sf'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']

@@ -18,13 +18,16 @@ reload(rootutils)
 import selection
 reload(selection)
 
+from config.parameters import lumi
+from config.data import *
+
+
 import ROOT as R
 import os
 import numpy as np
 
 channels = ['of', 'sf']
-backgrounds = ['top', 'vv', 'wjets', 'z']
-lumi = 9200. # in fb
+backgrounds = ['of', 'vv', 'wjets', 'z']
 
 def load_xsec(filename):
     """
@@ -44,7 +47,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     Create a ROOT file containing all of the background templates
     """
 
-    mcvv = mc[(mc.mc_cat=='WV') | (mc.mc_cat=='ZZ')]
+    mcvv = mc[(mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=='WZ')]
     mcz = mc[mc.mc_cat=='DY']
     selvv = selection.get_samples( mcvv, 100.)
     selz = selection.get_samples( mcz, 100.)
@@ -62,6 +65,12 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
         wjets = data[sd['wjets_ctrl_'+ch]]
         templates['wjets_'+ch] = rootutils.create_TH1(wjets.mctperp, wjets.weight, "wjets_template_"+ch, bins, histrange, True)
+        # systematic on w+jets template
+        rhist = R.TH1D("wjets_syst_"+ch, "wjets_syst_"+ch, bins, histrange[0], histrange[1])
+        for i in xrange(bins):
+            if templates['wjets_'+ch].GetBinContent(i+1) > 0: #only do non-zero bins
+                rhist.SetBinContent(i+1, 0.3) # 50% systematic
+        templates['wjets_syst_'+ch] = rhist
 
         vv = mcvv[selvv['sig_'+ch]]
         templates['vv_'+ch] = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template_"+ch, bins, histrange, True)
@@ -77,7 +86,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
             mc_hist, mc_edges = np.histogram(mc_onz.mctperp, weights=mc_onz.weight, bins=bins, range=histrange, normed=True)
             d_hist, d_edges = np.histogram(data_onz.mctperp, weights=data_onz.weight, bins=bins, range=histrange, normed=True)
 
-            err = abs(mc_hist[:10]-d_hist[:10])
+            err = abs(mc_hist[:11]-d_hist[:11])
 
             # make a TH1 out of it
             rhist = R.TH1D("z_syst", "z_syst", bins, histrange[0], histrange[1])
@@ -85,7 +94,6 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
                 rhist.SetBinContent(i+1, val)
 
             templates['z_syst'] = rhist
-
 
         n_1tag = sum(mc[smc['1tag_ctrl_'+ch] & (mc.mctperp>5.)].weight)
         n_2tag = sum(mc[smc['2tag_ctrl_'+ch] & (mc.mctperp>5.)].weight)
@@ -103,14 +111,22 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
     rfile.Close()
 
-def create_data_file(filename="data.root", bins=19, histrange=(10,200)):
+def create_data_file(filename="data.root", bins=19, histrange=(10,200), bootstrap_num=0):
 
     rfile = R.TFile(filename, "RECREATE")
     rfile.cd()
 
+    bs_label = ""
     for ch in channels:
-        d = data[sd['sig_'+ch]]
-        template = rootutils.create_TH1(d.mctperp, d.weight, "data_"+ch, bins, histrange)
+        if bootstrap_num == 0:
+            d = data[sd['sig_'+ch]]
+        else:
+            rand = np.random.mtrand.RandomState(bootstrap_num*100000+333)
+            d = data[sd['sig_'+ch]]
+            data_size = len(d.index)
+            d = d.ix[d.index[rand.choice(data_size, size=data_size, replace=True)]]
+            bs_label = "bs_{0}_".format(bootstrap_num)
+        template = rootutils.create_TH1(d.mctperp, d.weight, "data_"+bs_label+ch, bins, histrange)
         template.Write()
 
     rfile.Close()
@@ -123,14 +139,16 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
     mumu_high_eta_sms = sel_sms['opposite_sign_mumu'] & (abs(sms.eta2) > 1.)
     mumu_low_eta_sms = sel_sms['opposite_sign_mumu'] & (abs(sms.eta2) < 1.)
 
-    sms.weight *= (sel_sms['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta_sms.astype(float)*mumu_high_eta_trigger_eff
+    weight = (sel_sms['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta_sms.astype(float)*mumu_high_eta_trigger_eff
                   +mumu_low_eta_sms.astype(float)*mumu_low_eta_trigger_eff + sel_sms['opposite_sign_emu'].astype(float)*emu_trigger_eff)
+    weight.name="weight"
+    sms = sms.join(weight)
 
     # check to see if the file exists, since ROOT will happily continue along with a non-existent file
     if not os.path.exists(hist_filename):
         raise IOError(hist_filename+" does not exist.")
     nevents_file = R.TFile(hist_filename)
-    nevents_hist = nevents_file.Get("hist/NEvents_histo")
+    nevents_hist = nevents_file.Get("ScanValidator/NEvents_histo")
 
     xsec_dict = load_xsec(xsec_filename)
 
@@ -195,8 +213,6 @@ if __name__ == '__main__':
     args = docopt(__doc__)
 
     print(args)
-
-    from config.data import *
 
     bins = int(args['--bins'])
     histrange = (float(args['--low']), float(args['--high']))

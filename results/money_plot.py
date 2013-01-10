@@ -21,6 +21,7 @@ import sys
 sys.path.append("import/")
 sys.path.append("../import/")
 from config.data import *
+from config.parameters import bkg_colors
 from CMSPyLibs.plot import *
 
 bins=29
@@ -43,6 +44,7 @@ def make_money_plot():
         bkgtpl = []
         bkgwtpl = []
         bkgltpl = []
+        bkgctpl = []
 
         bkgtpl.append( data[sd['top_ctrl_'+ch]].mctperp )
         data_norm = data[sd['top_mct_low_'+ch]].mctperp.count()
@@ -50,29 +52,25 @@ def make_money_plot():
         sf = est_events/data_norm
         bkgwtpl.append( sf*np.ones(data[sd['top_ctrl_'+ch]].mctperp.count()) )
         bkgltpl.append("Top")
+        bkgctpl.append(bkg_colors['top'])
 
-        bkgtpl.append( mc[smc['sig_'+ch]&(mc.mctype.isin(['WWW','WWG','WWTo2L2Nu']))].mctperp )
-        allvv_norm = sum(mc[smc['sig_mct_low_'+ch]&((mc.mc_cat=='WV') | (mc.mc_cat=='ZZ'))].weight)
+        bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="WW")].mctperp )
+        allvv_norm = sum(mc[smc['sig_mct_low_'+ch]&((mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=="WV"))].weight)
         est_events = float(results[ch]['vv'][0])
         sf = est_events/allvv_norm
-        bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mctype.isin(['WWW','WWG','WWTo2L2Nu']))].weight)
+        bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="WW")].weight)
         bkgltpl.append("WW")
+        bkgctpl.append(bkg_colors['WW'])
 
-        bkgtpl.append( mc[smc['sig_'+ch]&(mc.mctype=='WZTo3LNu')].mctperp )
-        allvv_norm = sum(mc[smc['sig_mct_low_'+ch]&((mc.mc_cat=='WV') | (mc.mc_cat=='ZZ'))].weight)
-        est_events = float(results[ch]['vv'][0])
-        sf = est_events/allvv_norm
-        bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mctype=='WZTo3LNu')].weight)
+        bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="WZ")].mctperp )
+        bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="WZ")].weight)
         bkgltpl.append("WZ")
-        print "WZ Pred: ", sf*sum(mc[smc['sig_mct_high_'+ch]&(mc.mctype=='WZTo3LNu')].weight)
+        bkgctpl.append(bkg_colors['WZ'])
 
-        bkgtpl.append( mc[smc['sig_'+ch]&(mc.mctype=='ZZTo2L2Nu')].mctperp )
-        allvv_norm = sum(mc[smc['sig_mct_low_'+ch]&((mc.mc_cat=='WV') | (mc.mc_cat=='ZZ'))].weight)
-        est_events = float(results[ch]['vv'][0])
-        sf = est_events/allvv_norm
-        bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mctype=='ZZTo2L2Nu')].weight)
+        bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="ZZ")].mctperp )
+        bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="ZZ")].weight)
         bkgltpl.append("ZZ")
-        print "ZZ Pred: ", sf*sum(mc[smc['sig_mct_high_'+ch]&(mc.mctype=='ZZTo2L2Nu')].weight)
+        bkgctpl.append(bkg_colors['ZZ'])
 
         bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="DY")].mctperp )
         data_norm = sum(mc[smc['sig_mct_low_'+ch]&(mc.mc_cat=="DY")].weight)
@@ -80,6 +78,7 @@ def make_money_plot():
         sf = est_events/data_norm
         bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="DY")].weight )
         bkgltpl.append("Z/$\gamma^*$")
+        bkgctpl.append(bkg_colors['Z'])
 
         bkgtpl.append( data[sd['wjets_ctrl_'+ch]].mctperp )
         data_norm = data[sd['wjets_mct_low_'+ch]].mctperp.count()
@@ -87,14 +86,16 @@ def make_money_plot():
         sf = est_events/data_norm
         bkgwtpl.append( sf*np.ones(data[sd['wjets_ctrl_'+ch]].mctperp.count()) )
         bkgltpl.append("Non-prompt")
+        bkgctpl.append(bkg_colors['wjets'])
 
         f = figure(figsize=(6,6))
         f.set_facecolor('w')
         fig = subplot2grid((4,1),(0,0), rowspan=3)
         fig.set_yscale('log', nonposy='clip')
-        fig.set_ylim(0.001, 1000)
+        fig.set_ylim(0.01, 2000)
         fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
-        h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, zorder=1, linewidth=0.5)
+        h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl,
+                 zorder=1, linewidth=0.5, color=bkgctpl)
         he = hist_errorbars( data[sd['sig_'+ch]].mctperp, xerrs=False, bins=bins, range=plotrange)
         he.set_label("Data")
 
@@ -103,7 +104,7 @@ def make_money_plot():
         handles.insert(0,handles.pop())
         labels.insert(0,labels.pop())
 
-        legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=2)
+        legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
         fig.set_axisbelow(False)
 
         minorticks = MultipleLocator(10)
@@ -119,12 +120,12 @@ def make_money_plot():
         fig2 = subplot2grid((4,1),(3,0))
         hist_ratio(data[sd['sig_'+ch]].mctperp, all_bkg, all_bkg_w, bins=bins, range=plotrange)
         axhline(1, color="k")
-        fig2.set_ylim(0.5,1.5)
+        fig2.set_ylim(0.0,2.0)
         fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')
 
         xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
 
-        figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=9.2\;\text{fb}^{-1}$", color='k',
+        figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=18.1\;\text{fb}^{-1}$", color='k',
                  fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
 
         savefig("plots/money"+ch+".pdf")

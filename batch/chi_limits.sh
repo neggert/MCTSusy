@@ -1,4 +1,4 @@
-#PBS -t 0-130
+#PBS -t 0-520
 
 #!/bin/sh
 
@@ -9,4 +9,4 @@ cd /home/uscms33/MCTSusy/
 
 echo $PBS_ARRAYID
 
-./set_limits.py batch sig_chi.root chi_masses.json $PBS_ARRAYID limits/results/chi_$PBS_ARRAYID.dat
+./set_limits.py batch sig_chi.root chi_masses.json $PBS_ARRAYID limits/results/chi_$PBS_ARRAYID.dat -a

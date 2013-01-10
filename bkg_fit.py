@@ -21,11 +21,11 @@ import json
 
 bkgs = ['top', 'vv', 'wjets', 'z']
 
-def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
+def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data", data_file_name="data.root"):
     prefix = "limits/"+sig_file[:-5]+"_{}_{}".format(mass1, mass2)
 
     try:
-        create_histfactory(sig_file, prefix, mass1, mass2, chans)
+        create_histfactory(sig_file, prefix, mass1, mass2, chans, data_prefix=data_prefix, data_file_name=data_file_name)
     except:
         return None
 
@@ -49,7 +49,7 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
                        pars.find("n_sf_top"), pars.find("n_sf_vv"), pars.find("n_sf_z"), pars.find("n_sf_wjets"))
 
     # run the fit
-    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.NumCPU(8), R.RooFit.Minos(err_pars))
+    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.NumCPU(8))
 
     fitPars = res.floatParsFinal()
 
@@ -108,6 +108,8 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
     #     raw_input("...")
 
     # print "Test statistic on data: {:.7f}".format(ts)
+
+    return fitresults
 
 
 

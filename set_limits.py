@@ -20,7 +20,7 @@ import ROOT as R
 import json
 from collections import defaultdict
 
-def create_histfactory(signal_file, prefix, m1, m2, channels):
+def create_histfactory(signal_file, prefix, m1, m2, channels, data_file_name="data.root", data_prefix="data"):
     meas = R.RooStats.HistFactory.Measurement("meas", "meas")
 
     meas.SetOutputFilePrefix(prefix)
@@ -39,7 +39,7 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
 
     for ch in channels:
         channel_confs[ch] = R.RooStats.HistFactory.Channel(ch)
-        channel_confs[ch].SetData("data_"+ch, "data.root")
+        channel_confs[ch].SetData(data_prefix+"_"+ch, data_file_name)
         channel_confs[ch].SetStatErrorConfig(0.1, "Poisson")
 
         # signal sample

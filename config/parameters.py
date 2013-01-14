@@ -1,4 +1,4 @@
-lumi = 18065 # in pbinv
+lumi = 19490. # in pbinv, MUST BE A FLOAT
 
 ee_trigger_eff = 0.95
 mumu_high_eta_trigger_eff = 0.83

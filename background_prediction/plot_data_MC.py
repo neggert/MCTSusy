@@ -84,7 +84,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
 
     xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
 
-    figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=18.1\;\text{fb}^{-1}$", color='k',
+    figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=19.5\;\text{fb}^{-1}$", color='k',
              fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
 
     return fig, fig2
@@ -138,36 +138,76 @@ def make_data_mc_plots():
     xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
     savefig("plots/data_mc_3l.pdf")
 
+    f = plot_mc("sig", 'mctperp', 29, (10,300))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(0.01, 10000)
+    f.set_xlim(10, 300)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/mc_only.pdf")
+
+    f = plot_mc("sig_of", 'mctperp', 29, (10,300))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(0.01, 5000)
+    f.set_xlim(10, 300)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/mc_only_of.pdf")
+
+    f = plot_mc("sig_sf", 'mctperp', 29, (10,300))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(0.01, 5000)
+    f.set_xlim(10, 300)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/mc_only_sf.pdf")
+
 def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     selected = mc[smc[selection_name]]
 
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WV', 'ZZ', 'DY', 'fake']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'DY', 'wjets']
 
     bkgtpl = []
     bkgwtpl = []
     bkgltpl = []
+    bkgctpl = []
 
     for name in group_order:
-        if selected[(selected.mc_cat==name) & (selected.mctperp > plotrange[0])&(selected.mctperp < plotrange[1])].mctperp.count() > 0:
+        if selected[(selected.mc_cat==name) & (selected[variable] > plotrange[0])&(selected[variable] < plotrange[1])][variable].count() > 0:
             bkgtpl.append( selected[selected.mc_cat==name][variable])
             bkgwtpl.append( selected[selected.mc_cat==name].weight)
-            bkgltpl.append(name)
+            bkgltpl.append(bkg_labels[name])
+            bkgctpl.append(bkg_colors[name])
 
     if len(bkgtpl) == 0:
         raise RuntimeError('No Events')
 
-    figure()
+    f = figure(figsize=(6,6))
+    f.set_facecolor('w')
     fig = subplot(111)
-    h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl)
+    fig.set_yscale('log', nonposy='clip')
+    fig.set_ylim(0.01, 10000)
+    fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
+
+    h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, color=bkgctpl, linewidth=0.5)
+    print sum([sum(weights) for weights in bkgwtpl])
+
+    handles, labels = fig.get_legend_handles_labels()
+
+    legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
     fig.set_axisbelow(False)
 
-    legend()
+    minorticks = MultipleLocator(10)
+    fig.xaxis.set_minor_locator(minorticks)
+
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
+
+    figtext(0.12, 0.92, r"CMS Simulation $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=19.5\;\text{fb}^{-1}$", color='k',
+             fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
 
     return fig
 
 if __name__ == '__main__':
     make_data_mc_plots()
+
 
 

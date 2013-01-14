@@ -125,7 +125,7 @@ def make_money_plot():
 
         xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
 
-        figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=18.1\;\text{fb}^{-1}$", color='k',
+        figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=19.5\;\text{fb}^{-1}$", color='k',
                  fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
 
         savefig("plots/money"+ch+".pdf")

@@ -97,6 +97,9 @@ def asymptotic_limit(filename, coarse):
     # run the initial fit
     sbmodel.GetPdf().fitTo(data, R.RooFit.Constrain(constr))
 
+    poi_hat = sbmodel.GetParametersOfInterest().first().getVal()
+    poi_hat_err = sbmodel.GetParametersOfInterest().first().getError()
+
     sbmodel.SetSnapshot(sbmodel.GetParametersOfInterest())
     sbmodel.Print()
 
@@ -117,6 +120,7 @@ def asymptotic_limit(filename, coarse):
 
     if coarse:
         hypo.SetFixedScan(10, 0, 10)
+    hypo.SetFixedScan(20, poi_hat, poi_hat+4*poi_hat_err)
 
     res = hypo.GetInterval()
 
@@ -124,8 +128,6 @@ def asymptotic_limit(filename, coarse):
 
 def frequentist_limit(filename, ncpu, coarse):
     # First run the asymptotic limit to get a rough idea
-    a_exp = asymptotic_limit(filename, coarse).GetExpectedUpperLimit()
-
     rfile = R.TFile(filename)
 
     ws = rfile.Get("combined")
@@ -139,6 +141,9 @@ def frequentist_limit(filename, ncpu, coarse):
 
     # run the initial fit
     sbmodel.GetPdf().fitTo(data, R.RooFit.Constrain(constr))
+
+    poi_hat = sbmodel.GetParametersOfInterest().first().getVal()
+    poi_hat_err = sbmodel.GetParametersOfInterest().first().getError()
 
     sbmodel.SetSnapshot(sbmodel.GetParametersOfInterest())
 
@@ -160,7 +165,7 @@ def frequentist_limit(filename, ncpu, coarse):
     if coarse:
         hypo.SetFixedScan(10, 0, 10)
     else:
-        hypo.SetFixedScan(10, a_exp/10, a_exp*10, True)
+        hypo.SetFixedScan(20, poi_hat, poi_hat+4*poi_hat_err)
 
     toymc = calc.GetTestStatSampler()
 

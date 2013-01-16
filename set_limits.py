@@ -120,7 +120,7 @@ def asymptotic_limit(filename, coarse):
 
     if coarse:
         hypo.SetFixedScan(10, 0, 10)
-    hypo.SetFixedScan(20, poi_hat, poi_hat+4*poi_hat_err)
+    hypo.SetFixedScan(50, poi_hat, poi_hat+4*poi_hat_err, True)
 
     res = hypo.GetInterval()
 
@@ -165,7 +165,7 @@ def frequentist_limit(filename, ncpu, coarse):
     if coarse:
         hypo.SetFixedScan(10, 0, 10)
     else:
-        hypo.SetFixedScan(20, poi_hat, poi_hat+4*poi_hat_err)
+        hypo.SetFixedScan(50, poi_hat, poi_hat+4*poi_hat_err, True)
 
     toymc = calc.GetTestStatSampler()
 

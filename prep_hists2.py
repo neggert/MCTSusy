@@ -44,7 +44,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     rhist = R.TH1D("wjets_syst", "wjets_syst", bins, histrange[0], histrange[1])
     for i in xrange(bins):
         if templates['wjets'].GetBinContent(i+1) > 0: #only do non-zero bins
-            rhist.SetBinContent(i+1, 0.5) # 50% systematic
+            rhist.SetBinContent(i+1, 0.3) # 50% systematic
     templates['wjets_syst'] = rhist
 
     vv = mcvv[selvv['sig_sf']]

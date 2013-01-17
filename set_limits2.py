@@ -23,6 +23,9 @@ from set_limits import *
 def create_histfactory(signal_file, prefix, m1, m2, channels):
     backgrounds = ['of', 'vv', 'wjets', 'z']
 
+    m1 = int(m1)
+    m2 = int(m2)
+
     meas = R.RooStats.HistFactory.Measurement("meas", "meas")
 
     meas.SetOutputFilePrefix(prefix)
@@ -118,13 +121,14 @@ if __name__ == '__main__':
 
     res = run_limit(sig_file, m1, m2, chans, ncpu, asym, coarse)
 
-    exp, obs = res
+    exp, exp_down, exp_up, obs = res
 
     if not args['batch']:
         print "95% CL CLs upper limit"
-        print "Expected: {0:.2f}\tObserved: {1:.2f}".format(exp, obs)
+        print "Expected: {0:.2f} ({1:.2f}-{2:.2f})\tObserved: {3:.2f}".format(exp, exp_down, exp_up, obs)
     else:
         with open(args['<output_file>'], 'w') as f:
-            f.write("{0}\t{1}\t{2:.2f}\t{3:.2f}\n".format(m1, m2, exp, obs))
+            f.write("{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4:.2f}\t{5:.2f}\n".format(m1, m2, exp, exp_down, exp_up, obs))
+
 
 

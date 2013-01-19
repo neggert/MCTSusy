@@ -11,6 +11,8 @@
 #include "RooFitResult.h"
 #include "RooArgSet.h"
 #include "RooRealVar.h"
+#include "RooCategory.h"
+#include "RooSimultaneous.h"
 
 namespace RooStats {
     class AndersonDarlingTestStat : public TestStatistic {
@@ -22,15 +24,13 @@ namespace RooStats {
 
         ~AndersonDarlingTestStat() {}
 
-        Double_t Evaluate(RooAbsData& data, RooArgSet& params) {
-            return EvaluateADDistance(data, params);
-        }
+        Double_t Evaluate(RooAbsData& data, RooArgSet& params);
 
         const TString GetVarName() const { return TString("Anderson-Darling Statistic");}
 
         bool PValueIsRightTail(void) const { return true; }
 
-        Double_t EvaluateADDistance(RooAbsData& data, RooArgSet& params);
+        Double_t EvaluateADDistance(RooAbsPdf& pdf, RooAbsData& data, RooRealVar& observable);
 
       private:
         RooAbsPdf* fPdf;

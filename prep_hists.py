@@ -131,6 +131,54 @@ def create_data_file(filename="data.root", bins=19, histrange=(10,200), bootstra
 
     rfile.Close()
 
+def create_data_file_with_signal(sms_filename, xsec_filename, hist_filename, filename="data.root", bins=19, histrange=(10,200),
+                                 mass1=400, mass2=100, xsec_multiplier=1.):
+
+
+
+    sms_file = HDFStore(sms_filename)
+    sms = sms_file['data']
+    sel_sms = selection.get_samples(sms)
+    mumu_high_eta_sms = sel_sms['opposite_sign_mumu'] & (abs(sms.eta2) > 1.)
+    mumu_low_eta_sms = sel_sms['opposite_sign_mumu'] & (abs(sms.eta2) < 1.)
+
+    weight = (sel_sms['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta_sms.astype(float)*mumu_high_eta_trigger_eff
+                  +mumu_low_eta_sms.astype(float)*mumu_low_eta_trigger_eff + sel_sms['opposite_sign_emu'].astype(float)*emu_trigger_eff)
+    weight.name="weight"
+    sms = sms.join(weight)
+
+    sms_data = sms[(sms.mass1==mass1) & (sms.mass2==mass2)]
+    sel = selection.get_samples(sms_data)
+
+
+    # check to see if the file exists, since ROOT will happily continue along with a non-existent file
+    if not os.path.exists(hist_filename):
+        raise IOError(hist_filename+" does not exist.")
+    nevents_file = R.TFile(hist_filename)
+    nevents_hist = nevents_file.Get("ScanValidator/NEvents_histo")
+
+    xsec_dict = load_xsec(xsec_filename)
+
+    events_per_point = nevents_hist.GetBinContent(nevents_hist.FindBin(mass1, mass2))
+    xsec, xsec_err = xsec_dict[float(mass1)]
+
+    xsec *= xsec_multiplier
+
+    rfile = R.TFile(filename, "RECREATE")
+    rfile.cd()
+
+    for ch in channels:
+        d = data[sd['sig_'+ch]]
+        s = sms_data[sel['sig_'+ch]]
+        template = rootutils.create_TH1(d.mctperp, d.weight, "data_"+ch, bins, histrange)
+        sms_template = rootutils.create_TH1(s.mctperp, s.weight, "sms_"+ch, bins, histrange)
+        sms_template.Scale(xsec*lumi/events_per_point)
+        for i in xrange(int(sms_template.Integral())):
+            template.Fill(sms_template.GetRandom())
+        template.Write()
+
+    rfile.Close()
+
 def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, xsec_multiplier=1., bins=19, histrange=(10,200) ):
 
     sms_file = HDFStore(input_file)

@@ -49,7 +49,8 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data"
                        pars.find("n_sf_top"), pars.find("n_sf_vv"), pars.find("n_sf_z"), pars.find("n_sf_wjets"))
 
     # run the fit
-    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.NumCPU(8))
+    R.RooMsgService.instance().setGlobalKillBelow(R.RooFit.ERROR)
+    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save())
 
     fitPars = res.floatParsFinal()
 
@@ -69,45 +70,45 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data"
     # none of this works
     # Need to use a test statistic that doesn't require an alternative hypothesis
 
-    # model.SetSnapshot(model.GetParametersOfInterest())
+    model.SetSnapshot(model.GetParametersOfInterest())
 
-    # nll = R.RooStats.MinNLLTestStat(model.GetPdf())
-    # nll.SetOneSidedDiscovery()
+    R.gROOT.ProcessLineSync(".L KS/AndersonDarlingTestStat.cc+")
 
-    # # get the test statistic on data
-    # nll.SetPrintLevel(2)
-    # ts = nll.Evaluate(data, model.GetParametersOfInterest())
+    AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
 
-    # if get_p:
+    # get the test statistic on data
+    ts = AD.Evaluate(data, model.GetParametersOfInterest())
 
-    #     sampler = R.RooStats.ToyMCSampler(nll, 1000)
-    #     sampler.SetPdf(model.GetPdf())
-    #     sampler.SetObservables(model.GetObservables())
-    #     sampler.SetGlobalObservables(model.GetGlobalObservables())
-    #     sampler.SetParametersForTestStat(model.GetParametersOfInterest())
+    if get_p:
 
-    #     params = R.RooArgSet()
-    #     params.add(model.GetNuisanceParameters())
-    #     params.add(model.GetParametersOfInterest())
+        sampler = R.RooStats.ToyMCSampler(AD, 500)
+        sampler.SetPdf(model.GetPdf())
+        sampler.SetObservables(model.GetObservables())
+        sampler.SetGlobalObservables(model.GetGlobalObservables())
+        sampler.SetParametersForTestStat(model.GetParametersOfInterest())
 
-    #     if ncpu > 1:
-    #         pc = R.RooStats.ProofConfig(ws, ncpu, "")
-    #         sampler.SetProofConfig(pc)
+        params = R.RooArgSet()
+        params.add(model.GetNuisanceParameters())
+        params.add(model.GetParametersOfInterest())
 
-    #     sampDist = sampler.GetSamplingDistribution(params)
+        if ncpu > 1:
+            pc = R.RooStats.ProofConfig(ws, ncpu, "")
+            sampler.SetProofConfig(pc)
 
-    #     p = 1-sampDist.CDF(ts)
+        sampDist = sampler.GetSamplingDistribution(params)
 
-    #     print "P value:", p
-    #     print "Test statistic on data: {:.7f}".format(ts)
+        p = 1-sampDist.CDF(ts)
 
-    #     plot = R.RooStats.SamplingDistPlot()
-    #     plot.AddSamplingDistribution(sampDist)
+        print "P value:", p
+        print "Test statistic on data: {:.7f}".format(ts)
 
-    #     plot.Draw()
-    #     raw_input("...")
+        plot = R.RooStats.SamplingDistPlot()
+        plot.AddSamplingDistribution(sampDist)
 
-    # print "Test statistic on data: {:.7f}".format(ts)
+        plot.Draw()
+        raw_input("...")
+
+    print "Test statistic on data: {:.7f}".format(ts)
 
     return fitresults
 

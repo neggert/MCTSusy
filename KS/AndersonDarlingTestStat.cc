@@ -26,10 +26,27 @@ Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSe
     RooFit::MsgLevel msglevel = RooMsgService::instance().globalKillBelow();
     RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
 
+    // Set POI constant so the fit doesn't adjust them
+    // RooRealVar* param;
+    // TIterator *param_iter = params.createIterator();
+    // while (1) {
+    //     param = dynamic_cast<RooRealVar*>(param_iter->Next());
+    //     if (!param) break;
+    //     param->setConstant(kTRUE);
+    // }
+
     //First, find the best fit values
     RooArgSet* constraints = fPdf->getParameters(data);
     RooStats::RemoveConstantParameters(constraints);
     fPdf->fitTo(data, RooFit::Constrain(*constraints), RooFit::PrintLevel(-1), RooFit::Verbose(kFALSE));
+
+    // unet POI constant so the fit doesn't adjust them
+    // param_iter = params.createIterator();
+    // while (1) {
+    //     param = dynamic_cast<RooRealVar*>(param_iter->Next());
+    //     if (!param) break;
+    //     param->setConstant(kFALSE);
+    // }
 
     Double_t test_stat = 0;
 

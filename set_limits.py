@@ -4,7 +4,7 @@
 
 Usage:
     set_limits.py <signal_file> <mass1> <mass2> [-hac] [--ncpu=<c>] [--channels=<c1,c2>]
-    set_limits.py batch <signal_file> <mass_file> <jobnum> <output_file> [-ah] [--channels=<c1,c2>]
+    set_limits.py batch <signal_file> <mass_file> <jobnum> <output_file> [-ah] [--ncpu=<c>] [--channels=<c1,c2>]
 
 Options:
     -h --help        Show this screen.
@@ -19,6 +19,7 @@ backgrounds = ['top', 'vv', 'wjets', 'z']
 import ROOT as R
 import json
 from collections import defaultdict
+import sys
 
 def create_histfactory(signal_file, prefix, m1, m2, channels, data_file_name="data.root", data_prefix="data"):
     meas = R.RooStats.HistFactory.Measurement("meas", "meas")
@@ -223,6 +224,9 @@ if __name__ == '__main__':
     coarse = bool(args['--coarse'])
 
     ncpu = int(args['--ncpu'])
+
+    # reset sys.argv to placate ROOT
+    sys.argv = [sys.argv[0], '-b']
 
     res = run_limit(sig_file, m1, m2, chans, ncpu, asym, coarse)
 

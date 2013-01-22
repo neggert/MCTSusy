@@ -91,7 +91,7 @@ def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, coarse):
     else:
         res = frequentist_limit(prefix+"_combined_meas_model.root", ncpu, coarse)
 
-    return (res.GetExpectedUpperLimit(), res.UpperLimit())
+    return (res.GetExpectedUpperLimit(), res.GetExpectedUpperLimit(-1), res.GetExpectedUpperLimit(+1), res.UpperLimit())
 
 if __name__ == '__main__':
     from docopt import docopt

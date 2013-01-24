@@ -172,14 +172,28 @@ def frequentist_limit(filename, ncpu, coarse):
 
     prof_l = R.RooStats.ProfileLikelihoodTestStat(sbmodel.GetPdf())
     prof_l.SetOneSided(True)
+    prof_l.SetReuseNLL(True)
+    prof_l.SetStrategy(0)
 
     toymc.SetTestStatistic(prof_l)
     toymc.SetMaxToys(500) # needed because of https://savannah.cern.ch/bugs/?93360
+    toymc.SetGenerateBinned(True)
+    toymc.SetUseMultiGen(True)
 
     if ncpu > 1:
         pc = R.RooStats.ProofConfig(ws, ncpu, "workers="+str(ncpu))
         toymc.SetProofConfig(pc)
 
+    if not coarse:
+        a = R.Double(.05)
+        b = R.Double(.001)
+        c = R.Double(0)
+        d = R.Double(0)
+        import numpy
+        e = numpy.array(poi_hat+2.1*poi_hat_err)
+        hypo.RunLimit(a,b,c,d,e)
+    res = hypo.GetInterval()
+    hypo.GetUpperLimitDistribution(True, 100)
     res = hypo.GetInterval()
 
     return res

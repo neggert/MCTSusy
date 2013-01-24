@@ -60,50 +60,47 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
     f.close()
 
 
-    # none of this works
-    # Need to use a test statistic that doesn't require an alternative hypothesis
+    model.SetSnapshot(model.GetParametersOfInterest())
 
-    # model.GetParametersOfInterest().first().setConstant(False)
-    # model.GetParametersOfInterest().first().setVal(0.)
-    # model.SetSnapshot(model.GetParametersOfInterest())
+    R.gROOT.ProcessLineSync(".L KS/AndersonDarlingTestStat.cc+")
 
-    # prof_l = R.RooStats.ProfileLikelihoodTestStat(model.GetPdf())
-    # prof_l.SetOneSidedDiscovery()
+    AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
 
-    # # get the test statistic on data
-    # prof_l.SetPrintLevel(2)
-    # ts = prof_l.Evaluate(data, model.GetParametersOfInterest())
+    # get the test statistic on data
+    ts = AD.Evaluate(data, model.GetParametersOfInterest())
 
-    # if get_p:
+    if get_p:
 
-    #     sampler = R.RooStats.ToyMCSampler(prof_l, 1000)
-    #     sampler.SetPdf(model.GetPdf())
-    #     sampler.SetObservables(model.GetObservables())
-    #     sampler.SetGlobalObservables(model.GetGlobalObservables())
-    #     sampler.SetParametersForTestStat(model.GetParametersOfInterest())
+        sampler = R.RooStats.ToyMCSampler(AD, 500)
+        sampler.SetPdf(model.GetPdf())
+        sampler.SetObservables(model.GetObservables())
+        sampler.SetGlobalObservables(model.GetGlobalObservables())
+        sampler.SetParametersForTestStat(model.GetParametersOfInterest())
 
-    #     params = R.RooArgSet()
-    #     params.add(model.GetNuisanceParameters())
-    #     params.add(model.GetParametersOfInterest())
+        params = R.RooArgSet()
+        params.add(model.GetNuisanceParameters())
+        params.add(model.GetParametersOfInterest())
 
-    #     if ncpu > 1:
-    #         pc = R.RooStats.ProofConfig(ws, ncpu, "")
-    #         sampler.SetProofConfig(pc)
+        if ncpu > 1:
+            pc = R.RooStats.ProofConfig(ws, ncpu, "")
+            sampler.SetProofConfig(pc)
 
-    #     sampDist = sampler.GetSamplingDistribution(params)
+        sampDist = sampler.GetSamplingDistribution(params)
 
-    #     p = 1-sampDist.CDF(ts)
+        p = 1-sampDist.CDF(ts)
 
-    #     print "P value:", p
-    #     print "Test statistic on data: {:.7f}".format(ts)
+        print "P value:", p
+        print "Test statistic on data: {:.7f}".format(ts)
 
-    #     plot = R.RooStats.SamplingDistPlot()
-    #     plot.AddSamplingDistribution(sampDist)
+        plot = R.RooStats.SamplingDistPlot()
+        plot.AddSamplingDistribution(sampDist)
 
-    #     plot.Draw()
-    #     raw_input("...")
+        plot.Draw()
+        raw_input("...")
 
-    # print "Test statistic on data: {:.7f}".format(ts)
+    print "Test statistic on data: {:.7f}".format(ts)
+
+    return fitresults
 
 
 

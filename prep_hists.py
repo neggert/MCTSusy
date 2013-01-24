@@ -86,7 +86,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
             mc_hist, mc_edges = np.histogram(mc_onz.mctperp, weights=mc_onz.weight, bins=bins, range=histrange, normed=True)
             d_hist, d_edges = np.histogram(data_onz.mctperp, weights=data_onz.weight, bins=bins, range=histrange, normed=True)
 
-            err = abs(mc_hist[:11]-d_hist[:11])
+            err = abs(mc_hist[:11]-d_hist[:11])/d_hist[:11]
 
             # make a TH1 out of it
             rhist = R.TH1D("z_syst", "z_syst", bins, histrange[0], histrange[1])

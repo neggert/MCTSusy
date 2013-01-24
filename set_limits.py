@@ -177,7 +177,7 @@ def frequentist_limit(filename, ncpu, coarse):
     toymc.SetMaxToys(500) # needed because of https://savannah.cern.ch/bugs/?93360
 
     if ncpu > 1:
-        pc = R.RooStats.ProofConfig(ws, ncpu, "")
+        pc = R.RooStats.ProofConfig(ws, ncpu, "workers="+str(ncpu))
         toymc.SetProofConfig(pc)
 
     res = hypo.GetInterval()

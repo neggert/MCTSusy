@@ -1,8 +1,8 @@
 #! /bin/sh
-#BSUB -J "neggertArray[1-521]"
+#BSUB -J "chi_limits[1-521]"
 #BSUB -n 8
 #BSUB -R "span[hosts=1]"
-#BSUB -q 1nw
+#BSUB -q 2nw
 
 echo $LSB_JOBINDEX
 

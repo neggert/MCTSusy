@@ -166,7 +166,7 @@ def frequentist_limit(filename, ncpu, coarse):
     if coarse:
         hypo.SetFixedScan(10, 0, 10)
     else:
-        hypo.SetFixedScan(50, poi_hat, poi_hat+4*poi_hat_err, True)
+        hypo.SetFixedScan(20, poi_hat, poi_hat+4*poi_hat_err, False)
 
     toymc = calc.GetTestStatSampler()
 

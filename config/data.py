@@ -47,3 +47,7 @@ mumu_low_eta_slep = sel_slep['opposite_sign_mumu'] & (abs(slep.eta2) < 1.)
 
 # slep.weight *= (sel_slep['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta_slep.astype(float)*mumu_high_eta_trigger_eff
               # +mumu_low_eta_slep.astype(float)*mumu_low_eta_trigger_eff + sel_slep['opposite_sign_emu'].astype(float)*emu_trigger_eff)
+
+stchiww = HDFStore("work/sms/sms_tchiww.hdf5")
+tchiww = stchiww['data']
+sel_tchiww = selection.get_samples(tchiww)

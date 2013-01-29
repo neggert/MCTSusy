@@ -18,6 +18,10 @@ Options:
 from set_limits import *
 from collections import defaultdict
 import json
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+from matplotlib.ticker import IndexLocator, FixedFormatter
+import numpy as np
 
 bkgs = ['top', 'vv', 'wjets', 'z']
 
@@ -66,9 +70,44 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data"
 
     f.close()
 
+    # plot the relevant portion of the correlation matrix
+    cor = res.correlationMatrix()
+    cor = cor.GetSub(97, 104, 97, 104)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.patch.set_facecolor('gray')
+    ax.set_aspect('equal', 'box')
+    labels = FixedFormatter(['',
+                            'OF Top',
+                             'OF Diboson',
+                             'OF Z',
+                             'OF WJets',
+                             'SF Top',
+                             'SF Diboson',
+                             'SF Z',
+                             'SF WJets'])
+    ax.xaxis.set_major_formatter(labels)
+    ax.xaxis.tick_top()
+    ax.yaxis.set_major_formatter(labels)
+    for t in ax.get_xticklabels():
+        t.set_rotation(40)
+        t.set_ha('left')
 
-    # none of this works
-    # Need to use a test statistic that doesn't require an alternative hypothesis
+
+    for i in xrange(cor.GetNrows()):
+        for j in xrange(cor.GetNcols()):
+            c = cor[i][j]
+            if c > 0: color='white'
+            else: color='black'
+            size = np.sqrt(np.abs(c))
+            rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black')
+            ax.add_patch(rect)
+    ax.autoscale_view()
+    plt.gca().invert_yaxis()
+    plt.tight_layout()
+
+    plt.savefig("plots/correlation.pdf")
+    raw_input("...")
 
     model.SetSnapshot(model.GetParametersOfInterest())
 

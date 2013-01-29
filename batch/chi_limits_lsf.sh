@@ -1,5 +1,5 @@
 #! /bin/sh
-#BSUB -J "chi_limits[1-521]"
+#BSUB -J "chi_limits[1-10]"
 #BSUB -n 8
 #BSUB -R "span[hosts=1]"
 #BSUB -q 2nw

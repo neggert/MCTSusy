@@ -166,7 +166,7 @@ def frequentist_limit(filename, ncpu, coarse):
     if coarse:
         hypo.SetFixedScan(10, 0, 10)
     else:
-        hypo.SetFixedScan(20, poi_hat, poi_hat+4*poi_hat_err, False)
+        hypo.SetFixedScan(20, poi_hat+1*poi_hat_err, poi_hat+4*poi_hat_err, False)
 
     toymc = calc.GetTestStatSampler()
 
@@ -176,7 +176,7 @@ def frequentist_limit(filename, ncpu, coarse):
     prof_l.SetStrategy(0)
 
     toymc.SetTestStatistic(prof_l)
-    toymc.SetMaxToys(500) # needed because of https://savannah.cern.ch/bugs/?93360
+    toymc.SetMaxToys(200) # needed because of https://savannah.cern.ch/bugs/?93360
     toymc.SetGenerateBinned(True)
     toymc.SetUseMultiGen(True)
 
@@ -184,16 +184,14 @@ def frequentist_limit(filename, ncpu, coarse):
         pc = R.RooStats.ProofConfig(ws, ncpu, "workers="+str(ncpu))
         toymc.SetProofConfig(pc)
 
-    if not coarse:
-        a = R.Double(.05)
-        b = R.Double(.001)
-        c = R.Double(0)
-        d = R.Double(0)
-        import numpy
-        e = numpy.array(poi_hat+2.1*poi_hat_err)
-        hypo.RunLimit(a,b,c,d,e)
-    res = hypo.GetInterval()
-    hypo.GetUpperLimitDistribution(True, 100)
+    # if not coarse:
+    #     a = R.Double(.05)
+    #     b = R.Double(.0001)
+    #     c = R.Double(0)
+    #     d = R.Double(0)
+    #     import numpy
+    #     e = numpy.array(poi_hat+2.1*poi_hat_err)
+    #     hypo.RunLimit(a,b,c,d,e)
     res = hypo.GetInterval()
 
     return res

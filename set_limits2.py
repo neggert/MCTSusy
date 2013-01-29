@@ -4,7 +4,7 @@
 
 Usage:
     set_limits2.py <signal_file> <mass1> <mass2> [-hac] [--ncpu=<c>] [--channels=<c1,c2>]
-    set_limits2.py batch <signal_file> <mass_file> <jobnum> <output_file> [-ah] [--channels=<c1,c2>]
+    set_limits2.py batch <signal_file> <mass_file> <jobnum> <output_file> [-ah] [--ncpu=<c>] [--channels=<c1,c2>]
 
 Options:
     -h --help        Show this screen.

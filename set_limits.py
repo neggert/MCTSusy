@@ -3,13 +3,13 @@
 """Set limits on the specified model
 
 Usage:
-    set_limits.py <signal_file> <mass1> <mass2> [-hac] [--ncpu=<c>] [--channels=<c1,c2>]
-    set_limits.py batch <signal_file> <mass_file> <jobnum> <output_file> [-ah] [--ncpu=<c>] [--channels=<c1,c2>]
+    set_limits.py <signal_file> <mass1> <mass2> [-hae] [--ncpu=<c>] [--channels=<c1,c2>]
+    set_limits.py batch <signal_file> <mass_file> <jobnum> <output_file> [-aeh] [--ncpu=<c>] [--channels=<c1,c2>]
 
 Options:
     -h --help        Show this screen.
     -a --asymptotic  Run asymptotic limits
-    -c --coarse      Run coarse scan
+    -e --expected    Get expected limits
     --ncpu=<c>       Number of CPUs to use [default: 1]
     --channels=<c1,c2> Channels to use [default: of,sf]
 
@@ -127,7 +127,7 @@ def asymptotic_limit(filename, coarse):
 
     return res
 
-def frequentist_limit(filename, ncpu, coarse):
+def frequentist_limit(filename, ncpu, expected):
     # First run the asymptotic limit to get a rough idea
     rfile = R.TFile(filename)
 
@@ -163,10 +163,8 @@ def frequentist_limit(filename, ncpu, coarse):
     hypo.UseCLs(True)
     hypo.SetVerbose(True)
 
-    if coarse:
-        hypo.SetFixedScan(10, 0, 10)
-    else:
-        hypo.SetFixedScan(20, poi_hat+1*poi_hat_err, poi_hat+4*poi_hat_err, False)
+
+    hypo.SetFixedScan(20, poi_hat, poi_hat+4*poi_hat_err, False)
 
     toymc = calc.GetTestStatSampler()
 
@@ -176,7 +174,7 @@ def frequentist_limit(filename, ncpu, coarse):
     prof_l.SetStrategy(0)
 
     toymc.SetTestStatistic(prof_l)
-    toymc.SetMaxToys(200) # needed because of https://savannah.cern.ch/bugs/?93360
+    toymc.SetMaxToys(400) # needed because of https://savannah.cern.ch/bugs/?93360
     toymc.SetGenerateBinned(True)
     toymc.SetUseMultiGen(True)
 
@@ -184,19 +182,19 @@ def frequentist_limit(filename, ncpu, coarse):
         pc = R.RooStats.ProofConfig(ws, ncpu, "workers="+str(ncpu))
         toymc.SetProofConfig(pc)
 
-    # if not coarse:
-    #     a = R.Double(.05)
-    #     b = R.Double(.0001)
-    #     c = R.Double(0)
-    #     d = R.Double(0)
-    #     import numpy
-    #     e = numpy.array(poi_hat+2.1*poi_hat_err)
-    #     hypo.RunLimit(a,b,c,d,e)
+    if not expected:
+        a = R.Double(.05)
+        b = R.Double(.0001)
+        c = R.Double(0)
+        d = R.Double(0)
+        import numpy
+        e = numpy.array(poi_hat+2.1*poi_hat_err)
+        hypo.RunLimit(a,b,c,d,e)
     res = hypo.GetInterval()
 
     return res
 
-def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, coarse):
+def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, expected):
     prefix = "limits/"+sig_file[:-5]+"_{0}_{1}".format(mass1, mass2)
 
     # try:
@@ -205,9 +203,9 @@ def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, coarse):
         # return None
 
     if asymptotic:
-        res = asymptotic_limit(prefix+"_combined_meas_model.root", coarse)
+        res = asymptotic_limit(prefix+"_combined_meas_model.root", expected)
     else:
-        res = frequentist_limit(prefix+"_combined_meas_model.root", ncpu, coarse)
+        res = frequentist_limit(prefix+"_combined_meas_model.root", ncpu, expected)
 
     return (res.GetExpectedUpperLimit(), res.GetExpectedUpperLimit(-1), res.GetExpectedUpperLimit(+1), res.UpperLimit())
 
@@ -233,14 +231,14 @@ if __name__ == '__main__':
 
     asym = bool(args['--asymptotic'])
 
-    coarse = bool(args['--coarse'])
+    expected = bool(args['--expected'])
 
     ncpu = int(args['--ncpu'])
 
     # reset sys.argv to placate ROOT
     sys.argv = [sys.argv[0], '-b']
 
-    res = run_limit(sig_file, m1, m2, chans, ncpu, asym, coarse)
+    res = run_limit(sig_file, m1, m2, chans, ncpu, asym, expected)
 
     exp, exp_down, exp_up, obs = res
 
@@ -249,6 +247,10 @@ if __name__ == '__main__':
         print "Expected: {0:.2f} ({1:.2f}-{2:.2f})\tObserved: {3:.2f}".format(exp, exp_down, exp_up, obs)
     else:
         with open(args['<output_file>'], 'w') as f:
-            f.write("{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4:.2f}\t{5:.2f}\n".format(m1, m2, exp, exp_down, exp_up, obs))
+            if expected:
+                f.write("{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4:.2f}\n".format(m1, m2, exp, exp_down, exp_up))
+            else:
+                f.write("{0}\t{1}\t{2:.2f}\t{3:.2f}\n".format(m1, m2, obs))
+
 
 

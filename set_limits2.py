@@ -3,13 +3,13 @@
 """Set limits on the specified model
 
 Usage:
-    set_limits2.py <signal_file> <mass1> <mass2> [-hac] [--ncpu=<c>] [--channels=<c1,c2>]
-    set_limits2.py batch <signal_file> <mass_file> <jobnum> <output_file> [-ah] [--ncpu=<c>] [--channels=<c1,c2>]
+    set_limits2.py <signal_file> <mass1> <mass2> [-hae] [--ncpu=<c>] [--channels=<c1,c2>]
+    set_limits2.py batch <signal_file> <mass_file> <jobnum> <output_file> [-aeh] [--ncpu=<c>] [--channels=<c1,c2>]
 
 Options:
     -h --help        Show this screen.
     -a --asymptotic  Run asymptotic limits
-    -c --coarse      Run coarse scan
+    -e --expected      Run expected scan
     --ncpu=<c>       Number of CPUs to use [default: 1]
     --channels=<c1,c2> Channels to use [default: of,sf]
 
@@ -78,7 +78,7 @@ def create_histfactory(signal_file, prefix, m1, m2, channels):
 
     R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
 
-def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, coarse):
+def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, expected):
     prefix = "limits/"+sig_file[:-5]+"_{0}_{1}_2".format(mass1, mass2)
 
     try:
@@ -87,9 +87,9 @@ def run_limit(sig_file, mass1, mass2, chans, ncpu, asymptotic, coarse):
         return None
 
     if asymptotic:
-        res = asymptotic_limit(prefix+"_combined_meas_model.root", coarse)
+        res = asymptotic_limit(prefix+"_combined_meas_model.root", expected)
     else:
-        res = frequentist_limit(prefix+"_combined_meas_model.root", ncpu, coarse)
+        res = frequentist_limit(prefix+"_combined_meas_model.root", ncpu, expected)
 
     return (res.GetExpectedUpperLimit(), res.GetExpectedUpperLimit(-1), res.GetExpectedUpperLimit(+1), res.UpperLimit())
 
@@ -115,11 +115,14 @@ if __name__ == '__main__':
 
     asym = bool(args['--asymptotic'])
 
-    coarse = bool(args['--coarse'])
+    expected = bool(args['--expected'])
 
     ncpu = int(args['--ncpu'])
 
-    res = run_limit(sig_file, m1, m2, chans, ncpu, asym, coarse)
+    # reset sys.argv to placate ROOT
+    sys.argv = [sys.argv[0], '-b']
+
+    res = run_limit(sig_file, m1, m2, chans, ncpu, asym, expected)
 
     exp, exp_down, exp_up, obs = res
 
@@ -128,7 +131,10 @@ if __name__ == '__main__':
         print "Expected: {0:.2f} ({1:.2f}-{2:.2f})\tObserved: {3:.2f}".format(exp, exp_down, exp_up, obs)
     else:
         with open(args['<output_file>'], 'w') as f:
-            f.write("{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4:.2f}\t{5:.2f}\n".format(m1, m2, exp, exp_down, exp_up, obs))
+            if expected:
+                f.write("{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4:.2f}\n".format(m1, m2, exp, exp_down, exp_up))
+            else:
+                f.write("{0}\t{1}\t{2:.2f}\t{3:.2f}\n".format(m1, m2, obs))
 
 
 

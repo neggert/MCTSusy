@@ -116,6 +116,27 @@ def make_data_mc_plots():
     xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
     savefig("plots/data_mc_z.pdf")
 
+    f,f2 = compare_data_mc('z_ctrl_0met', 'mctperp', 29, (10,300))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(0.01, 1000000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_0met.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_0met', 'metPt', 30, (0,300))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(.1, 100000)
+    f2.set_ylim(0, 2)
+    xlabel("MET (GeV)")
+    savefig("plots/data_mc_z_metdist.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_30met', 'mctperp', 29, (10,300))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(0.01, 1000000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_30met.pdf")
+
     f,f2 = compare_data_mc('z_ctrl_sf', 'mctperp', 9, (10,100))
     f.set_yscale('log', nonposy='clip')
     f.set_ylim(1, 10000)

@@ -43,7 +43,12 @@ expected_p1_hist = R.TH2D("hExpP1LimitSmooth", "hExpP1LimitSmooth", nbins_x, m1_
 for d in data:
     m1, m2, exp, exp_m1, exp_p1, obs = d
 
-    xsec_hist.SetBinContent(xsec_hist.FindBin(m1, m2), xsecs[float(m1)][0])
+    if obs >= 100 or exp_p1 >= 100 or exp >= 100:
+        continue
+    if m1-m2 <= 50:
+	continue
+
+    xsec_hist.SetBinContent(xsec_hist.FindBin(m1, m2), xsecs[float(m1)][0]*2)
     observed_hist.SetBinContent(observed_hist.FindBin(m1,m2), obs)
     observed_hist_smooth.SetBinContent(observed_hist_smooth.FindBin(m1,m2), obs)
     expected_hist.SetBinContent(expected_hist.FindBin(m1,m2), exp)

@@ -179,9 +179,9 @@ def create_data_file_with_signal(sms_filename, xsec_filename, hist_filename, fil
 
     rfile.Close()
 
-def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, xsec_multiplier=1., bins=19, histrange=(10,200) ):
+def create_combined_file(sms_file, out_filename, nevents_filename, xsec_filename, xsec_multiplier=1., bins=19, histrange=(10,200) ):
 
-    sms_file = HDFStore(input_file)
+    sms_file = HDFStore(sms_file)
     sms = sms_file['data']
     sel_sms = selection.get_samples(sms)
     mumu_high_eta_sms = sel_sms['opposite_sign_mumu'] & (abs(sms.eta2) > 1.)
@@ -192,15 +192,21 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
     weight.name="weight"
     sms = sms.join(weight)
 
+    mcvv = mc[(mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=='WZ')]
+    mcz = mc[mc.mc_cat=='DY']
+    selvv = selection.get_samples( mcvv, 100.)
+    selz = selection.get_samples( mcz, 100.)
+
     # check to see if the file exists, since ROOT will happily continue along with a non-existent file
-    if not os.path.exists(hist_filename):
-        raise IOError(hist_filename+" does not exist.")
-    nevents_file = R.TFile(hist_filename)
+    if not os.path.exists(nevents_filename):
+        raise IOError(nevents_filename+" does not exist.")
+    nevents_file = R.TFile(nevents_filename)
     nevents_hist = nevents_file.Get("ScanValidator/NEvents_histo")
 
     xsec_dict = load_xsec(xsec_filename)
 
     rfile = R.TFile(out_filename, "RECREATE")
+    rfile.cd()
 
     templates = {}
     jes_up_templates = {}
@@ -208,9 +214,12 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
     # create a different template for each mass point
     # templates are scaled to number of exected events given the reference cross-section
     groups = sms.groupby(['mass1', 'mass2'])
-    for name, data in groups:
+    for name, sms_data in groups:
+        dir_name = "_".join(map(str, map(int, name)))
+        rfile.mkdir(dir_name, dir_name)
+        rfile.cd(dir_name)
         m1, m2 = name
-        sel = selection.get_samples(data)
+        sel = selection.get_samples(sms_data)
 
         events_per_point = nevents_hist.GetBinContent(nevents_hist.FindBin(m1, m2))
         try:
@@ -221,38 +230,78 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
         xsec *= xsec_multiplier
 
         for ch in channels:
-            mass_point = data[sel['sig_'+ch]]
-            mass_point_jes_up = data[sel['sig_scaleup_'+ch]]
-            mass_point_jes_down = data[sel['sig_scaledown_'+ch]]
+            rfile.cd(dir_name)
+            rfile.mkdir("/".join([dir_name,ch]))
+            rfile.cd("/".join([dir_name,ch]))
+            # signal templates
+            mass_point = sms_data[sel['sig_'+ch]]
+            mass_point_jes_up = sms_data[sel['sig_scaleup_'+ch]]
+            mass_point_jes_down = sms_data[sel['sig_scaledown_'+ch]]
 
             if mass_point[(mass_point.mctperp > histrange[0]) & (mass_point.mctperp < histrange[1])].mctperp.count() == 0: continue
 
             h = rootutils.create_TH1(mass_point.mctperp, mass_point.weight,
-                                                                         "sms_template_{}_{}_{}".format(ch, int(m1), int(m2)),
+                                                                         "sms_template",
                                                                           bins, histrange, False)
             hup = rootutils.create_TH1(mass_point_jes_up.mctperp_up, mass_point_jes_up.weight,
-                                                                         "sms_template_jes_up_{}_{}_{}".format(ch, int(m1), int(m2)),
+                                                                         "sms_template_jesUp",
                                                                           bins, histrange, False)
             hdown = rootutils.create_TH1(mass_point_jes_down.mctperp_down, mass_point_jes_down.weight,
-                                                                         "sms_template_jes_down_{}_{}_{}".format(ch, int(m1), int(m2)),
+                                                                         "sms_template_jesDown",
                                                                           bins, histrange, False)
             h.Scale(xsec*lumi/events_per_point)
             hup.Scale(xsec*lumi/events_per_point)
             hdown.Scale(xsec*lumi/events_per_point)
             tname = 'sms_{}_{}_{}'.format(ch, m1, m2)
-            templates[tname] = h
-            jes_up_templates[tname] = hup
-            jes_down_templates[tname] = hdown
+            h.Write()
+            hup.Write()
+            hdown.Write()
+
+            # background templates
+            top = data[sd['top_ctrl_'+ch]]
+            top_template  = rootutils.create_TH1(top.mctperp, top.weight, "top_template", bins, histrange, True)
+            top_template.Write()
+
+            wjets = data[sd['wjets_ctrl_'+ch]]
+            wjets_template = rootutils.create_TH1(wjets.mctperp, wjets.weight, "wjets_template", bins, histrange, True)
+            wjets_template.Write()
+            # systematic on w+jets template
+            rhist = R.TH1D("wjets_syst_"+ch, "wjets_syst", bins, histrange[0], histrange[1])
+            for i in xrange(bins):
+                if wjets_template.GetBinContent(i+1) > 0: #only do non-zero bins
+                    rhist.SetBinContent(i+1, 0.3) # 50% systematic
+            rhist.Write()
+
+            vv = mcvv[selvv['sig_'+ch]]
+            vv_template = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template", bins, histrange, True)
+            vv_template.Write()
+
+            z = mcz[selz['sig_'+ch]]
+            z_template = rootutils.create_TH1(z.mctperp, z.weight, "z_template", bins, histrange, True)
+            z_template.Write()
 
 
+            if ch == 'sf':
+                # systematic on Z monte carlo
+                mc_onz = mc[smc['z_ctrl_sf']]
+                data_onz = data[sd['z_ctrl_sf']]
 
+                mc_hist, mc_edges = np.histogram(mc_onz.mctperp, weights=mc_onz.weight, bins=bins, range=histrange, normed=True)
+                d_hist, d_edges = np.histogram(data_onz.mctperp, weights=data_onz.weight, bins=bins, range=histrange, normed=True)
 
+                err = abs(mc_hist[:11]-d_hist[:11])/d_hist[:11]
 
+                # make a TH1 out of it
+                rhist = R.TH1D("z_syst", "z_syst", bins, histrange[0], histrange[1])
+                for i, val in enumerate(err):
+                    rhist.SetBinContent(i+1, val)
 
-    for k in templates.keys():
-        templates[k].Write()
-        jes_down_templates[k].Write()
-        jes_up_templates[k].Write()
+                rhist.Write()
+
+            # data
+            d = data[sd['sig_'+ch]]
+            template = rootutils.create_TH1(d.mctperp, d.weight, "data_obs", bins, histrange)
+            template.Write()
 
     rfile.Close()
 
@@ -265,8 +314,6 @@ if __name__ == '__main__':
     bins = int(args['--bins'])
     histrange = (float(args['--low']), float(args['--high']))
 
-    create_data_file("data.root", bins, histrange)
-    create_template_file("templates.root", bins, histrange)
-    create_signal_file(args['<signal_file>'], args['<signal_output>'], args['<nevents_file>'], args['<xsec_file>'],
+    create_combined_file(args['<signal_file>'], args['<signal_output>'], args['<nevents_file>'], args['<xsec_file>'],
                        float(args['--xsec_multiplier']), bins, histrange)
 

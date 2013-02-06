@@ -205,19 +205,18 @@ def create_combined_file(sms_file, out_filename, nevents_filename, xsec_filename
 
     xsec_dict = load_xsec(xsec_filename)
 
-    rfile = R.TFile(out_filename, "RECREATE")
-    rfile.cd()
+    # rfile = R.TFile(out_filename, "RECREATE")
+    # rfile.cd()
 
-    templates = {}
-    jes_up_templates = {}
-    jes_down_templates = {}
     # create a different template for each mass point
     # templates are scaled to number of exected events given the reference cross-section
     groups = sms.groupby(['mass1', 'mass2'])
     for name, sms_data in groups:
         dir_name = "_".join(map(str, map(int, name)))
-        rfile.mkdir(dir_name, dir_name)
-        rfile.cd(dir_name)
+        ws = R.RooWorkspace(dir_name, dir_name)
+        ws.factory("x[{0},{1}]".format(*histrange));
+        obs = R.RooArgList(ws.var("x"))
+        obs_set = R.RooArgSet(ws.var("x"))
         m1, m2 = name
         sel = selection.get_samples(sms_data)
 
@@ -230,9 +229,6 @@ def create_combined_file(sms_file, out_filename, nevents_filename, xsec_filename
         xsec *= xsec_multiplier
 
         for ch in channels:
-            rfile.cd(dir_name)
-            rfile.mkdir("/".join([dir_name,ch]))
-            rfile.cd("/".join([dir_name,ch]))
             # signal templates
             mass_point = sms_data[sel['sig_'+ch]]
             mass_point_jes_up = sms_data[sel['sig_scaleup_'+ch]]
@@ -252,34 +248,65 @@ def create_combined_file(sms_file, out_filename, nevents_filename, xsec_filename
             h.Scale(xsec*lumi/events_per_point)
             hup.Scale(xsec*lumi/events_per_point)
             hdown.Scale(xsec*lumi/events_per_point)
-            tname = 'sms_{}_{}_{}'.format(ch, m1, m2)
-            h.Write()
-            hup.Write()
-            hdown.Write()
+            h_rdh = R.RooDataHist(ch+"_sms_template",ch+"_sms_template", obs, h, 1.0)
+            getattr(ws, "import")(h_rdh)
+            hup_rdh = R.RooDataHist(ch+"_sms_template_jesUp",ch+"_sms_template_jesUp", obs, hup)
+            getattr(ws, "import")(hup_rdh)
+            hdown_rdh = R.RooDataHist(ch+"_sms_template_jesDown",ch+"_sms_template_jesDown", obs, hdown)
+            getattr(ws, "import")(hdown_rdh)
+
 
             # background templates
             top = data[sd['top_ctrl_'+ch]]
             top_template  = rootutils.create_TH1(top.mctperp, top.weight, "top_template", bins, histrange, True)
-            top_template.Write()
+            top_rdh = R.RooDataHist(ch+"_top_template",ch+"_top_template", obs, top_template)
+            getattr(ws, "import")(top_rdh)
+            top_rhf = R.RooHistPdf(ch+"_top_template_func", ch+"_top_template_func", obs_set, ws.obj(ch+"_top_template"))
+            getattr(ws, "import")(top_rhf)
+            ws.factory(ch+"_top_template_pdf_norm[0,10000]")
+            top_pdf = R.RooExtendPdf(ch+"_top_template_pdf", ch+"_top_template_pdf", ws.obj(ch+"_top_template_func"),
+                                     ws.var(ch+"_top_template_pdf_norm"))
+            getattr(ws, "import")(top_pdf)
 
             wjets = data[sd['wjets_ctrl_'+ch]]
             wjets_template = rootutils.create_TH1(wjets.mctperp, wjets.weight, "wjets_template", bins, histrange, True)
-            wjets_template.Write()
+            wjets_rdh = R.RooDataHist(ch+"_wjets_template",ch+"_wjets_template", obs, wjets_template)
+            getattr(ws, "import")(wjets_rdh)
+            wjets_rhf = R.RooHistPdf(ch+"_wjets_template_func", ch+"_wjets_template_func", obs_set, ws.obj(ch+"_wjets_template"))
+            getattr(ws, "import")(wjets_rhf)
+            ws.factory(ch+"_wjets_template_pdf_norm[0,10000]")
+            wjets_pdf = R.RooExtendPdf(ch+"_wjets_template_pdf", ch+"_wjets_template_pdf", ws.obj(ch+"_wjets_template_func"),
+                                     ws.var(ch+"_wjets_template_pdf_norm"))
+            getattr(ws, "import")(wjets_pdf)
             # systematic on w+jets template
             rhist = R.TH1D("wjets_syst_"+ch, "wjets_syst", bins, histrange[0], histrange[1])
             for i in xrange(bins):
                 if wjets_template.GetBinContent(i+1) > 0: #only do non-zero bins
                     rhist.SetBinContent(i+1, 0.3) # 50% systematic
-            rhist.Write()
+            rhist_rdh = R.RooDataHist(ch+"_wjets_syst",ch+"_wjets_syst", obs, rhist)
+            getattr(ws,"import")(rhist_rdh)
 
             vv = mcvv[selvv['sig_'+ch]]
             vv_template = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template", bins, histrange, True)
-            vv_template.Write()
+            vv_rdh = R.RooDataHist(ch+"_vv_template",ch+"_vv_template", obs, vv_template)
+            getattr(ws, "import")(vv_rdh)
+            vv_rhf = R.RooHistPdf(ch+"_vv_template_func", ch+"_vv_template_func", obs_set, ws.obj(ch+"_vv_template"))
+            getattr(ws, "import")(vv_rhf)
+            ws.factory(ch+"_vv_template_pdf_norm[0,10000]")
+            vv_pdf = R.RooExtendPdf(ch+"_vv_template_pdf", ch+"_vv_template_pdf", ws.obj(ch+"_vv_template_func"),
+                                     ws.var(ch+"_vv_template_pdf_norm"))
+            getattr(ws, "import")(vv_pdf)
 
             z = mcz[selz['sig_'+ch]]
             z_template = rootutils.create_TH1(z.mctperp, z.weight, "z_template", bins, histrange, True)
-            z_template.Write()
-
+            z_rdh = R.RooDataHist(ch+"_z_template",ch+"_z_template", obs, z_template)
+            getattr(ws, "import")(z_rdh)
+            z_rhf = R.RooHistPdf(ch+"_z_template_func", ch+"_z_template_func", obs_set, ws.obj(ch+"_z_template"))
+            getattr(ws, "import")(z_rhf)
+            ws.factory(ch+"_z_template_pdf_norm[0,10000]")
+            z_pdf = R.RooExtendPdf(ch+"_z_template_pdf", ch+"_z_template_pdf", ws.obj(ch+"_z_template_func"),
+                                     ws.var(ch+"_z_template_pdf_norm"))
+            getattr(ws, "import")(z_pdf)
 
             if ch == 'sf':
                 # systematic on Z monte carlo
@@ -296,14 +323,16 @@ def create_combined_file(sms_file, out_filename, nevents_filename, xsec_filename
                 for i, val in enumerate(err):
                     rhist.SetBinContent(i+1, val)
 
-                rhist.Write()
-
+                rhist_rdh = R.RooDataHist(ch+"_z_syst",ch+"_z_syst", obs, rhist)
+                getattr(ws,"import")(rhist_rdh)
             # data
             d = data[sd['sig_'+ch]]
             template = rootutils.create_TH1(d.mctperp, d.weight, "data_obs", bins, histrange)
-            template.Write()
+            data_rdh = R.RooDataHist(ch+"_data_obs",ch+"_data_obs", obs, template)
+            getattr(ws, "import")(data_rdh)
 
-    rfile.Close()
+        ws.writeToFile(out_filename, False)
+        break
 
 if __name__ == '__main__':
     from docopt import docopt

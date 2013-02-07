@@ -1,0 +1,51 @@
+imax 2 # number of channels
+jmax 4 # number of backgrounds
+kmax * # number of nuisance parameters
+-------------------------------------
+shapes data_obs * ~/chi_templates_syst.root 100_0:of_data_obs
+shapes sms * ~/chi_templates_syst.root 100_0:$CHANNEL_$PROCESS_template 100_0:$CHANNEL_$PROCESS_template_$SYSTEMATIC
+shapes * * ~/chi_templates_syst.root 100_0:$CHANNEL_$PROCESS_template_pdf 100_0:$CHANNEL_$PROCESS_template_pdf_$SYSTEMATIC
+-------------------------
+# observation
+bin of sf
+observation -1 -1
+-----------------------------------
+# backgrounds
+bin     of  of      of  of  of      sf  sf  sf  sf  sf
+process sms top     vv  z   wjets   sms top vv  z   wjets
+process 0   1       2   3   4       0   1   2   3   4
+rate    -1   1      1   1   1       -1  1   1   1   1
+-----------------------------------
+# systematics
+lumi    lnN     1.04    -   -   -   -   1.04   -   -   -   -
+jes     shape   1       -   -   -   -   1      -   -   -   -
+
+closure_bin1_sf   shapeN   -   -   -   -   -   -   -   -   -   1
+closure_bin2_sf   shapeN   -   -   -   -   -   -   -   -   -   1
+closure_bin3_sf   shapeN   -   -   -   -   -   -   -   -   -   1
+closure_bin4_sf   shapeN   -   -   -   -   -   -   -   -   -   1
+closure_bin5_sf   shapeN   -   -   -   -   -   -   -   -   -   1
+closure_bin6_sf   shapeN   -   -   -   -   -   -   -   -   -   1
+closure_bin7_sf   shapeN   -   -   -   -   -   -   -   -   -   1
+closure_bin8_sf   shapeN   -   -   -   -   -   -   -   -   -   1
+closure_bin9_sf   shapeN   -   -   -   -   -   -   -   -   -   1
+closure_bin13_sf   shapeN   -   -   -   -   -   -   -   -   -  1
+closure_bin1_of    shapeN   -   -   -   -   1   -   -   -   -   -
+closure_bin2_of    shapeN   -   -   -   -   1   -   -   -   -   -
+closure_bin3_of    shapeN   -   -   -   -   1   -   -   -   -   -
+closure_bin4_of    shapeN   -   -   -   -   1   -   -   -   -   -
+closure_bin5_of    shapeN   -   -   -   -   1   -   -   -   -   -
+closure_bin6_of    shapeN   -   -   -   -   1   -   -   -   -   -
+closure_bin7_of    shapeN   -   -   -   -   1   -   -   -   -   -
+closure_bin8_of    shapeN   -   -   -   -   1   -   -   -   -   -
+
+of_top_template_pdf_norm flatParam
+of_vv_template_pdf_norm flatParam
+of_z_template_pdf_norm flatParam
+of_wjets_template_pdf_norm flatParam
+sf_top_template_pdf_norm flatParam
+sf_vv_template_pdf_norm flatParam
+sf_z_template_pdf_norm flatParam
+sf_wjets_template_pdf_norm flatParam
+
+

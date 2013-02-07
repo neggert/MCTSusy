@@ -12,14 +12,11 @@ Options:
 """
 import ROOT as R
 from collections import defaultdict
-backgrounds = ['top', 'vv', 'wjets', 'z']
 
+backgrounds = ['of', 'vv', 'wjets', 'z']
 
 def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_name="data.root", data_prefix="data"):
-    backgrounds = ['of', 'vv', 'wjets', 'z']
-
-    m1 = int(m1)
-    m2 = int(m2)
+    prefix = "limits/"+signal_file[:-5]+"_{0}_{1}".format(m1, m2)
 
     meas = R.RooStats.HistFactory.Measurement("meas", "meas")
 
@@ -28,12 +25,14 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
     # meas.AddConstantParam("n_of_top")
     # meas.AddConstantParam("n_sf_top")
 
+    temp_file = R.TFile("templates.root")
+
     meas.SetLumi(1.0)
     meas.SetLumiRelErr(0.04)
     meas.SetExportOnly(True)
 
-    channel_conf = None
-    samples = {}
+    channel_confs = {}
+    samples = defaultdict(dict)
 
     channel_conf = R.RooStats.HistFactory.Channel('sf')
     channel_conf.SetData("data_sf", "data.root")
@@ -66,9 +65,11 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
         samples[bkg] = template
         channel_conf.AddSample(samples[bkg])
 
-    meas.AddChannel(channel_conf)
+        meas.AddChannel(channel_conf)
 
     meas.CollectHistograms()
+
+    R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
 
 if __name__ == '__main__':
     from docopt import docopt

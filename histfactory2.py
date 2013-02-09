@@ -3,36 +3,29 @@
 """Create the model
 
 Usage:
-    histfactory.py <signal_file> <template_file> <mass_file> [-h] [--channels=<c1,c2>]
+    histfactory.py <signal_file> <template_file> <mass_file> [-h] 
 
 Options:
     -h --help        Show this screen.
-    --channels=<c1,c2> Channels to use [default: of,sf]
 
 """
 import ROOT as R
-from collections import defaultdict
 
 backgrounds = ['of', 'vv', 'wjets', 'z']
 
-def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_name="data.root", data_prefix="data"):
+def create_histfactory(template_file, signal_file, m1, m2, data_file_name="data.root", data_prefix="data"):
     prefix = "limits/"+signal_file[:-5]+"_{0}_{1}".format(m1, m2)
 
     meas = R.RooStats.HistFactory.Measurement("meas", "meas")
 
     meas.SetOutputFilePrefix(prefix)
     meas.SetPOI("sig_strength")
-    # meas.AddConstantParam("n_of_top")
-    # meas.AddConstantParam("n_sf_top")
-
-    temp_file = R.TFile("templates.root")
 
     meas.SetLumi(1.0)
     meas.SetLumiRelErr(0.04)
     meas.SetExportOnly(True)
 
-    channel_confs = {}
-    samples = defaultdict(dict)
+    samples = {}
 
     channel_conf = R.RooStats.HistFactory.Channel('sf')
     channel_conf.SetData("data_sf", "data.root")
@@ -52,20 +45,20 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
 
     # add the background samples
     for bkg in backgrounds:
-        template = R.RooStats.HistFactory.Sample("{0}".format(bkg), "{0}_template".format(bkg), "templates2.root")
+        template = R.RooStats.HistFactory.Sample("{0}".format(bkg), "{0}_template".format(bkg), template_file)
         template.SetNormalizeByTheory(False)
         template.ActivateStatError()
-        template.AddNormFactor("n_{0}".format(bkg), 2000, 0, 5000)
+        template.AddNormFactor("n_{0}".format(bkg), 2000, 0, 10000)
 
         if bkg == 'z':
-            template.AddShapeSys("z_syst", 0, "z_syst", "templates2.root")
+            template.AddShapeSys("z_syst", 0, "z_syst", template_file)
         if bkg == 'wjets':
-            template.AddShapeSys("wjets_syst", 0, "wjets_syst", "templates2.root")
+            template.AddShapeSys("wjets_syst", 0, "wjets_syst", template_file)
 
         samples[bkg] = template
         channel_conf.AddSample(samples[bkg])
 
-        meas.AddChannel(channel_conf)
+    meas.AddChannel(channel_conf)
 
     meas.CollectHistograms()
 
@@ -83,14 +76,9 @@ if __name__ == '__main__':
     with open(args['<mass_file>']) as f:
         masses = json.load(f)
 
-    try:
-        chans = args['--channels'].split(",")
-    except AttributeError:
-        chans = ['of', 'sf']
-
     for m1,m2 in masses:
         try:
-            create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), chans)
+            create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2))
         except:
             continue
 

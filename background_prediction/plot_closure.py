@@ -4,6 +4,8 @@ sys.path.append("import/")
 from CMSPyLibs.plot import *
 from config.data import *
 from config.parameters import bkg_colors
+from prettytable import PrettyTable
+import numpy as np
 
 
 from matplotlib import rc
@@ -73,6 +75,83 @@ def plot_top_closure(flavor):
              fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
 
     savefig("plots/closure_top_{}.pdf".format(flavor))
+
+def print_top_closure():
+    """Make closure plot for the top control sample"""
+
+    names = ['top', 'tW']
+
+    truth = {}
+    truth['top'] = mc[smc['sig_mct_low'] & (mc.mc_cat == 'top') &(mc.mctype!='tW')]
+    truth['tW'] = mc[smc['sig_mct_low'] & (mc.mctype=='tW')]
+    control = mc[smc['top_mct_low']]
+
+    cuts = np.arange(20, 220, 20)
+
+    data = np.zeros((len(cuts), len(names)))
+    errs = np.zeros(data.shape)
+    control_data = np.zeros(len(cuts))
+    control_errs = np.zeros(control_data.shape)
+
+    for i, cut in enumerate(cuts):
+        for j, name in enumerate(names):
+            data[i, j] = truth[name][truth[name].mctperp > cut].weight.sum()/truth[name].weight.sum()
+            errs[i,j ] = np.sqrt(sum(truth[name][truth[name].mctperp > cut].weight**2))/truth[name].weight.sum()
+        control_data[i] = control[control.mctperp > cut].weight.sum()/control.weight.sum()
+        control_errs[i] = np.sqrt(sum(control[control.mctperp > cut].weight**2))/control.weight.sum()
+
+    t = PrettyTable(["",]+map(str, cuts.tolist()))
+    for i in xrange(len(names)):
+        data_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], data[:,i])
+        err_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], errs[:,i])
+        combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+        combined.insert(0, names[i])
+        t.add_row(combined)
+    data_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], control_data)
+    err_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], control_errs)
+    combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+    combined.insert(0, "CR")
+    t.add_row(combined)
+
+    print t
+
+def print_fs_closure():
+    """Make closure plot for the top control sample"""
+
+    names = ['fs']
+
+    truth = {}
+    truth['fs'] = mc[smc['sig_mct_low_sf'] & ((mc.mc_cat=='top') | (mc.mc_cat=='WW') | (mc.mc_cat=="WZ"))]
+    control = mc[smc['sig_mct_low_of']]
+
+    cuts = np.arange(20, 260, 20)
+
+    data = np.zeros((len(cuts), len(names)))
+    errs = np.zeros(data.shape)
+    control_data = np.zeros(len(cuts))
+    control_errs = np.zeros(control_data.shape)
+
+    for i, cut in enumerate(cuts):
+        for j, name in enumerate(names):
+            data[i, j] = truth[name][truth[name].mctperp > cut].weight.sum()/truth[name].weight.sum()
+            errs[i,j ] = np.sqrt(sum(truth[name][truth[name].mctperp > cut].weight**2))/truth[name].weight.sum()
+        control_data[i] = control[control.mctperp > cut].weight.sum()/control.weight.sum()
+        control_errs[i] = np.sqrt(sum(control[control.mctperp > cut].weight**2))/control.weight.sum()
+
+    t = PrettyTable(["",]+map(str, cuts.tolist()))
+    for i in xrange(len(names)):
+        data_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], data[:,i])
+        err_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], errs[:,i])
+        combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+        combined.insert(0, names[i])
+        t.add_row(combined)
+    data_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], control_data)
+    err_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], control_errs)
+    combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+    combined.insert(0, "CR")
+    t.add_row(combined)
+
+    print t
 
 def plot_fake_closure():
     """Make closure plot for the fake lepton control sample"""

@@ -3,6 +3,7 @@ sys.path.append("import/")
 from CMSPyLibs.plot import *
 from config.data import *
 from config.parameters import bkg_colors, bkg_labels
+from prettytable import PrettyTable
 
 
 from matplotlib import rc
@@ -15,9 +16,9 @@ from matplotlib.font_manager import *
 switch_backend("pdf")
 
 fontp = FontProperties(family="Helvetica", size=12)
-fontpb = FontProperties(family="Helvetica", size=12, weight="book")
+fontpb = FontProperties(family="Helvetica", size=10, weight="book")
 
-def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
+def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumulative=False):
     """
     Make a plot comparing the histogram of variable between data and simulation
 
@@ -69,7 +70,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     handles.insert(0,handles.pop())
     labels.insert(0,labels.pop())
 
-    legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
+    l = legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
     fig.set_axisbelow(False)
 
     minorticks = MultipleLocator(10)
@@ -212,9 +213,22 @@ def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, color=bkgctpl, linewidth=0.5)
     print sum([sum(weights) for weights in bkgwtpl])
 
+    # plot some example signals on top
+    sms1 = chi[sel_chi[selection_name] & (chi.mass1==200) & (chi.mass2==25)]
+    sms3 = chi[sel_chi[selection_name] & (chi.mass1==400) & (chi.mass2==100)]
+
+    x = [sms1.mctperp, sms3.mctperp]
+    w = [sms1.weight, sms3.weight]
+    c = ['b','r']
+    labels = [r'\noindent$m_{\chi^\pm}=200$ GeV, $m_{\chi^0}=25$ GeV', r'\noindent$m_{\chi^\pm}=400$ GeV, $m_{\chi^0}=100$ GeV']
+
+    hist(x, histtype="step", weights=w, color=c, label=labels, bins=h[1], bottom=h[0][0], ls='dotted', zorder=0.5, lw=2)
+
     handles, labels = fig.get_legend_handles_labels()
 
-    legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
+    fig.set_xlim(*plotrange)
+
+    legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1, ncol=2)
     fig.set_axisbelow(False)
 
     minorticks = MultipleLocator(10)
@@ -227,8 +241,90 @@ def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
 
     return fig
 
+def print_ZZ_datamc():
+    """Make closure plot for the top control sample"""
+    flavor = 'sf'
+    names = ['top', 'tW']
+
+    from config.data import *
+
+    truth = {}
+    mc_cr = mc[smc['z_mct_low_'+flavor]]
+    data_cr = data[sd['z_mct_low_'+flavor]]
+
+    cuts = np.arange(100, 320, 20)
+
+    data = np.zeros(len(cuts))
+    errs = np.zeros(data.shape)
+    control_data = np.zeros(len(cuts))
+    control_errs = np.zeros(control_data.shape)
+
+    for i, cut in enumerate(cuts):
+        data[i] = mc_cr[mc_cr.mctperp > cut].weight.sum()
+        errs[i] = np.sqrt(sum(mc_cr[mc_cr.mctperp > cut].weight**2))
+        control_data[i] = data_cr[data_cr.mctperp > cut].weight.sum()
+        control_errs[i] = np.sqrt(sum(data_cr[data_cr.mctperp > cut].weight**2))
+
+    t = PrettyTable(["",]+map(str, cuts.tolist()))
+    data_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], data)
+    err_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], errs)
+    combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+    combined.insert(0, "Monte Carlo")
+    t.add_row(combined)
+    data_strings = map(str.format, ["{:d}" for _ in xrange(len(cuts))], map(int, control_data))
+    err_strings = map(str.format, ["{:f}" for _ in xrange(len(cuts))], control_errs)
+    combined = data_strings
+    combined.insert(0, "Data")
+    t.add_row(combined)
+
+    print t
+
+def print_WZ_datamc():
+    """Make closure plot for the top control sample"""
+    flavor = 'sf'
+    names = ['top', 'tW']
+
+    from config.data import *
+
+    truth = {}
+    mc_cr = mc[smc['wz_ctrl']]
+    data_cr = data[sd['wz_ctrl']]
+
+    cuts = np.arange(20, 320, 20)
+
+    data = np.zeros(len(cuts))
+    errs = np.zeros(data.shape)
+    control_data = np.zeros(len(cuts))
+    control_errs = np.zeros(control_data.shape)
+
+    for i, cut in enumerate(cuts):
+        data[i] = mc_cr[mc_cr.mctperp > cut].weight.sum()
+        errs[i] = np.sqrt(sum(mc_cr[mc_cr.mctperp > cut].weight**2))
+        control_data[i] = data_cr[data_cr.mctperp > cut].weight.sum()
+        control_errs[i] = np.sqrt(sum(data_cr[data_cr.mctperp > cut].weight**2))
+
+    t = PrettyTable(["",]+map(str, cuts.tolist()))
+    data_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], data)
+    err_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], errs)
+    combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+    combined.insert(0, "Monte Carlo")
+    t.add_row(combined)
+    data_strings = map(str.format, ["{:d}" for _ in xrange(len(cuts))], map(int, control_data))
+    err_strings = map(str.format, ["{:f}" for _ in xrange(len(cuts))], control_errs)
+    combined = data_strings
+    combined.insert(0, "Data")
+    t.add_row(combined)
+
+    print t
+
+
+
 if __name__ == '__main__':
     make_data_mc_plots()
+    plot_mc('sig_mct_low_sf', 'mctperp', 29, (10,300))
+    savefig("plots/mc_only_sf.pdf")
+    plot_mc('sig_mct_low_of', 'mctperp', 29, (10,300))
+    savefig("plots/mc_only_of.pdf")
 
 
 

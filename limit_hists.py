@@ -40,20 +40,39 @@ expected_hist = R.TH2D("hExpLimitSmooth", "hExpLimitSmooth", nbins_x, m1_low, m1
 expected_m1_hist = R.TH2D("hExpM1LimitSmooth", "hExpM1LimitSmooth", nbins_x, m1_low, m1_high, nbins_y, m2_low, m2_high)
 expected_p1_hist = R.TH2D("hExpP1LimitSmooth", "hExpP1LimitSmooth", nbins_x, m1_low, m1_high, nbins_y, m2_low, m2_high)
 
+the_data = {}
 for d in data:
     m1, m2, exp, exp_m1, exp_p1, obs = d
+    the_data[(m1,m2)] = (exp, exp_m1, exp_p1, obs)
 
-    if obs >= 100 or exp_p1 >= 100 or exp >= 100:
-        continue
+import json
+with open("chi_masses.json") as f:
+    masses = json.load(f)
+
+for m1, m2 in masses:
+
     if m1-m2 <= 50:
-	continue
+        continue
+    xsec_hist.SetBinContent(xsec_hist.FindBin(m1, m2), xsecs[float(m1)][0])
 
-    xsec_hist.SetBinContent(xsec_hist.FindBin(m1, m2), xsecs[float(m1)][0]*2)
+    try:
+        exp, exp_m1, exp_p1, obs = the_data[(m1, m2)]
+    except KeyError:
+        continue
+
     observed_hist.SetBinContent(observed_hist.FindBin(m1,m2), obs)
     observed_hist_smooth.SetBinContent(observed_hist_smooth.FindBin(m1,m2), obs)
     expected_hist.SetBinContent(expected_hist.FindBin(m1,m2), exp)
     expected_m1_hist.SetBinContent(expected_m1_hist.FindBin(m1,m2), exp_m1)
     expected_p1_hist.SetBinContent(expected_p1_hist.FindBin(m1,m2), exp_p1)
+
+R.gROOT.ProcessLineSync(".L repare_holes.C+")
+
+R.repareHoles(observed_hist)
+R.repareHoles(observed_hist_smooth)
+R.repareHoles(expected_hist)
+R.repareHoles(expected_m1_hist)
+R.repareHoles(expected_p1_hist)
 
 observed_hist_smooth.Smooth(1,"k3a")
 expected_hist.Smooth(1,"k3a")

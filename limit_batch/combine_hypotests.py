@@ -29,6 +29,7 @@ for f in files:
 with open(args['<output_file>'], 'w') as f:
     for masses in tests.keys():
         res = tests[masses]
+        res.SetInterpolationOption(R.RooStats.HypoTestInverterResult.kSpline)
         m1,m2 = masses
         exp = res.GetExpectedUpperLimit()
         exp_down = res.GetExpectedUpperLimit(-1)

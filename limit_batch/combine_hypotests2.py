@@ -68,19 +68,33 @@ with open(args['<output_file>'], 'w') as f:
             interp_obs = gp.GaussianProcess()
             interp_obs.fit(pois, obs_CLs_vs_poi)
             obs = scipy.optimize.brentq(lambda x: interp_obs.predict(x)-target_cls, min(pois), max(pois))
-
+        except ValueError:
+            print "Failed to interpolate observed limit for point", m1, m2
+            print obs_CLs_vs_poi
+            continue
+        try:
             interp_exp = gp.GaussianProcess()
             interp_exp.fit(pois, exp_CLs_vs_poi)
             exp = scipy.optimize.brentq(lambda x: interp_exp.predict(x)-target_cls, min(pois), max(pois))
-
+        except ValueError:
+            print "Failed to interpolate expected limit for point", m1, m2
+            print exp_CLs_vs_poi
+            continue
+        try:
             interp_expp1 = gp.GaussianProcess()
             interp_expp1.fit(pois, expp1_CLs_vs_poi)
             expp1 = scipy.optimize.brentq(lambda x: interp_expp1.predict(x)-target_cls, min(pois), max(pois))
-
+        except ValueError:
+            print "Failed to interpolate expected+1sigma limit for point", m1, m2
+            print expp1_CLs_vs_poi
+            continue
+        try:
             interp_expm1 = gp.GaussianProcess()
             interp_expm1.fit(pois, expm1_CLs_vs_poi)
             expm1 = scipy.optimize.brentq(lambda x: interp_expm1.predict(x)-target_cls, min(pois), max(pois))
         except ValueError:
+            print "Failed to interpolate expected-1sigmalimit for point", m1, m2
+            print expm1_CLs_vs_poi
             continue
 
 

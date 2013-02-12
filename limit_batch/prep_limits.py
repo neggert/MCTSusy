@@ -38,7 +38,7 @@ for filename in files:
     poi_hat = sbmodel.GetParametersOfInterest().first().getVal()
     poi_hat_err = sbmodel.GetParametersOfInterest().first().getError()
 
-    poi_vals = np.linspace(poi_hat, poi_hat+4*poi_hat_err, npoints)
+    poi_vals = np.linspace(max([0.001, poi_hat-2*poi_hat_err]), poi_hat+8*poi_hat_err, npoints)
 
     with open(output, "a") as out:
         for p in poi_vals:

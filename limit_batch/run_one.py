@@ -12,12 +12,15 @@ import ROOT as R
 
 def run_one_point(filename, poi_val):
     rfile = R.TFile(filename)
+    print filename
+    print poi_val
 
     ws = rfile.Get("combined")
 
     data = ws.data("obsData")
 
     sbmodel = ws.obj("ModelConfig")
+    sbmodel.GetParametersOfInterest().first().setMax(1000)
 
     constr = sbmodel.GetNuisanceParameters()
     R.RooStats.RemoveConstantParameters(constr)
@@ -45,7 +48,7 @@ def run_one_point(filename, poi_val):
     prof_l.SetStrategy(0)
 
     toymc.SetTestStatistic(prof_l)
-    toymc.SetMaxToys(10) # needed because of https://savannah.cern.ch/bugs/?93360
+    toymc.SetNToys(3000) # needed because of https://savannah.cern.ch/bugs/?93360
     toymc.SetGenerateBinned(True)
     toymc.SetUseMultiGen(True)
 

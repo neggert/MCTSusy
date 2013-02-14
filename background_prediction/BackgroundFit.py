@@ -25,7 +25,7 @@ r.gSystem.Load("libRooStats")
 
 def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
 
-      mcvv = mc[(mc.mc_cat=='WV') | (mc.mc_cat=='ZZ')]
+      mcvv = mc[(mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=="WZ") | (mc.mc_cat=="VVV")]
       mcz = mc[mc.mc_cat=='DY']
 
       # <markdowncell>
@@ -285,7 +285,7 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
 
       results = model_c.fitTo( ds, r.RooFit.ExternalConstraints(constraints),
                                r.RooFit.Constrain(constraint_vars), r.RooFit.Save(),
-                               r.RooFit.NumCPU(8), r.RooFit.PrintLevel(-1), r.RooFit.PrintEvalErrors(-1),
+                               r.RooFit.NumCPU(8), r.RooFit.PrintLevel(1), r.RooFit.PrintEvalErrors(-1),
                                r.RooFit.Verbose(False))
 
       # <markdowncell>
@@ -305,21 +305,30 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
       ntot_sig_pred = r.RooFormulaVar("ntot_sig_pred", "ntot_sig_pred", "ntop_sig_pred+nz_sig_pred+nvv_sig_pred+nwjets_sig_pred",
                                       r.RooArgList(ntop_sig_pred, nz_sig_pred, nvv_sig_pred, nwjets_sig_pred))
 
-      ww_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mctype.isin(['WWW','WWG','WWTo2L2Nu']))].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
-      wz_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mctype=='WZTo3LNu')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
-      zz_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mctype=='ZZTo2L2Nu')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
+      ww_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mc_cat=="WW")].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
+      wz_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mc_cat=='WZ')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
+      zz_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mc_cat=='ZZ')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
+      vvv_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mc_cat=='VVV')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
 
-      ww_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mctype.isin(['WWW','WWG','WWTo2L2Nu']))].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
-      wz_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mctype=='WZTo3LNu')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
-      zz_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mctype=='ZZTo2L2Nu')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
+
+      ww_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mc_cat=="WW")].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
+      wz_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mc_cat=='WZ')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
+      zz_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mc_cat=='ZZ')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
+      vvv_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mc_cat=='VVV')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
+
+
 
       nww = r.RooFormulaVar("nww", 'nww', "nvv*"+str(ww_frac_low), r.RooArgList(nvv))
       nwz = r.RooFormulaVar("nwz", 'nwz', "nvv*"+str(wz_frac_low), r.RooArgList(nvv))
       nzz = r.RooFormulaVar("nzz", 'nzz', "nvv*"+str(zz_frac_low), r.RooArgList(nvv))
+      nvvv = r.RooFormulaVar("nvvv", 'nvvv', "nvv*"+str(vvv_frac_low), r.RooArgList(nvv))
+
 
       nww_sig_pred = r.RooFormulaVar("nww_sig_pred", "nww_sig_pred", "nvv_sig_pred*"+str(ww_frac_high), r.RooArgList(nvv_sig_pred))
       nwz_sig_pred = r.RooFormulaVar("nwz_sig_pred", "nwz_sig_pred", "nvv_sig_pred*"+str(wz_frac_high), r.RooArgList(nvv_sig_pred))
       nzz_sig_pred = r.RooFormulaVar("nzz_sig_pred", "nzz_sig_pred", "nvv_sig_pred*"+str(zz_frac_high), r.RooArgList(nvv_sig_pred))
+      nvvv_sig_pred = r.RooFormulaVar("nvvv_sig_pred", "nvvv_sig_pred", "nvv_sig_pred*"+str(vvv_frac_high), r.RooArgList(nvv_sig_pred))
+
 
 
       # <markdowncell>
@@ -388,6 +397,7 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
       pred_high_dict['WW'] = (nww_sig_pred.getVal(), nww_sig_pred.getPropagatedError(results))
       pred_high_dict['WZ'] = (nwz_sig_pred.getVal(), nwz_sig_pred.getPropagatedError(results))
       pred_high_dict['ZZ'] = (nzz_sig_pred.getVal(), nzz_sig_pred.getPropagatedError(results))
+      pred_high_dict['VVV'] = (nvvv_sig_pred.getVal(), nvvv_sig_pred.getPropagatedError(results))
       pred_high_dict['DY'] = (nz_sig_pred.getVal(), nz_sig_pred.getPropagatedError(results))
       pred_high_dict['W'] = (nwjets_sig_pred.getVal(), nwjets_sig_pred.getPropagatedError(results))
 
@@ -397,6 +407,7 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
       pred_low_dict['WW'] = (nww.getVal(), nww.getPropagatedError(results))
       pred_low_dict['WZ'] = (nwz.getVal(), nwz.getPropagatedError(results))
       pred_low_dict['ZZ'] = (nzz.getVal(), nzz.getPropagatedError(results))
+      pred_low_dict['VVV'] = (nvvv.getVal(), nvvv.getPropagatedError(results))
       pred_low_dict['DY'] = (nz.getVal(), nz.getError())
       pred_low_dict['W'] = (nwjets.getVal(), nwjets.getError())
 

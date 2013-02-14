@@ -56,12 +56,13 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
             template = R.RooStats.HistFactory.Sample("{0}_{1}".format(bkg, ch), "{0}_template_{1}".format(bkg, ch), "templates.root")
             template.SetNormalizeByTheory(False)
             template.ActivateStatError()
-            if bkg == 'banana':
-                ntop_pred = temp_file.Get("ntop_"+ch)[0]
-                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), ntop_pred, 0, 2*ntop_pred, True)
-                template.AddOverallSys("top_norm_"+ch, 0.88, 1.12)
-            else :
-                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 10000)
+            template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 10000)
+
+            if bkg == 'vv':
+                template.AddHistoSys('WW_norm', "vv_syst_WW_"+ch+"Up", "templates.root", "", "vv_syst_WW_"+ch+"Down", "templates.root", "")
+                template.AddHistoSys('WZ_norm', "vv_syst_WZ_"+ch+"Up", "templates.root", "", "vv_syst_WZ_"+ch+"Down", "templates.root", "")
+                template.AddHistoSys('ZZ_norm', "vv_syst_ZZ_"+ch+"Up", "templates.root", "", "vv_syst_ZZ_"+ch+"Down", "templates.root", "")
+                template.AddHistoSys('VVV_norm', "vv_syst_VVV_"+ch+"Up", "templates.root", "", "vv_syst_VVV_"+ch+"Down", "templates.root", "")
 
             if bkg == 'z':
                 template.AddShapeSys("z_syst_"+ch, 0, "z_syst", "templates.root")
@@ -77,6 +78,8 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
     meas.CollectHistograms()
 
     R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
+
+    print "Saved to", prefix
 
 if __name__ == '__main__':
     from docopt import docopt
@@ -96,8 +99,10 @@ if __name__ == '__main__':
         chans = ['of', 'sf']
 
     for m1,m2 in masses:
-        try:
-            create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), chans)
-        except:
-            continue
+        # try:
+        create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), chans)
+        break
+        # except:
+            # continue
+
 

@@ -5,7 +5,7 @@
 """Set limits on the specified model
 
 Usage:
-    bkg_fit.py <signal_file> <mass1> <mass2> [-p] [--ncpu=<c>] [--channels=<c1,c2>]
+    bkg_fit.py <filename> [-p] [--ncpu=<c>] [--channels=<c1,c2>]
 
 Options:
     -h --help        Show this screen.
@@ -25,15 +25,9 @@ import numpy as np
 
 bkgs = ['top', 'vv', 'wjets', 'z']
 
-def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data", data_file_name="data.root"):
-    prefix = "limits/"+sig_file[:-5]+"_{}_{}".format(mass1, mass2)
+def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="data.root"):
 
-    try:
-        create_histfactory(sig_file, prefix, mass1, mass2, chans, data_prefix=data_prefix, data_file_name=data_file_name)
-    except:
-        return None
-
-    rfile = R.TFile(prefix+"_combined_meas_model.root")
+    rfile = R.TFile(file_name)
 
     ws = rfile.Get("combined")
 
@@ -59,6 +53,7 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data"
     fitPars = res.floatParsFinal()
 
     fitresults = defaultdict(dict)
+    chans = ['of','sf']
     for ch in chans:
         for b in bkgs:
             fitvar = fitPars.find('n_{}_{}'.format(ch, b))
@@ -72,7 +67,8 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data"
 
     # plot the relevant portion of the correlation matrix
     cor = res.correlationMatrix()
-    cor = cor.GetSub(97, 104, 97, 104)
+    cor = cor.GetSub(95, 102, 95, 102)
+    # import pdb; pdb.set_trace()
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.patch.set_facecolor('gray')
@@ -97,6 +93,7 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p, data_prefix="data"
     for i in xrange(cor.GetNrows()):
         for j in xrange(cor.GetNcols()):
             c = cor[i][j]
+            if abs(c) < 0.01: continue
             if c > 0: color='white'
             else: color='black'
             size = np.sqrt(np.abs(c))
@@ -158,19 +155,13 @@ if __name__ == '__main__':
 
     args = docopt(__doc__)
 
-    m1 = int(args['<mass1>'])
-    m2 = int(args['<mass2>'])
+    file_name = args['<filename>']
 
-    sig_file = args['<signal_file>']
 
-    try:
-        chans = args['--channels'].split(",")
-    except AttributeError:
-        chans = ['of', 'sf']
 
     ncpu = int(args['--ncpu'])
 
     get_p = bool(args['-p'])
 
-    res = run_bonly_fit(sig_file, m1, m2, chans, ncpu, get_p)
+    res = run_bonly_fit(file_name, ncpu, get_p)
 

@@ -51,9 +51,13 @@ with open("chi_masses.json") as f:
 
 for m1, m2 in masses:
 
-    if m1-m2 <= 50:
+    if m1-m2 < 50:
         continue
-    xsec_hist.SetBinContent(xsec_hist.FindBin(m1, m2), xsecs[float(m1)][0])
+    try:
+	xsec_hist.SetBinContent(xsec_hist.FindBin(m1, m2), xsecs[float(m1)][0]*2)
+    except KeyError:
+	print "No limits for", m1, m2
+        continue
 
     try:
         exp, exp_m1, exp_p1, obs = the_data[(m1, m2)]
@@ -66,13 +70,13 @@ for m1, m2 in masses:
     expected_m1_hist.SetBinContent(expected_m1_hist.FindBin(m1,m2), exp_m1)
     expected_p1_hist.SetBinContent(expected_p1_hist.FindBin(m1,m2), exp_p1)
 
-R.gROOT.ProcessLineSync(".L repare_holes.C+")
-
-R.repareHoles(observed_hist)
-R.repareHoles(observed_hist_smooth)
-R.repareHoles(expected_hist)
-R.repareHoles(expected_m1_hist)
-R.repareHoles(expected_p1_hist)
+# R.gROOT.ProcessLineSync(".L repare_holes.C+")
+# 
+# R.repareHoles(observed_hist)
+# R.repareHoles(observed_hist_smooth)
+# R.repareHoles(expected_hist)
+# R.repareHoles(expected_m1_hist)
+# R.repareHoles(expected_p1_hist)
 
 observed_hist_smooth.Smooth(1,"k3a")
 expected_hist.Smooth(1,"k3a")

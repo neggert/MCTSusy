@@ -18,7 +18,8 @@ bkg_colors = {"top": (.9,.6,0),
           "ZZ": (.95, .9, .25),
           "Z": (0, .45, .70),
           "DY": (0, .45, .7),
-          "wjets": (.8,.4, .0)
+          "wjets": (.8,.4, .0),
+          'VVV': 'r'
          }
 
 bkg_labels = {"top": "Top",
@@ -27,6 +28,7 @@ bkg_labels = {"top": "Top",
               "ZZ": "ZZ",
               "Z": r"Z/$\gamma^*$",
               "DY": r"Z/$\gamma^*$",
+              "VVV": "VVV",
               "wjets": "Non-prompt",
               "fake": "Non-prompt"
              }

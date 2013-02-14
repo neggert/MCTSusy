@@ -24,6 +24,13 @@ mumu_low_eta = smc['opposite_sign_mumu'] & (abs(mc.eta2) < 1.)
 mc.weight *= (smc['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta.astype(float)*mumu_high_eta_trigger_eff
               +mumu_low_eta.astype(float)*mumu_low_eta_trigger_eff + smc['opposite_sign_emu'].astype(float)*emu_trigger_eff)
 
+# adjust some MC categories
+cat = mc.pop('mc_cat')
+cat[mc.mctype=="WWZNoGstar"] = "VVV"
+cat[mc.mctype=="WWW"] = 'VVV'
+mc = mc.join(cat)
+
+
 # data
 t = HDFStore("work/data/data_final2012json.hdf5")
 data = t['data']

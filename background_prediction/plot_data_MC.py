@@ -34,7 +34,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
 
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WW', 'WZ', 'ZZ', 'DY', 'wjets']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'VVV', 'DY', 'wjets']
 
     bkgtpl = []
     bkgwtpl = []

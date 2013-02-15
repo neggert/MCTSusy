@@ -47,7 +47,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     Create a ROOT file containing all of the background templates
     """
 
-    mcvv = mc[(mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=='WZ') | (mc.mc_cat=='VVV')]
+    mcvv = mc[(mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=='WZ') | (mc.mc_cat=='VVV') | (mc.mc_cat=='HWW')]
     mcz = mc[mc.mc_cat=='DY']
     selvv = selection.get_samples( mcvv, 100.)
     selz = selection.get_samples( mcz, 100.)
@@ -95,6 +95,11 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
         templates['vv_syst_VVV_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_VVV_"+ch+"Up", bins, histrange, True)
         weights = vv.weight*(1-(vv.mc_cat=="VVV")*0.10)
         templates['vv_syst_VVV_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_VVV_"+ch+"Down", bins, histrange, True)
+
+        weights = vv.weight*(1+(vv.mc_cat=="HWW")*0.10)
+        templates['vv_syst_HWW_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_HWW_"+ch+"Up", bins, histrange, True)
+        weights = vv.weight*(1-(vv.mc_cat=="HWW")*0.10)
+        templates['vv_syst_HWW_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_HWW_"+ch+"Down", bins, histrange, True)
 
         z = mcz[selz['sig_'+ch]]
         templates['z_'+ch] = rootutils.create_TH1(z.mctperp, z.weight, "z_template_"+ch, bins, histrange, True)

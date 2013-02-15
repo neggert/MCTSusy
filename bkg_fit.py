@@ -57,6 +57,10 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     for ch in chans:
         for b in bkgs:
             fitvar = fitPars.find('n_{}_{}'.format(ch, b))
+            if b == 'z':
+                b = "DY"
+            elif b == 'wjets':
+                b = 'fake'
             fitresults[ch][b] = (fitvar.getVal(), fitvar.getError())
 
     f = open("fit_results.json", 'w')
@@ -67,7 +71,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     # plot the relevant portion of the correlation matrix
     cor = res.correlationMatrix()
-    cor = cor.GetSub(95, 102, 95, 102)
+    cor = cor.GetSub(96, 103, 96, 103)
     # import pdb; pdb.set_trace()
     fig = plt.figure()
     ax = fig.add_subplot(111)

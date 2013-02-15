@@ -63,6 +63,8 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
                 template.AddHistoSys('WZ_norm', "vv_syst_WZ_"+ch+"Up", "templates.root", "", "vv_syst_WZ_"+ch+"Down", "templates.root", "")
                 template.AddHistoSys('ZZ_norm', "vv_syst_ZZ_"+ch+"Up", "templates.root", "", "vv_syst_ZZ_"+ch+"Down", "templates.root", "")
                 template.AddHistoSys('VVV_norm', "vv_syst_VVV_"+ch+"Up", "templates.root", "", "vv_syst_VVV_"+ch+"Down", "templates.root", "")
+                template.AddHistoSys('HWW_norm', "vv_syst_HWW_"+ch+"Up", "templates.root", "", "vv_syst_HWW_"+ch+"Down", "templates.root", "")
+
 
             if bkg == 'z':
                 template.AddShapeSys("z_syst_"+ch, 0, "z_syst", "templates.root")

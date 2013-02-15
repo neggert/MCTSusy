@@ -72,9 +72,19 @@ def make_money_plot():
         bkgltpl.append("ZZ")
         bkgctpl.append(bkg_colors['ZZ'])
 
+        bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="VVV")].mctperp )
+        bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="VVV")].weight)
+        bkgltpl.append("VVV")
+        bkgctpl.append(bkg_colors['VVV'])
+
+        bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="HWW")].mctperp )
+        bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="HWW")].weight)
+        bkgltpl.append("HWW")
+        bkgctpl.append(bkg_colors['HWW'])
+
         bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="DY")].mctperp )
         data_norm = sum(mc[smc['sig_mct_low_'+ch]&(mc.mc_cat=="DY")].weight)
-        est_events = float(results[ch]['z'][0])
+        est_events = float(results[ch]['DY'][0])
         sf = est_events/data_norm
         bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="DY")].weight )
         bkgltpl.append("Z/$\gamma^*$")
@@ -82,7 +92,7 @@ def make_money_plot():
 
         bkgtpl.append( data[sd['wjets_ctrl_'+ch]].mctperp )
         data_norm = data[sd['wjets_mct_low_'+ch]].mctperp.count()
-        est_events = float(results[ch]['wjets'][0])
+        est_events = float(results[ch]['fake'][0])
         sf = est_events/data_norm
         bkgwtpl.append( sf*np.ones(data[sd['wjets_ctrl_'+ch]].mctperp.count()) )
         bkgltpl.append("Non-prompt")

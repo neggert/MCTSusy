@@ -45,6 +45,12 @@ def do_bkg_fit2(data, mc, mctcut=100., flavor='sf', plot=False) :
       selzz = get_samples( mczz, cut)
       selz = get_samples( mcz, cut)
 
+      sel['sig_mct_low'+flavor] = sel['sig_mct_low'+flavor] & (data.mctperp < cut)
+      sel['sig_mct_low_of'] = sel['sig_mct_low_of'] & (data.mctperp < cut)
+      sel['wjets_mct_low'+flavor] = sel['wjets_mct_low'+flavor] & (data.mctperp < cut)
+      selzz['sig_mct_low'+flavor] = selzz['sig_mct_low'+flavor] & (mczz.mctperp < cut)
+      selz['sig_mct_low'+flavor] = selz['sig_mct_low'+flavor] & (mcz.mctperp < cut)
+
       # <markdowncell>
 
       # Get the true number of events from each mc type in the low $M_{\text{CT}}$ control region with b-jet veto and isolation cuts applied

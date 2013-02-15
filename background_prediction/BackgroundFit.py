@@ -25,7 +25,7 @@ r.gSystem.Load("libRooStats")
 
 def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
 
-      mcvv = mc[(mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=="WZ") | (mc.mc_cat=="VVV")]
+      mcvv = mc[(mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=="WZ") | (mc.mc_cat=="VVV") | (mc.mc_cat=="HWW")]
       mcz = mc[mc.mc_cat=='DY']
 
       # <markdowncell>
@@ -69,6 +69,11 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
       # Load the data from the low $M_{CT}$ control region into a RooDataSet
 
       # <codecell>
+      sel['sig_mct_low'+flavor] = sel['sig_mct_low'+flavor] & (data.mctperp < cut)
+      sel['top_mct_low'+flavor] = sel['top_mct_low'+flavor] & (data.mctperp < cut)
+      sel['wjets_mct_low'+flavor] = sel['wjets_mct_low'+flavor] & (data.mctperp < cut)
+      selvv['sig_mct_low'+flavor] = selvv['sig_mct_low'+flavor] & (mcvv.mctperp < cut)
+      selz['sig_mct_low'+flavor] = selz['sig_mct_low'+flavor] & (mcz.mctperp < cut)
 
       mct = r.RooRealVar("mct", "mct", 5., 100.)
       w = r.RooRealVar("w", "w", 0., 10.)
@@ -309,12 +314,16 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
       wz_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mc_cat=='WZ')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
       zz_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mc_cat=='ZZ')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
       vvv_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mc_cat=='VVV')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
+      hww_frac_low = sum(mcvv[selvv['sig_mct_low'+flavor]&(mcvv.mc_cat=='HWW')].weight)/sum(mcvv[selvv['sig_mct_low'+flavor]].weight)
+
 
 
       ww_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mc_cat=="WW")].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
       wz_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mc_cat=='WZ')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
       zz_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mc_cat=='ZZ')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
       vvv_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mc_cat=='VVV')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
+      hww_frac_high = sum(mcvv[selvv['sig_mct_high'+flavor]&(mcvv.mc_cat=='HWW')].weight)/sum(mcvv[selvv['sig_mct_high'+flavor]].weight)
+
 
 
 
@@ -322,12 +331,16 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
       nwz = r.RooFormulaVar("nwz", 'nwz', "nvv*"+str(wz_frac_low), r.RooArgList(nvv))
       nzz = r.RooFormulaVar("nzz", 'nzz', "nvv*"+str(zz_frac_low), r.RooArgList(nvv))
       nvvv = r.RooFormulaVar("nvvv", 'nvvv', "nvv*"+str(vvv_frac_low), r.RooArgList(nvv))
+      nhww = r.RooFormulaVar("nhww", 'nhww', "nvv*"+str(hww_frac_low), r.RooArgList(nvv))
+
 
 
       nww_sig_pred = r.RooFormulaVar("nww_sig_pred", "nww_sig_pred", "nvv_sig_pred*"+str(ww_frac_high), r.RooArgList(nvv_sig_pred))
       nwz_sig_pred = r.RooFormulaVar("nwz_sig_pred", "nwz_sig_pred", "nvv_sig_pred*"+str(wz_frac_high), r.RooArgList(nvv_sig_pred))
       nzz_sig_pred = r.RooFormulaVar("nzz_sig_pred", "nzz_sig_pred", "nvv_sig_pred*"+str(zz_frac_high), r.RooArgList(nvv_sig_pred))
       nvvv_sig_pred = r.RooFormulaVar("nvvv_sig_pred", "nvvv_sig_pred", "nvv_sig_pred*"+str(vvv_frac_high), r.RooArgList(nvv_sig_pred))
+      nhww_sig_pred = r.RooFormulaVar("nhww_sig_pred", "nhww_sig_pred", "nvv_sig_pred*"+str(hww_frac_high), r.RooArgList(nvv_sig_pred))
+
 
 
 
@@ -398,6 +411,7 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
       pred_high_dict['WZ'] = (nwz_sig_pred.getVal(), nwz_sig_pred.getPropagatedError(results))
       pred_high_dict['ZZ'] = (nzz_sig_pred.getVal(), nzz_sig_pred.getPropagatedError(results))
       pred_high_dict['VVV'] = (nvvv_sig_pred.getVal(), nvvv_sig_pred.getPropagatedError(results))
+      pred_high_dict['HWW'] = (nhww_sig_pred.getVal(), nhww_sig_pred.getPropagatedError(results))
       pred_high_dict['DY'] = (nz_sig_pred.getVal(), nz_sig_pred.getPropagatedError(results))
       pred_high_dict['W'] = (nwjets_sig_pred.getVal(), nwjets_sig_pred.getPropagatedError(results))
 
@@ -408,6 +422,7 @@ def do_bkg_fit(data, mc, mctcut=100., flavor='', ntop_syst=0.12, plot=False) :
       pred_low_dict['WZ'] = (nwz.getVal(), nwz.getPropagatedError(results))
       pred_low_dict['ZZ'] = (nzz.getVal(), nzz.getPropagatedError(results))
       pred_low_dict['VVV'] = (nvvv.getVal(), nvvv.getPropagatedError(results))
+      pred_low_dict['HWW'] = (nhww.getVal(), nhww.getPropagatedError(results))
       pred_low_dict['DY'] = (nz.getVal(), nz.getError())
       pred_low_dict['W'] = (nwjets.getVal(), nwjets.getError())
 

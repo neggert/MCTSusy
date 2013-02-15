@@ -34,7 +34,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
 
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WW', 'WZ', 'ZZ', 'VVV', 'DY', 'wjets']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'VVV', 'HWW', 'DY', 'fake']
 
     bkgtpl = []
     bkgwtpl = []
@@ -186,7 +186,7 @@ def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
 
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WW', 'WZ', 'ZZ', 'DY', 'wjets']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'HWW', 'VVV', 'DY', 'fake']
 
     bkgtpl = []
     bkgwtpl = []
@@ -207,7 +207,7 @@ def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     f.set_facecolor('w')
     fig = subplot(111)
     fig.set_yscale('log', nonposy='clip')
-    fig.set_ylim(0.01, 10000)
+    fig.set_ylim(0.01, 50000)
     fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
 
     h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, color=bkgctpl, linewidth=0.5)
@@ -265,10 +265,11 @@ def print_ZZ_datamc():
         control_data[i] = data_cr[data_cr.mctperp > cut].weight.sum()
         control_errs[i] = np.sqrt(sum(data_cr[data_cr.mctperp > cut].weight**2))
 
-    t = PrettyTable(["",]+map(str, cuts.tolist()))
+    t = PrettyTable(["",]+[str(c)+"\GeV" for c in cuts.tolist()])
+    t.vertical_char = "&"
     data_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], data)
     err_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], errs)
-    combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+    combined = [datastr+" $\pm$ "+errstr for datastr, errstr in zip(data_strings, err_strings)]
     combined.insert(0, "Monte Carlo")
     t.add_row(combined)
     data_strings = map(str.format, ["{:d}" for _ in xrange(len(cuts))], map(int, control_data))
@@ -290,7 +291,7 @@ def print_WZ_datamc():
     mc_cr = mc[smc['wz_ctrl']]
     data_cr = data[sd['wz_ctrl']]
 
-    cuts = np.arange(20, 320, 20)
+    cuts = np.arange(20, 300, 20)
 
     data = np.zeros(len(cuts))
     errs = np.zeros(data.shape)
@@ -303,10 +304,11 @@ def print_WZ_datamc():
         control_data[i] = data_cr[data_cr.mctperp > cut].weight.sum()
         control_errs[i] = np.sqrt(sum(data_cr[data_cr.mctperp > cut].weight**2))
 
-    t = PrettyTable(["",]+map(str, cuts.tolist()))
+    t = PrettyTable(["\mctp\ Cut",]+map(str, cuts.tolist()))
+    t.vertical_char = "&"
     data_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], data)
     err_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], errs)
-    combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+    combined = [datastr+" $\pm$ "+errstr for datastr, errstr in zip(data_strings, err_strings)]
     combined.insert(0, "Monte Carlo")
     t.add_row(combined)
     data_strings = map(str.format, ["{:d}" for _ in xrange(len(cuts))], map(int, control_data))

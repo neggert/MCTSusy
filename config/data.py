@@ -5,7 +5,7 @@ import selection
 reload(selection)
 
 # background MC
-s = HDFStore("work/mc/mc2012_moriond.hdf5")
+s = HDFStore("work/mc/mc_20130214.hdf5")
 mc = s['data']
 
 weights = mc.x_eff*lumi
@@ -25,10 +25,10 @@ mc.weight *= (smc['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta
               +mumu_low_eta.astype(float)*mumu_low_eta_trigger_eff + smc['opposite_sign_emu'].astype(float)*emu_trigger_eff)
 
 # adjust some MC categories
-cat = mc.pop('mc_cat')
-cat[mc.mctype=="WWZNoGstar"] = "VVV"
-cat[mc.mctype=="WWW"] = 'VVV'
-mc = mc.join(cat)
+# cat = mc.pop('mc_cat')
+# cat[mc.mctype=="WWZNoGstar"] = "VVV"
+# cat[mc.mctype=="WWW"] = 'VVV'
+# mc = mc.join(cat)
 
 
 # data

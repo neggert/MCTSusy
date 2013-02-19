@@ -3,7 +3,10 @@
 Combine hypothesis test results
 
 Usage:
-    combine_hypotest.py <output_file> <input_files>...
+    combine_hypotests2.py [-p] <output_file> <input_files>... 
+
+Options:
+    -p          Make plots
 
 """
 
@@ -21,6 +24,8 @@ plt.switch_backend("agg")
 args = docopt.docopt(__doc__)
 
 files = args['<input_files>']
+
+plot = bool(args['-p'])
 
 tests = {}
 
@@ -70,7 +75,7 @@ with open(args['<output_file>'], 'w') as f:
             obs = scipy.optimize.brentq(lambda x: interp_obs.predict(x)-target_cls, min(pois), max(pois))
         except ValueError:
             print "Failed to interpolate observed limit for point", m1, m2
-            print obs_CLs_vs_poi
+            print zip(pois, obs_CLs_vs_poi)
             continue
         try:
             interp_exp = gp.GaussianProcess()
@@ -78,7 +83,7 @@ with open(args['<output_file>'], 'w') as f:
             exp = scipy.optimize.brentq(lambda x: interp_exp.predict(x)-target_cls, min(pois), max(pois))
         except ValueError:
             print "Failed to interpolate expected limit for point", m1, m2
-            print exp_CLs_vs_poi
+            print zip(pois, exp_CLs_vs_poi)
             continue
         try:
             interp_expp1 = gp.GaussianProcess()
@@ -86,7 +91,7 @@ with open(args['<output_file>'], 'w') as f:
             expp1 = scipy.optimize.brentq(lambda x: interp_expp1.predict(x)-target_cls, min(pois), max(pois))
         except ValueError:
             print "Failed to interpolate expected+1sigma limit for point", m1, m2
-            print expp1_CLs_vs_poi
+            print zip(pois, expp1_CLs_vs_poi)
             continue
         try:
             interp_expm1 = gp.GaussianProcess()
@@ -94,7 +99,7 @@ with open(args['<output_file>'], 'w') as f:
             expm1 = scipy.optimize.brentq(lambda x: interp_expm1.predict(x)-target_cls, min(pois), max(pois))
         except ValueError:
             print "Failed to interpolate expected-1sigmalimit for point", m1, m2
-            print expm1_CLs_vs_poi
+            print zip(pois, expm1_CLs_vs_poi)
             continue
 
 
@@ -111,7 +116,7 @@ with open(args['<output_file>'], 'w') as f:
         # except ValueError:
         #     continue
 
-        if any(map(np.isnan, [obs, exp, expp1, expm1])):
+	if any(map(np.isnan, [obs, exp, expp1, expm1])) or plot:
             fig = plt.figure()
             plt.plot(pois, obs_CLs_vs_poi)
             plt.plot(pois, exp_CLs_vs_poi)
@@ -126,13 +131,13 @@ with open(args['<output_file>'], 'w') as f:
             fig = plt.figure()
 
             cls_all = np.linspace(min(exp_CLs_vs_poi), max(exp_CLs_vs_poi), 100)
-            plt.plot(map(interp_obs, cls_all), cls_all)
-            plt.plot(map(interp_exp, cls_all), cls_all)
-            plt.plot(map(interp_expp1, cls_all), cls_all)
-            plt.plot(map(interp_expm1, cls_all), cls_all)
+            plt.plot(cls_all, map(interp_obs.predict, cls_all))
+            plt.plot(cls_all, map(interp_exp.predict, cls_all))
+            plt.plot(cls_all, map(interp_expp1.predict, cls_all))
+            plt.plot(cls_all, map(interp_expm1.predict, cls_all))
             plt.xlabel("Signal Strength")
             plt.ylabel("CLs")
-            # plt.yscale("log")
+            plt.yscale("log")
             plt.axhline(0.05)
             plt.legend(['Observed', 'Expected', "+1 sigma", "-1 sigma"])
             plt.savefig("figs/{0}_{1}_cls_interpolated.png".format(m1, m2))
@@ -145,7 +150,7 @@ with open(args['<output_file>'], 'w') as f:
         # obs = res.UpperLimit()
 
 
-        f.write("{0}\t{1}\t{2:.2f}\t{3:.2f}\t{4:.2f}\t{5:.2f}\n".format(m1, m2, float(exp), float(expm1), float(expp1), float(obs)))
+        f.write("{0}\t{1}\t{2:.3f}\t{3:.3f}\t{4:.3f}\t{5:.3f}\n".format(m1, m2, float(exp), float(expm1), float(expp1), float(obs)))
 
 
 

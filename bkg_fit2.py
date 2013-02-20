@@ -5,15 +5,15 @@
 """Set limits on the specified model
 
 Usage:
-    bkg_fit.py <signal_file> <mass1> <mass2> [-p] [--ncpu=<c>] [--channels=<c1,c2>]
+    bkg_fit2.py <filename> [-p] [--ncpu=<c>]
 
 Options:
     -h --help        Show this screen.
     --ncpu=<c>       Number of CPUs to use [default: 1]
-    --channels=<c1,c2> Channels to use [default: of,sf]
     -p               Get p value (slow)
 
 """
+
 
 from set_limits2 import *
 from collections import defaultdict
@@ -21,15 +21,9 @@ import json
 
 bkgs = ['of', 'vv', 'wjets', 'z']
 
-def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
-    prefix = "limits/"+sig_file[:-5]+"_{}_{}_2".format(mass1, mass2)
+def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="data.root"):
 
-    try:
-        create_histfactory(sig_file, prefix, mass1, mass2, chans)
-    except:
-        return None
-
-    rfile = R.TFile(prefix+"_combined_meas_model.root")
+    rfile = R.TFile(file_name)
 
     ws = rfile.Get("combined")
 
@@ -43,7 +37,13 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
     model.GetParametersOfInterest().first().setVal(0.)
     model.GetParametersOfInterest().first().setConstant()
 
+    pars = model.GetNuisanceParameters()
+
+    err_pars = R.RooArgSet(pars.find("n_of_top"), pars.find("n_of_vv"), pars.find("n_of_z"), pars.find("n_of_wjets"),
+                       pars.find("n_sf_top"), pars.find("n_sf_vv"), pars.find("n_sf_z"), pars.find("n_sf_wjets"))
+
     # run the fit
+    R.RooMsgService.instance().setGlobalKillBelow(R.RooFit.ERROR)
     res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save())
 
     fitPars = res.floatParsFinal()
@@ -51,6 +51,10 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
     fitresults = {}
     for b in bkgs:
         fitvar = fitPars.find('n_{}'.format(b))
+        if b == 'z':
+            b = "DY"
+        elif b == 'wjets':
+            b = 'fake'
         fitresults[b] = (fitvar.getVal(), fitvar.getError())
 
     f = open("fit_results2.json", 'w')
@@ -59,6 +63,46 @@ def run_bonly_fit(sig_file, mass1, mass2, chans, ncpu, get_p):
 
     f.close()
 
+    # plot the relevant portion of the correlation matrix
+    # cor = res.correlationMatrix()
+    # cor = cor.GetSub(96, 103, 96, 103)
+    # # import pdb; pdb.set_trace()
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.patch.set_facecolor('gray')
+    # ax.set_aspect('equal', 'box')
+    # labels = FixedFormatter(['',
+    #                         'OF Top',
+    #                          'OF Diboson',
+    #                          'OF Z',
+    #                          'OF WJets',
+    #                          'SF Top',
+    #                          'SF Diboson',
+    #                          'SF Z',
+    #                          'SF WJets'])
+    # ax.xaxis.set_major_formatter(labels)
+    # ax.xaxis.tick_top()
+    # ax.yaxis.set_major_formatter(labels)
+    # for t in ax.get_xticklabels():
+    #     t.set_rotation(40)
+    #     t.set_ha('left')
+
+
+    # for i in xrange(cor.GetNrows()):
+    #     for j in xrange(cor.GetNcols()):
+    #         c = cor[i][j]
+    #         if abs(c) < 0.01: continue
+    #         if c > 0: color='white'
+    #         else: color='black'
+    #         size = np.sqrt(np.abs(c))
+    #         rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black')
+    #         ax.add_patch(rect)
+    # ax.autoscale_view()
+    # plt.gca().invert_yaxis()
+    # plt.tight_layout()
+
+    # plt.savefig("plots/correlation.pdf")
+    # raw_input("...")
 
     model.SetSnapshot(model.GetParametersOfInterest())
 
@@ -109,19 +153,13 @@ if __name__ == '__main__':
 
     args = docopt(__doc__)
 
-    m1 = int(args['<mass1>'])
-    m2 = int(args['<mass2>'])
+    file_name = args['<filename>']
 
-    sig_file = args['<signal_file>']
 
-    try:
-        chans = args['--channels'].split(",")
-    except AttributeError:
-        chans = ['of', 'sf']
 
     ncpu = int(args['--ncpu'])
 
     get_p = bool(args['-p'])
 
-    res = run_bonly_fit(sig_file, m1, m2, chans, ncpu, get_p)
+    res = run_bonly_fit(file_name, ncpu, get_p)
 

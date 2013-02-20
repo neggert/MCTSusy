@@ -29,6 +29,8 @@ plotrange = (10,300)
 
 def make_money_plot():
 
+    wz_sf = (mc.mc_cat=="WZ") & abs(mc.parentParentPdg1).isin([22,23]) & abs(mc.parentParentPdg1).isin([22,23])
+
     fontp = FontProperties(family="Helvetica", size=12)
     fontpb = FontProperties(family="Helvetica", size=12, weight="book")
 
@@ -52,17 +54,25 @@ def make_money_plot():
     bkgctpl.append(bkg_colors['WW'])
 
     ch = "sf"
-    bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="ZZ")].mctperp )
-    data_norm = sum(mc[smc['sig_mct_low_'+ch]&(mc.mc_cat=="ZZ")].weight)
+    bkgtpl.append( mc[smc['sig_'+ch]&wz_sf].mctperp )
+    allvv_norm = sum(mc[smc['sig_mct_low_'+ch]&((mc.mc_cat=='ZZ') | wz_sf)].weight)
     est_events = float(results['vv'][0])
-    sf = est_events/data_norm
+    sf = est_events/allvv_norm
+    bkgwtpl.append( sf*mc[smc['sig_'+ch]&wz_sf].weight )
+    bkgltpl.append("WZ")
+    bkgctpl.append(bkg_colors['WZ'])
+
+    ch = "sf"
+    bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="ZZ")].mctperp )
+    est_events = float(results['vv'][0])
+    sf = est_events/allvv_norm
     bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="ZZ")].weight )
     bkgltpl.append("ZZ")
     bkgctpl.append(bkg_colors['ZZ'])
 
     bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="DY")].mctperp )
     data_norm = sum(mc[smc['sig_mct_low_'+ch]&(mc.mc_cat=="DY")].weight)
-    est_events = float(results['z'][0])
+    est_events = float(results['DY'][0])
     sf = est_events/data_norm
     bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="DY")].weight )
     bkgltpl.append("Z/$\gamma^*$")
@@ -70,7 +80,7 @@ def make_money_plot():
 
     bkgtpl.append( data[sd['wjets_ctrl_'+ch]].mctperp )
     data_norm = data[sd['wjets_mct_low_'+ch]].mctperp.count()
-    est_events = float(results['wjets'][0])
+    est_events = float(results['fake'][0])
     sf = est_events/data_norm
     bkgwtpl.append( sf*np.ones(data[sd['wjets_ctrl_'+ch]].mctperp.count()) )
     bkgltpl.append("Non-prompt")

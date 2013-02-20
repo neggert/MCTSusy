@@ -54,6 +54,9 @@ def create_histfactory(template_file, signal_file, m1, m2, data_file_name="data.
             template.AddShapeSys("z_syst", 0, "z_syst", template_file)
         if bkg == 'wjets':
             template.AddShapeSys("wjets_syst", 0, "wjets_syst", template_file)
+        if bkg == "vv":
+            template.AddHistoSys('WZ_norm', "vv_syst_WZ_Up", "templates2.root", "", "vv_syst_WZ_Down", "templates2.root", "")
+            template.AddHistoSys('ZZ_norm', "vv_syst_ZZ_Up", "templates2.root", "", "vv_syst_ZZ_Down", "templates2.root", "")
 
         samples[bkg] = template
         channel_conf.AddSample(samples[bkg])

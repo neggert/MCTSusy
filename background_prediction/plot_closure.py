@@ -86,7 +86,7 @@ def plot_top_closure(flavor):
 
     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
 
-    hist_ratio(mc[smc['top_ctrl_'+flavor]].mctperp, mc[all_truth].mctperp, mc[all_truth].weight, bins=nbins, range=nrange, normed=True)
+    hist_ratio(mc[smc['top_ctrl_'+flavor]].mctperp, mc[all_truth].mctperp, mc[all_truth].weight, mc[smc['top_ctrl_'+flavor]].weight, bins=nbins, range=nrange, normed=True)
     axhline(1, color="k")
     fig2.set_ylim(0,2)
     fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')
@@ -121,7 +121,8 @@ def print_top_closure():
         control_data[i] = control[control.mctperp > cut].weight.sum()/control.weight.sum()
         control_errs[i] = np.sqrt(sum(control[control.mctperp > cut].weight**2))/control.weight.sum()
 
-    t = PrettyTable(["",]+map(str, cuts.tolist()))
+    t = PrettyTable(["\mctp\ Cut",]+[str(c)+"\GeV" for c in cuts.tolist()])
+    t.vertical_char = "&"
     for i in xrange(len(names)):
         data_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], data[:,i])
         err_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], errs[:,i])
@@ -142,7 +143,8 @@ def print_fs_closure():
     names = ['fs']
 
     truth = {}
-    truth['fs'] = mc[smc['sig_mct_low_sf'] & ((mc.mc_cat=='top') | (mc.mc_cat=='WW') | (mc.mc_cat=="WZ"))]
+    wz_fs = (mc.mc_cat=="WZ") & ((abs(mc.parentParentPdg1) == 24) | (abs(mc.parentParentPdg1) == 24))
+    truth['fs'] = mc[smc['sig_mct_low_sf'] & ((mc.mc_cat=='top') | (mc.mc_cat=='WW') | wz_fs | (mc.mc_cat=="VVV") | (mc.mc_cat=="HWW"))]
     control = mc[smc['sig_mct_low_of']]
 
     cuts = np.arange(20, 260, 20)
@@ -159,11 +161,12 @@ def print_fs_closure():
         control_data[i] = control[control.mctperp > cut].weight.sum()/control.weight.sum()
         control_errs[i] = np.sqrt(sum(control[control.mctperp > cut].weight**2))/control.weight.sum()
 
-    t = PrettyTable(["",]+map(str, cuts.tolist()))
+    t = PrettyTable(["\mctp\ Cut",]+[str(c)+"\GeV" for c in cuts.tolist()])
+    t.vertical_char = "&"
     for i in xrange(len(names)):
         data_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], data[:,i])
         err_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], errs[:,i])
-        combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+        combined = [datastr+" $\pm$ "+errstr for datastr, errstr in zip(data_strings, err_strings)]
         combined.insert(0, names[i])
         t.add_row(combined)
     data_strings = map(str.format, ["{:.5f}" for _ in xrange(len(cuts))], control_data)
@@ -176,7 +179,7 @@ def print_fs_closure():
 
 def plot_fake_closure():
     """Make closure plot for the fake lepton control sample"""
-    faketruth = smc['sig'] & (mc.mc_cat=='wjets')
+    faketruth = smc['sig'] & (mc.mc_cat=='fake')
 
     f = figure(figsize=(6,6))
     f.set_facecolor('w')
@@ -207,7 +210,7 @@ def plot_fake_closure():
 
     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
 
-    hist_ratio(mc[smc['wjets_ctrl']].mctperp, mc[faketruth].mctperp, mc[faketruth].weight, bins=nbins, range=nrange, normed=True)
+    hist_ratio(mc[smc['wjets_ctrl']].mctperp, mc[faketruth].mctperp, mc[faketruth].weight, mc[smc['wjets_ctrl']].weight, bins=nbins, range=nrange, normed=True)
     axhline(1, color="k")
     fig2.set_ylim(0,2)
     fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')
@@ -221,7 +224,20 @@ def plot_fake_closure():
 
 def plot_fs_closure():
     """Make closure plot for the fake lepton control sample"""
-    fstruth = smc['sig_sf'] & ((mc.mc_cat=='top') | (mc.mc_cat=='WW') | (mc.mc_cat=="WZ"))
+
+    # the flavor symmetric part of WZ has one of the leptons from a W
+    wz_fs = (mc.mc_cat=="WZ") & ((abs(mc.parentParentPdg1) == 24) | (abs(mc.parentParentPdg1) == 24))
+
+    truths = ['top', 'WW', 'WZ', 'HWW', 'VVV']
+    truth = {}
+    truth['top'] = smc['sig_mct_low_sf'] & (mc.mc_cat=="top")
+    truth['WW'] = smc['sig_mct_low_sf'] & (mc.mc_cat=="WW")
+    truth['WZ'] = smc['sig_mct_low_sf'] & wz_fs
+    truth['HWW'] = smc['sig_mct_low_sf'] & (mc.mc_cat=="HWW")
+    truth['VVV'] = smc['sig_mct_low_sf'] & (mc.mc_cat=="VVV")
+
+    fstruth = smc['sig_mct_low_sf'] & ((mc.mc_cat=='top') | (mc.mc_cat=='WW') | wz_fs | (mc.mc_cat=="VVV") | (mc.mc_cat=="HWW"))
+
 
     f = figure(figsize=(6,6))
     f.set_facecolor('w')
@@ -232,10 +248,29 @@ def plot_fs_closure():
 
     nbins = 29
     nrange = (10., 300.)
+    f = figure(figsize=(6,6))
+    f.set_facecolor('w')
+    fig = subplot2grid((4,1),(0,0), rowspan=3)
+    fig.set_yscale('log', nonposy='clip')
+    fig.set_ylim(0.001, 1000)
+    fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
 
-    hist( mc[fstruth].mctperp, weights=mc[fstruth].weight, bins=nbins, range=nrange, histtype="step", stacked=True,\
-        normed=True, label="Flavor Symmetric MC Truth", color=bkg_colors['WW'], linewidth=2)
-    he = hist_errorbars( mc[smc['sig_of']].mctperp.values, weights=mc[smc['sig_of']].weight.values, bins=nbins, range=nrange, normed=True,\
+    x = []
+    w = []
+    for t in truths:
+        x.append(mc[truth[t]].mctperp)
+        w.append(mc[truth[t]].weight)
+
+    c = [(.9,.6,0),
+          (.35, .7, .9),
+          (0,.6,.5),
+           (0, .45, .70),
+           (.80,.40,0)]
+    labels = [r'Top', r'WW', r'WZ', r'H$\rightarrow$WW', 'VVV']
+
+
+    hist(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels)
+    he = hist_errorbars( mc[smc['sig_mct_low_of']].mctperp.values, weights=mc[smc['sig_mct_low_of']].weight.values, bins=nbins, range=nrange, normed=True,\
         xerrs=False, label="Control", color='k')
     he.set_label("Control Region MC")
     ylim(1.e-7, .1)
@@ -253,7 +288,8 @@ def plot_fs_closure():
 
     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
 
-    hist_ratio(mc[smc['sig_of']].mctperp, mc[fstruth].mctperp, mc[fstruth].weight, bins=nbins, range=nrange, normed=True)
+    hist_ratio(mc[smc['sig_mct_low_of']].mctperp, mc[fstruth].mctperp, mc[fstruth].weight,mc[smc['sig_mct_low_of']].weight,
+               bins=nbins, range=nrange, normed=True)
     axhline(1, color="k")
     fig2.set_ylim(0,2)
     fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')

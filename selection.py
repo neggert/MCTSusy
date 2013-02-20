@@ -68,6 +68,7 @@ def get_samples( data, mctcut=100., real_data=False) :
         outdict['mumu'] = ((abs(data.pdg1) == 13) & (abs(data.pdg2) == 13))
         outdict['emu'] = (abs(data.pdg1) != abs(data.pdg2))
     outdict['opposite_sign'] = (data.pdg1*data.pdg2 < 0)
+    outdict['same_sign'] = (data.pdg1*data.pdg2 > 0)  & (~data.ThirdLepton) & (data.mll > 12)
     outdict['opposite_sign_ee'] = outdict['opposite_sign'] & outdict['ee']
     outdict['opposite_sign_mumu'] = outdict['opposite_sign'] & outdict['mumu']
     outdict['opposite_sign_emu'] = outdict['opposite_sign'] & outdict['emu']
@@ -87,6 +88,8 @@ def get_samples( data, mctcut=100., real_data=False) :
 
     outdict['isolation_sig'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection']
     outdict['isolation_3l'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['3leptons']
+    outdict['isolation_ss'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['same_sign']
+
     outdict['isolation_sig_ee'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection'] & outdict['ee']
     outdict['isolation_sig_mumu'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection'] & outdict['mumu']
     outdict['isolation_sig_emu'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection'] & outdict['emu']
@@ -116,6 +119,8 @@ def get_samples( data, mctcut=100., real_data=False) :
     # combine to get signal and control samples
     # note we still haven't applied the mct cut
     outdict['wjets_ctrl'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window']
+    outdict['wjets_ss_ctrl'] = outdict['bjets_sig'] & outdict['isolation_ss'] & outdict['pass_met'] & outdict['off_z_window']
+
     outdict['1tag_ctrl'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['2tag_ctrl'] = outdict['2_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']

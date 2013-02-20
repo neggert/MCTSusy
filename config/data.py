@@ -5,7 +5,7 @@ import selection
 reload(selection)
 
 # background MC
-s = HDFStore("work/mc/mc_20130214.hdf5")
+s = HDFStore("work/mc/mc_20130219.hdf5")
 mc = s['data']
 
 weights = mc.x_eff*lumi
@@ -17,12 +17,12 @@ mc = mc.join(weights)
 
 smc = selection.get_samples(mc)
 
-mumu_high_eta = smc['opposite_sign_mumu'] & (abs(mc.eta2) > 1.)
-mumu_low_eta = smc['opposite_sign_mumu'] & (abs(mc.eta2) < 1.)
+mumu_high_eta = smc['mumu'] & (abs(mc.eta2) > 1.)
+mumu_low_eta = smc['mumu'] & (abs(mc.eta2) < 1.)
 
 
-mc.weight *= (smc['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta.astype(float)*mumu_high_eta_trigger_eff
-              +mumu_low_eta.astype(float)*mumu_low_eta_trigger_eff + smc['opposite_sign_emu'].astype(float)*emu_trigger_eff)
+mc.weight *= (smc['ee'].astype(float)*ee_trigger_eff+mumu_high_eta.astype(float)*mumu_high_eta_trigger_eff
+              +mumu_low_eta.astype(float)*mumu_low_eta_trigger_eff + smc['emu'].astype(float)*emu_trigger_eff)
 
 # adjust some MC categories
 # cat = mc.pop('mc_cat')

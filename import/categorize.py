@@ -10,7 +10,7 @@ def categorize(mctype):
         return 'ZZ'
     elif mctype.lower() in ['www', 'wwznogstar']:
         return "VVV"
-    elif mctype.lower() in ['dy_m10', 'dyjets_m-50', 'wz', 'zzto2l2q', 'zzznogstar', 'zzto4l']:
+    elif mctype.lower() in ['dy_m10', 'dyjets_m-50', 'wzto2l2q', 'zzto2l2q', 'zzznogstar', 'zzto4l']:
         return 'DY'
     elif mctype.lower() in ['wjets']:
         return 'fake'

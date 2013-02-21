@@ -46,7 +46,7 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
         signal.ActivateStatError()
         signal.AddOverallSys("trigger", 0.95, 1.05)
         signal.AddOverallSys("id_and_selection", 0.98, 1.02)
-        signal.AddOverallSys("b_veto", 0.94, 1.06)
+        signal.AddOverallSys("b_veto", 0.95, 1.05)
         signal.AddHistoSys("jes", "sms_template_jes_down_{0}_{1}_{2}".format(ch, m1, m2), signal_file, "",
                            "sms_template_jes_up_{0}_{1}_{2}".format(ch, m1, m2), signal_file, "")
         channel_confs[ch].AddSample(signal)

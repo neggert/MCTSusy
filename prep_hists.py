@@ -91,14 +91,14 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
         weights = vv.weight*(1-(vv.mc_cat=="ZZ")*0.10)
         templates['vv_syst_ZZ_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_"+ch+"Down", bins, histrange, True)
 
-        weights = vv.weight*(1+(vv.mc_cat=="VVV")*0.10)
+        weights = vv.weight*(1+(vv.mc_cat=="VVV")*0.50)
         templates['vv_syst_VVV_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_VVV_"+ch+"Up", bins, histrange, True)
-        weights = vv.weight*(1-(vv.mc_cat=="VVV")*0.10)
+        weights = vv.weight*(1-(vv.mc_cat=="VVV")*0.50)
         templates['vv_syst_VVV_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_VVV_"+ch+"Down", bins, histrange, True)
 
-        weights = vv.weight*(1+(vv.mc_cat=="HWW")*0.10)
+        weights = vv.weight*(1+(vv.mc_cat=="HWW")*0.50)
         templates['vv_syst_HWW_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_HWW_"+ch+"Up", bins, histrange, True)
-        weights = vv.weight*(1-(vv.mc_cat=="HWW")*0.10)
+        weights = vv.weight*(1-(vv.mc_cat=="HWW")*0.50)
         templates['vv_syst_HWW_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_HWW_"+ch+"Down", bins, histrange, True)
 
         z = mcz[selz['sig_'+ch]]

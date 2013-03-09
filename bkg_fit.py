@@ -24,6 +24,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import IndexLocator, FixedFormatter
 import numpy as np
 from prettytable import PrettyTable
+plt.switch_backend("pdf")
 
 bkgs = ['top', 'vv', 'wjets', 'z']
 
@@ -40,7 +41,9 @@ def get_step_fill_between(x, y1, y2):
     fill_y2[::2] = y2
     fill_y2[1::2] = y2
 
-    return fill_x, fill_y1, fill_y2
+
+
+    return np.append(fill_x, fill_x[::-1]), np.append(fill_y1, fill_y2[::-1])
 
 def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="data.root", do_minos=False):
 
@@ -112,7 +115,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     # plot the relevant portion of the correlation matrix
     fullcor = res.correlationMatrix()
-    cor = fullcor.GetSub(96, 103, 96, 103)
+    cor = fullcor.GetSub(128, 135, 128, 135)
     # import pdb; pdb.set_trace()
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -181,11 +184,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     model.SetSnapshot(model.GetParametersOfInterest())
 
-    # plot_fitted_sf(ws)
-    # plot_fitted_of(ws)
-
-
-    raw_input("...")
+    plot_fitted_sf(ws)
+    plot_fitted_of(ws)
 
 
     # plot the fitted templates
@@ -202,7 +202,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     if get_p:
 
         sampler = R.RooStats.ToyMCSampler(AD, 10)
-        sampler.SetPdf(model.GetPdf())
+        sampler.SetPdf(ws.obj("simPdf"))
         sampler.SetObservables(model.GetObservables())
         sampler.SetGlobalObservables(model.GetGlobalObservables())
         sampler.SetParametersForTestStat(model.GetParametersOfInterest())
@@ -268,22 +268,24 @@ def plot_fitted_sf(ws):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.fill_between(*get_step_fill_between(x, top_stat_low, top_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, top_stat_low, top_stat_high), color='r', alpha=0.5)
     ax.step(x, top_nom_points, where="post", linestyle="dashed", color="b")
     ax.step(x, top_fitted_points, where="post", color="k")
     ax.set_xlim(min(x), max(x)+10)
     ax.set_title("Top SF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_top_sf.pdf")
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_yscale("log", nonposy="clip")
-    ax.fill_between(*get_step_fill_between(x, top_stat_low, top_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, top_stat_low, top_stat_high), color='r', alpha=0.5)
     ax.step(x, top_nom_points, where="post", linestyle="dashed", color="b")
     ax.step(x, top_fitted_points, where="post", color="k")
     ax.set_xlim(min(x), max(x)+10)
     ax.set_ylim(0.001, 5000)
     ax.set_title("Top SF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_top_sf_log.pdf")
 
     # VV
@@ -292,7 +294,7 @@ def plot_fitted_sf(ws):
     # includes both fitted statistical and systematics
     # might need to multiply by bin width
     n_sf_vv = ws.obj("n_sf_vv").getVal()
-    vv_fitted = ws.obj("vv_sf_sf_overallSyst_x_StatUncert")
+    vv_fitted = ws.obj("vv_sf_sf_overallSyst_x_StatUncert_x_sf_ww_syst_sf_ShapeSys")
     vv_syst_nom = ws.obj("vv_sf_sf_Hist_alphanominal")
 
     n_vv_syst = 4
@@ -307,6 +309,8 @@ def plot_fitted_sf(ws):
     vv_fitted_points = np.zeros(x.shape)
     vv_nom_points = np.zeros(x.shape)
 
+    vv_shape_syst_points = np.zeros(x.shape)
+
     vv_syst_low_points = np.zeros((n_vv_syst, len(x)))
     vv_syst_high_points = np.zeros((n_vv_syst, len(x)))
 
@@ -314,6 +318,10 @@ def plot_fitted_sf(ws):
         obs.setVal(x[i])
         vv_fitted_points[i] = vv_fitted.getVal()
         vv_nom_points[i] = vv_syst_nom.getVal()
+        try:
+            vv_shape_syst_points[i] = ws.obj("gamma_ww_syst_sf_bin_{0}_sigma".format(i)).getVal()
+        except AttributeError:
+            pass
         for j in xrange(n_vv_syst):
             vv_syst_low_points[j,i] = vv_systs_low[j].getVal()
             vv_syst_high_points[j,i] = vv_systs_high[j].getVal()
@@ -333,29 +341,37 @@ def plot_fitted_sf(ws):
     vv_stat_high = vv_nom_points*(1+stat_uncertainty_rel)*n_sf_vv
     vv_stat_low = vv_nom_points*(1-stat_uncertainty_rel)*n_sf_vv
 
+    vv_shape_high = vv_nom_points*(1+vv_shape_syst_points)*n_sf_vv
+    vv_shape_low = vv_nom_points*(1-vv_shape_syst_points)*n_sf_vv
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    ax.fill_between(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="b", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color="r", alpha=0.5)
     ax.step(x, vv_fitted_points, where="post", color="k")
     ax.step(x, vv_nom_points*n_sf_vv, where="post", linestyle="dashed", color="b")
 
     ax.set_xlim(min(x), max(x)+10)
     ax.set_title("Diboson SF")
+
+    ax.legend(['Fitted', 'Nominal', "Histogram Systematic", "Shape Systematic", "Statistical Systematic"])
     plt.savefig("plots/template_vv_sf.pdf")
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_yscale("log", nonposy="clip")
 
-    ax.fill_between(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="b", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color="r", alpha=0.5)
     ax.step(x, vv_fitted_points, where="post", color="k")
     ax.step(x, vv_nom_points*n_sf_vv, where="post", linestyle="--", color="b")
 
     ax.set_xlim(min(x), max(x)+10)
     ax.set_title("Diboson SF")
+    ax.legend(['Fitted', 'Nominal', "Histogram Systematic", "Shape Systematic", "Statistical Systematic"])
     plt.savefig("plots/template_vv_sf_log.pdf")
 
 
@@ -388,22 +404,24 @@ def plot_fitted_sf(ws):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.fill_between(*get_step_fill_between(x, wjets_syst_low, wjets_syst_high), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, wjets_stat_low, wjets_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, wjets_syst_low, wjets_syst_high), alpha=0.5)
+    ax.fill(*get_step_fill_between(x, wjets_stat_low, wjets_stat_high), color='r', alpha=0.5)
     ax.step(x, wjets_fitted_points, color="k", where="post")
     ax.step(x, wjets_nom_points, color="b", linestyle="--", where="post")
     ax.set_title("Non-prompt SF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_wjets_sf.pdf")
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_yscale("log", nonposy="clip")
-    ax.fill_between(*get_step_fill_between(x, wjets_syst_low, wjets_syst_high), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, wjets_stat_low, wjets_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, wjets_syst_low, wjets_syst_high), alpha=0.5)
+    ax.fill(*get_step_fill_between(x, wjets_stat_low, wjets_stat_high), color='r', alpha=0.5)
     ax.step(x, wjets_fitted_points, color="k", where="post")
     ax.step(x, wjets_nom_points, color="b", linestyle="--", where="post")
     ax.set_ylim(0.01, 500)
     ax.set_title("Non-prompt SF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_wjets_sf_log.pdf")
 
 
@@ -435,25 +453,25 @@ def plot_fitted_sf(ws):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.fill_between(*get_step_fill_between(x, z_syst_low, z_syst_high), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, z_stat_low, z_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, z_syst_low, z_syst_high), alpha=0.5)
+    ax.fill(*get_step_fill_between(x, z_stat_low, z_stat_high), color='r', alpha=0.5)
     ax.step(x, z_fitted_points, color="k", where="post")
     ax.step(x, z_nom_points, color="b", linestyle="--", where="post")
     ax.set_title("Z SF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_z_sf.pdf")
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_yscale("log", nonposy="clip")
-    ax.fill_between(*get_step_fill_between(x, z_syst_low, z_syst_high), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, z_stat_low, z_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, z_syst_low, z_syst_high), alpha=0.5)
+    ax.fill(*get_step_fill_between(x, z_stat_low, z_stat_high), color='r', alpha=0.5)
     ax.step(x, z_fitted_points, color="k", where="post")
     ax.step(x, z_nom_points, color="b", linestyle="--", where="post")
     ax.set_ylim(0.01, 1000)
     ax.set_title("Z SF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_z_sf_log.pdf")
-
-    plt.show()
 
 def plot_fitted_of(ws):
     obs = ws.obj("obs_x_of")
@@ -491,22 +509,24 @@ def plot_fitted_of(ws):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.fill_between(*get_step_fill_between(x, top_stat_low, top_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, top_stat_low, top_stat_high), color='r', alpha=0.5)
     ax.step(x, top_nom_points, where="post", linestyle="dashed", color="b")
     ax.step(x, top_fitted_points, where="post", color="k")
     ax.set_xlim(min(x), max(x)+10)
     ax.set_title("Top OF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_top_of.pdf")
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_yscale("log", nonposy="clip")
-    ax.fill_between(*get_step_fill_between(x, top_stat_low, top_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, top_stat_low, top_stat_high), color='r', alpha=0.5)
     ax.step(x, top_nom_points, where="post", linestyle="dashed", color="b")
     ax.step(x, top_fitted_points, where="post", color="k")
     ax.set_xlim(min(x), max(x)+10)
     ax.set_ylim(0.001, 5000)
     ax.set_title("Top OF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_top_of_log.pdf")
 
     # VV
@@ -515,7 +535,7 @@ def plot_fitted_of(ws):
     # includes both fitted statistical and systematics
     # might need to multiply by bin width
     n_of_vv = ws.obj("n_of_vv").getVal()
-    vv_fitted = ws.obj("vv_of_of_overallSyst_x_StatUncert")
+    vv_fitted = ws.obj("vv_of_of_overallSyst_x_StatUncert_x_of_ww_syst_of_ShapeSys")
     vv_syst_nom = ws.obj("vv_of_of_Hist_alphanominal")
 
     n_vv_syst = 4
@@ -530,6 +550,8 @@ def plot_fitted_of(ws):
     vv_fitted_points = np.zeros(x.shape)
     vv_nom_points = np.zeros(x.shape)
 
+    vv_shape_syst_points = np.zeros(x.shape)
+
     vv_syst_low_points = np.zeros((n_vv_syst, len(x)))
     vv_syst_high_points = np.zeros((n_vv_syst, len(x)))
 
@@ -537,6 +559,10 @@ def plot_fitted_of(ws):
         obs.setVal(x[i])
         vv_fitted_points[i] = vv_fitted.getVal()
         vv_nom_points[i] = vv_syst_nom.getVal()
+        try:
+            vv_shape_syst_points[i] = ws.obj("gamma_ww_syst_of_bin_{0}_sigma".format(i)).getVal()
+        except AttributeError:
+            pass
         for j in xrange(n_vv_syst):
             vv_syst_low_points[j,i] = vv_systs_low[j].getVal()
             vv_syst_high_points[j,i] = vv_systs_high[j].getVal()
@@ -556,30 +582,37 @@ def plot_fitted_of(ws):
     vv_stat_high = vv_nom_points*(1+stat_uncertainty_rel)*n_of_vv
     vv_stat_low = vv_nom_points*(1-stat_uncertainty_rel)*n_of_vv
 
+    vv_shape_high = vv_nom_points*(1+vv_shape_syst_points)*n_of_vv
+    vv_shape_low = vv_nom_points*(1-vv_shape_syst_points)*n_of_vv
+
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    ax.fill_between(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="b", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color="r", alpha=0.5)
     ax.step(x, vv_fitted_points, where="post", color="k")
     ax.step(x, vv_nom_points*n_of_vv, where="post", linestyle="dashed", color="b")
 
     ax.set_xlim(min(x), max(x)+10)
     ax.set_title("Diboson OF")
+
+    ax.legend(['Fitted', 'Nominal', "Histogram Systematic", "Shape Systematic", "Statistical Systematic"])
     plt.savefig("plots/template_vv_of.pdf")
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_yscale("log", nonposy="clip")
 
-    ax.fill_between(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="b", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color="r", alpha=0.5)
     ax.step(x, vv_fitted_points, where="post", color="k")
     ax.step(x, vv_nom_points*n_of_vv, where="post", linestyle="--", color="b")
 
     ax.set_xlim(min(x), max(x)+10)
-    ax.set_ylim(0.001, 5000)
     ax.set_title("Diboson OF")
+    ax.legend(['Fitted', 'Nominal', "Histogram Systematic", "Shape Systematic", "Statistical Systematic"])
     plt.savefig("plots/template_vv_of_log.pdf")
 
 
@@ -612,22 +645,24 @@ def plot_fitted_of(ws):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.fill_between(*get_step_fill_between(x, wjets_syst_low, wjets_syst_high), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, wjets_stat_low, wjets_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, wjets_syst_low, wjets_syst_high), alpha=0.5)
+    ax.fill(*get_step_fill_between(x, wjets_stat_low, wjets_stat_high), color='r', alpha=0.5)
     ax.step(x, wjets_fitted_points, color="k", where="post")
     ax.step(x, wjets_nom_points, color="b", linestyle="--", where="post")
     ax.set_title("Non-prompt OF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_wjets_of.pdf")
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_yscale("log", nonposy="clip")
-    ax.fill_between(*get_step_fill_between(x, wjets_syst_low, wjets_syst_high), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, wjets_stat_low, wjets_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, wjets_syst_low, wjets_syst_high), alpha=0.5)
+    ax.fill(*get_step_fill_between(x, wjets_stat_low, wjets_stat_high), color='r', alpha=0.5)
     ax.step(x, wjets_fitted_points, color="k", where="post")
     ax.step(x, wjets_nom_points, color="b", linestyle="--", where="post")
     ax.set_ylim(0.01, 500)
     ax.set_title("Non-prompt OF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_wjets_of_log.pdf")
 
 
@@ -659,25 +694,25 @@ def plot_fitted_of(ws):
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    ax.fill_between(*get_step_fill_between(x, z_syst_low, z_syst_high), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, z_stat_low, z_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, z_syst_low, z_syst_high), alpha=0.5)
+    ax.fill(*get_step_fill_between(x, z_stat_low, z_stat_high), color='r', alpha=0.5)
     ax.step(x, z_fitted_points, color="k", where="post")
     ax.step(x, z_nom_points, color="b", linestyle="--", where="post")
     ax.set_title("Z OF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_z_of.pdf")
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.set_yscale("log", nonposy="clip")
-    ax.fill_between(*get_step_fill_between(x, z_syst_low, z_syst_high), alpha=0.5)
-    ax.fill_between(*get_step_fill_between(x, z_stat_low, z_stat_high), color='r', alpha=0.5)
+    ax.fill(*get_step_fill_between(x, z_syst_low, z_syst_high), alpha=0.5)
+    ax.fill(*get_step_fill_between(x, z_stat_low, z_stat_high), color='r', alpha=0.5)
     ax.step(x, z_fitted_points, color="k", where="post")
     ax.step(x, z_nom_points, color="b", linestyle="--", where="post")
-    ax.set_ylim(0.01, 500)
+    ax.set_ylim(0.01, 1000)
     ax.set_title("Z OF")
+    ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
     plt.savefig("plots/template_z_of_log.pdf")
-
-    plt.show()
 
 if __name__ == '__main__':
     from docopt import docopt

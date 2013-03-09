@@ -79,9 +79,24 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
 
     meas.CollectHistograms()
 
-    R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
+    ws = R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
 
-    print "Saved to", prefix
+    top_ratio_val = temp_file.Get("top_ratio")[0]
+    ws.factory('expr::top_ratio("n_of_top/n_sf_top", n_of_top, n_sf_top)')
+    ws.factory('RooGaussian::top_ratio_constraint(top_ratio, nom_top_ratio[{0}], {1})'.format(top_ratio_val, top_ratio_val*0.1))
+    vv_ratio_val = temp_file.Get("vv_ratio")[0]
+    ws.factory('expr::vv_ratio("n_of_vv/n_sf_vv", n_of_vv, n_sf_vv)')
+    ws.factory('RooGaussian::vv_ratio_constraint(vv_ratio, nom_vv_ratio[{0}], {1})'.format(vv_ratio_val, vv_ratio_val*0.1))
+    ws.factory('PROD:constrPdf(simPdf, top_ratio_constraint, vv_ratio_constraint)')
+
+    model = ws.obj("ModelConfig")
+    model.SetPdf(ws.obj("constrPdf"))
+
+    # ws.Print()
+
+    rfile = R.TFile(prefix+"_constrained.root", "RECREATE")
+    ws.Write()
+    rfile.Close()
 
 if __name__ == '__main__':
     from docopt import docopt
@@ -101,9 +116,10 @@ if __name__ == '__main__':
         chans = ['of', 'sf']
 
     for m1,m2 in masses:
-        try:
+        # try:
             create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), chans)
-        except:
-            continue
+            break
+        # except:
+            # continue
 
 

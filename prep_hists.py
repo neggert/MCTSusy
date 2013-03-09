@@ -126,14 +126,18 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
         eff = 2.*n_2tag/(n_1tag+2*n_2tag)*1.06
         ntop_pred = n_1tag/2.*(1-eff)/eff
 
-        constraints[ch] = R.TVectorD(1)
-        constraints[ch][0] = ntop_pred
+
+    constraints['top_ratio'] = R.TVectorD(1)
+    constraints['top_ratio'][0] = mc[smc['sig_mct_low_of'] & (mc.mc_cat=="top")].weight.sum()/mc[smc['sig_mct_low_sf'] & (mc.mc_cat=="top")].weight.sum()
+    constraints['vv_ratio'] = R.TVectorD(1)
+    constraints['vv_ratio'][0] = (mc[smc['sig_mct_low_of'] & (mc.mc_cat=="WW")].weight.sum()/mc[smc['sig_mct_low_sf'] & (mc.mc_cat=="WW")].weight.sum())\
+                                 * mcvv[selvv['sig_mct_low_sf']].weight.sum()/mcvv[selvv['sig_mct_low_of']].weight.sum()
 
     for k in templates.keys():
         templates[k].Write()
 
     for k in constraints.keys():
-        constraints[k].Write("ntop_"+k)
+        constraints[k].Write(k)
 
     rfile.Close()
 

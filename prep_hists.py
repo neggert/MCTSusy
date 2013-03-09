@@ -85,8 +85,8 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     ww = mc[smc['sig_of'] & (mc.mc_cat=="WW")]
 
     # re-weighting factors from comparing 3-1 lepton region to WW in MC
-    ww_hist, ww_bins = np.histogram(ww.mctperp, weights=ww.weight, bins=7, range=(10,150), normed=True)
-    three_m1_mc_hist, _ = np.histogram(three_m1_mc.mctperp, weights=three_m1_mc.weight, bins=7, range=(10,150), normed=True)
+    ww_hist, ww_bins = np.histogram(ww.mctperp, weights=ww.weight, bins=14, range=(10,290), normed=True)
+    three_m1_mc_hist, _ = np.histogram(three_m1_mc.mctperp, weights=three_m1_mc.weight, bins=14, range=(10,290), normed=True)
     three_m1_reweighting = ww_hist/three_m1_mc_hist
 
     def get_weight(mctperp):
@@ -99,9 +99,9 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
     # derive systematic from comparison of 3-1 data to MC
     # systematic is the larger of fractional uncertainty on data and discrepancy between data and MC
-    three_m1_data_hist, _ = np.histogram(three_m1_data.mctperp, bins=7, range=(10,150)) # unweighted
+    three_m1_data_hist, _ = np.histogram(three_m1_data.mctperp, bins=14, range=(10,290)) # unweighted
     three_m1_stat = 1./np.sqrt(three_m1_data_hist) # fractional
-    three_m1_data_hist_normed, _ = np.histogram(three_m1_data.mctperp, weights=three_m1_data.weight, bins=7, range=(10,150), normed=True)
+    three_m1_data_hist_normed, _ = np.histogram(three_m1_data.mctperp, weights=three_m1_data.weight, bins=14, range=(10,290), normed=True)
     ww_discrepancy = abs(three_m1_data_hist_normed-ww_hist)/ww_hist
 
     ww_systematic = np.max((three_m1_stat, ww_discrepancy), axis=0)

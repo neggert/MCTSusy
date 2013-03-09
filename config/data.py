@@ -9,6 +9,7 @@ import ROOT as R
 # background MC
 s = HDFStore("work/mc/mc_20130308.hdf5")
 mc = s['data']
+mc = mc[mc.mctype != "WGStarToLNu2E"]
 
 weights = mc.x_eff*lumi
 weights.name="weight"

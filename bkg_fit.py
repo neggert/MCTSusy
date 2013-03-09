@@ -65,7 +65,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     # run the fit
     R.RooMsgService.instance().setGlobalKillBelow(R.RooFit.ERROR)
-    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save())
+    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0))
     if do_minos:
         res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.Minos())
 
@@ -94,7 +94,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     print t
 
     fitresults = defaultdict(dict)
-    chans = ['of','of']
+    chans = ['of','sf']
     for ch in chans:
         for b in bkgs:
             fitvar = fitPars.find('n_{}_{}'.format(ch, b))
@@ -112,7 +112,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     # plot the relevant portion of the correlation matrix
     fullcor = res.correlationMatrix()
-    cor = fullcor.GetSub(132, 139, 132, 139)
+    cor = fullcor.GetSub(96, 103, 96, 103)
     # import pdb; pdb.set_trace()
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -181,8 +181,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     model.SetSnapshot(model.GetParametersOfInterest())
 
-    plot_fitted_sf(ws)
-    plot_fitted_of(ws)
+    # plot_fitted_sf(ws)
+    # plot_fitted_of(ws)
 
 
     raw_input("...")
@@ -192,13 +192,16 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     # get the test statistic on data    
     R.gROOT.ProcessLineSync(".L KS/AndersonDarlingTestStat.cc+")
-    AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
+    AD = R.RooStats.AndersonDarlingTestStat(ws.obj("simPdf"), model.GetPdf())
     ts = AD.Evaluate(data, model.GetParametersOfInterest())
+
+    # import IPython
+    # IPython.embed()
 
     # calculate a p-value
     if get_p:
 
-        sampler = R.RooStats.ToyMCSampler(AD, 500)
+        sampler = R.RooStats.ToyMCSampler(AD, 10)
         sampler.SetPdf(model.GetPdf())
         sampler.SetObservables(model.GetObservables())
         sampler.SetGlobalObservables(model.GetGlobalObservables())

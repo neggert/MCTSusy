@@ -18,8 +18,13 @@ namespace RooStats {
     class AndersonDarlingTestStat : public TestStatistic {
       public:
         AndersonDarlingTestStat() {};
-        AndersonDarlingTestStat(RooAbsPdf& pdf) {
+        AndersonDarlingTestStat(RooAbsPdf& pdf, RooAbsPdf *fitPdf=NULL) {
             fPdf = &pdf;
+            if (fitPdf==NULL){
+                fFitPdf = &pdf;
+            } else {
+                fFitPdf = fitPdf;
+            }
         }
 
         ~AndersonDarlingTestStat() {}
@@ -33,6 +38,6 @@ namespace RooStats {
         Double_t EvaluateADDistance(RooAbsPdf& pdf, RooAbsData& data, RooRealVar& observable);
 
       private:
-        RooAbsPdf* fPdf;
+        RooAbsPdf* fPdf, *fFitPdf;
     };
 }

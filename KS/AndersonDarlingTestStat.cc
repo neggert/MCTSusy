@@ -36,9 +36,9 @@ Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSe
     // }
 
     //First, find the best fit values
-    RooArgSet* constraints = fPdf->getParameters(data);
+    RooArgSet* constraints = fFitPdf->getParameters(data);
     RooStats::RemoveConstantParameters(constraints);
-    fPdf->fitTo(data, RooFit::Constrain(*constraints), RooFit::PrintLevel(-1), RooFit::Verbose(kFALSE));
+    fFitPdf->fitTo(data, RooFit::Constrain(*constraints), RooFit::PrintLevel(-1), RooFit::Verbose(kFALSE));
 
     // unet POI constant so the fit doesn't adjust them
     // param_iter = params.createIterator();

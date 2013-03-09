@@ -72,15 +72,15 @@ def make_money_plot():
         bkgltpl.append("ZZ")
         bkgctpl.append(bkg_colors['ZZ'])
 
-        bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="VVV")].mctperp )
-        bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="VVV")].weight)
-        bkgltpl.append("VVV")
-        bkgctpl.append(bkg_colors['VVV'])
+        bkgtpl.append( mc[smc['sig_'+ch]&mc.mc_cat.isin(["VVV", "HWW"])].mctperp )
+        bkgwtpl.append( sf*mc[smc['sig_'+ch]&mc.mc_cat.isin(["VVV", "HWW"])].weight)
+        bkgltpl.append("Rare SM")
+        bkgctpl.append(bkg_colors['Rare'])
 
-        bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="HWW")].mctperp )
-        bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="HWW")].weight)
-        bkgltpl.append("HWW")
-        bkgctpl.append(bkg_colors['HWW'])
+        # bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="HWW")].mctperp )
+        # bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="HWW")].weight)
+        # bkgltpl.append("HWW")
+        # bkgctpl.append(bkg_colors['HWW'])
 
         bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="DY")].mctperp )
         data_norm = sum(mc[smc['sig_mct_low_'+ch]&(mc.mc_cat=="DY")].weight)
@@ -141,6 +141,30 @@ def make_money_plot():
         savefig("plots/money"+ch+".pdf")
 
         figs.append(fig)
+
+        f = figure(figsize=(6,6))
+        f.set_facecolor('w')
+        fig = f.add_subplot(111)
+        # fig.set_yscale('log', nonposy='clip')
+        # fig.set_ylim(0.01, 2000)
+        fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
+        h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl,
+                 zorder=1, linewidth=0.5, color=bkgctpl)
+        he = hist_errorbars( data[sd['sig_'+ch]].mctperp, xerrs=False, bins=bins, range=plotrange)
+        he.set_label("Data")
+
+        # move data to top of legend
+        handles, labels = fig.get_legend_handles_labels()
+        handles.insert(0,handles.pop())
+        labels.insert(0,labels.pop())
+
+        legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
+        fig.set_axisbelow(False)
+
+        minorticks = MultipleLocator(10)
+        fig.xaxis.set_minor_locator(minorticks)
+
+        savefig("plots/money"+ch+"_linear.pdf")
 
     return fig
 

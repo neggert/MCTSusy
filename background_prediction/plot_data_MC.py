@@ -32,9 +32,11 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     selected = mc[smc[selection_name]]
     data_selected = data[sd[selection_name]]
 
+    selected.mc_cat[selected.mc_cat.isin(["VVV", "HWW"])] = "Rare"
+
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WW', 'WZ', 'ZZ', 'VVV', 'HWW', 'DY', 'fake']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'Rare', 'DY', 'fake']
 
     bkgtpl = []
     bkgwtpl = []
@@ -258,9 +260,11 @@ def make_data_mc_plots():
 def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     selected = mc[smc[selection_name]]
 
+    selected.mc_cat[selected.mc_cat.isin(["VVV", "HWW"])] = "Rare"
+
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WW', 'WZ', 'ZZ', 'HWW', 'VVV', 'DY', 'fake']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'Rare', 'DY', 'fake']
 
     bkgtpl = []
     bkgwtpl = []

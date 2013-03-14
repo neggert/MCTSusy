@@ -27,6 +27,22 @@ mumu_low_eta = smc['mumu'] & (abs(mc.eta2) < 1.)
 mc.weight *= (smc['ee'].astype(float)*ee_trigger_eff+mumu_high_eta.astype(float)*mumu_high_eta_trigger_eff
               +mumu_low_eta.astype(float)*mumu_low_eta_trigger_eff + smc['emu'].astype(float)*emu_trigger_eff)
 
+# Z MC MET re-weighting
+import json
+with open("z_weights.json") as f:
+	reweighting = json.load(f)
+
+z_weights = np.asarray(reweighting['scale_factors'])
+z_bins = np.asarray(reweighting['bins'])
+
+def reweight(val, weight_factors, bins):
+	i = np.argmax(np.where(bins<val, bins, 0))
+	if i > len(weight_factors)-1:
+		return 1.
+	return weight_factors[i]
+
+mc.weight[mc.mc_cat=="DY"] *= mc[mc.mc_cat=="DY"].metPt.apply(reweight, args=(z_weights, z_bins))
+
 # adjust some MC categories
 # cat = mc.pop('mc_cat')
 # cat[mc.mctype=="WWZNoGstar"] = "VVV"

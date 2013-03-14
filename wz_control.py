@@ -107,7 +107,7 @@ f.set_facecolor('w')
 fig = subplot2grid((4,1),(0,0), rowspan=3)
 fig.set_yscale('log', nonposy='clip')
 fig.set_ylim(0.001, 1000)
-fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
+fig.set_ylabel("entries / 20 GeV", fontproperties=fontpb, color='k')
 
 hist(ww.mctperp, weights=ww.weight, color=bkg_colors['WW'], bins=nbins, range=nrange, normed=True, histtype="step", label="WW MC")
 
@@ -162,9 +162,9 @@ f.set_facecolor('w')
 fig = subplot2grid((4,1),(0,0), rowspan=3)
 fig.set_yscale('log', nonposy='clip')
 fig.set_ylim(0.001, 1000)
-fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
+fig.set_ylabel("entries / 20 GeV", fontproperties=fontpb, color='k')
 
-hist(ww.mctperp, weights=ww.weight, color=bkg_colors['WW'], bins=nbins, range=nrange, normed=True, histtype="step", label="WW Simulation")
+hist(ww.mctperp, weights=ww.weight, color=bkg_colors['WW'], bins=nbins, range=nrange, normed=True, histtype="step", label="WW MC")
 
 he = hist_errorbars( wz_data.mctperp, weights=wz_data.weight, bins=nbins, range=nrange, normed=True,
     xerrs=False, color="k")
@@ -193,7 +193,7 @@ fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')
 
 xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
 
-figtext(0.12, 0.92, r"CMS Simulation $\sqrt{\text{s}}=8\;\text{TeV}$", color='k',
+figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=19.5\;\text{fb}^{-1}$", color='k',
          fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
 
 savefig("plots/3-1leptonData.pdf")

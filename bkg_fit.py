@@ -24,7 +24,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import IndexLocator, FixedFormatter
 import numpy as np
 from prettytable import PrettyTable
-plt.switch_backend("pdf")
+# plt.switch_backend("pdf")
 
 bkgs = ['top', 'vv', 'wjets', 'z']
 
@@ -63,8 +63,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     pars = model.GetNuisanceParameters()
 
-    err_pars = R.RooArgSet(pars.find("n_of_top"), pars.find("n_of_vv"), pars.find("n_of_z"), pars.find("n_of_wjets"),
-                       pars.find("n_of_top"), pars.find("n_of_vv"), pars.find("n_of_z"), pars.find("n_of_wjets"))
+    # err_pars = R.RooArgSet(pars.find("n_of_top"), pars.find("n_of_vv"), pars.find("n_of_z"), pars.find("n_of_wjets"),
+    #                    pars.find("n_of_top"), pars.find("n_of_vv"), pars.find("n_of_z"), pars.find("n_of_wjets"))
 
     # run the fit
     R.RooMsgService.instance().setGlobalKillBelow(R.RooFit.ERROR)
@@ -78,9 +78,9 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     t = PrettyTable()
     if do_minos:
-        t.field_names = ['', "Value", "Parabolic Error", "Minos Down", "Minos Up"]
+        t.field_names = ['#', '', "Value", "Parabolic Error", "Minos Down", "Minos Up"]
     else:
-        t.field_names = ['', "Value", "Parabolic Error"]
+        t.field_names = ['#', '', "Value", "Parabolic Error"]
     t.vertical_char = "&"
     for i in xrange(nPar):
         name = fitPars.at(i).GetName()
@@ -89,23 +89,44 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
         if do_minos:
             minos_up = fitPars.at(i).getErrorLo()
             minos_down = fitPars.at(i).getErrorHi()
-            t.add_row((name, "{0:.3g}".format(val), "{0:.3g}".format(err), "{0:.3g}".format(minos_down), "{0:.3g}".format(minos_up)))
+            t.add_row((i, name, "{0:.3g}".format(val), "{0:.3g}".format(err), "{0:.3g}".format(minos_down), "{0:.3g}".format(minos_up)))
 
         else:
-            t.add_row((name, "{0:.3g}".format(val), "{0:.3g}".format(err)))
+            t.add_row((i, name, "{0:.3g}".format(val), "{0:.3g}".format(err)))
 
     print t
+
+    #find the actual parameter vlaues
+    par = R.RooArgList(ws.obj("n_top_sf"), ws.obj("alpha_top_ratio"))
+    n_top_sf_real = R.RooFormulaVar("n_top_sf_real", "n_top_sf_real", "n_top_sf*(1-0.1*alpha_top_ratio)", par)
+    scale = ws.obj("n_top_of_scale").getVal()
+    n_top_of = R.RooFormulaVar("n_top_of", "n_top_of", "n_top_sf*{0}*(1+0.1*alpha_top_ratio)".format(scale), par)
+
+    par = R.RooArgList(ws.obj("n_vv_sf"), ws.obj("alpha_vv_ratio"))
+    vv_ratio = ws.obj("alpha_vv_ratio")
+    n_vv_sf = ws.obj("n_vv_sf")
+    n_vv_sf_real = R.RooFormulaVar("n_vv_sf_real", "n_vv_sf_real", "n_vv_sf*(1-0.1*alpha_vv_ratio)", par)
+    n_vv_sf_err = n_vv_sf_real.getVal()*np.sqrt((n_vv_sf.getError()/n_vv_sf.getVal())**2+(0.1*vv_ratio.getError()/(1-0.1*vv_ratio.getVal()))**2)
+
+    scale = ws.obj("n_vv_of_scale").getVal()
+    n_vv_of = R.RooFormulaVar("n_vv_of", "n_vv_of", "n_vv_sf*{0}*(1+0.1*alpha_vv_ratio)".format(scale), par)
+
+    n_vv_of_err = n_vv_of.getVal()*np.sqrt((n_vv_sf.getError()/n_vv_sf.getVal())**2+(0.1*vv_ratio.getError()/(1+0.1*vv_ratio.getVal()))**2)
 
     fitresults = defaultdict(dict)
     chans = ['of','sf']
     for ch in chans:
-        for b in bkgs:
+        for b in ['z', 'wjets']:
             fitvar = fitPars.find('n_{}_{}'.format(ch, b))
             if b == 'z':
                 b = "DY"
             elif b == 'wjets':
                 b = 'fake'
             fitresults[ch][b] = (fitvar.getVal(), fitvar.getError())
+    fitresults['sf']['top'] = (n_top_sf_real.getVal(), n_top_sf_real.getPropagatedError(res))
+    fitresults['of']['top'] = (n_top_of.getVal(), n_top_of.getPropagatedError(res))
+    fitresults['sf']['vv'] = (n_vv_sf_real.getVal(), n_vv_sf_err)
+    fitresults['of']['vv'] = (n_vv_of.getVal(), n_vv_of_err)
 
     f = open("fit_results.json", 'w')
 
@@ -115,7 +136,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     # plot the relevant portion of the correlation matrix
     fullcor = res.correlationMatrix()
-    cor = fullcor.GetSub(128, 135, 128, 135)
+    cor = fullcor.GetSub(129, 136, 129, 136)
     # import pdb; pdb.set_trace()
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -147,7 +168,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
             if c > 0: color='white'
             else: color='black'
             size = np.sqrt(np.abs(c))
-            rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black')
+            rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black', lw=0.1)
             ax.add_patch(rect)
     ax.autoscale_view()
     plt.gca().invert_yaxis()
@@ -172,7 +193,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
             if c > 0: color='white'
             else: color='black'
             size = np.sqrt(np.abs(c))
-            rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black')
+            rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black', lw=0.1)
             ax.add_patch(rect)
     ax.set_xlim(0, 140)
     ax.set_ylim(0, 140)
@@ -192,7 +213,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     # get the test statistic on data    
     R.gROOT.ProcessLineSync(".L KS/AndersonDarlingTestStat.cc+")
-    AD = R.RooStats.AndersonDarlingTestStat(ws.obj("simPdf"), model.GetPdf())
+    AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
     ts = AD.Evaluate(data, model.GetParametersOfInterest())
 
     # import IPython
@@ -201,8 +222,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     # calculate a p-value
     if get_p:
 
-        sampler = R.RooStats.ToyMCSampler(AD, 10)
-        sampler.SetPdf(ws.obj("simPdf"))
+        sampler = R.RooStats.ToyMCSampler(AD, 500)
+        sampler.SetPdf(model.GetPdf())
         sampler.SetObservables(model.GetObservables())
         sampler.SetGlobalObservables(model.GetGlobalObservables())
         sampler.SetParametersForTestStat(model.GetParametersOfInterest())
@@ -216,6 +237,10 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
             sampler.SetProofConfig(pc)
 
         sampDist = sampler.GetSamplingDistribution(params)
+
+        f = R.TFile("BkgADDist.root", "RECREATE")
+        sampDist.Write("sampDist")
+        f.Close()
 
         p = 1-sampDist.CDF(ts)
 
@@ -248,7 +273,10 @@ def plot_fitted_sf(ws):
     stat_uncertainty_rel = 1./np.sqrt(stat_uncertainty_means)
 
     # top
-    n_sf_top = ws.obj("n_sf_top").getVal()
+    par = R.RooArgList(ws.obj("n_top_sf"), ws.obj("alpha_top_ratio"))
+    n_top_sf_real = R.RooFormulaVar("n_top_sf_real", "n_top_sf_real", "n_top_sf*(1-0.1*alpha_top_ratio)", par)
+
+    n_sf_top = n_top_sf_real.getVal()
     top_fitted = ws.obj("top_sf_sf_overallSyst_x_StatUncert")
     top_nominal = ws.obj("top_sf_sf_nominal")
 
@@ -274,6 +302,8 @@ def plot_fitted_sf(ws):
     ax.set_xlim(min(x), max(x)+10)
     ax.set_title("Top SF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal', "Statistical Systematic"])
+
     plt.savefig("plots/template_top_sf.pdf")
 
     fig = plt.figure()
@@ -286,6 +316,8 @@ def plot_fitted_sf(ws):
     ax.set_ylim(0.001, 5000)
     ax.set_title("Top SF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal', "Statistical Systematic"])
+
     plt.savefig("plots/template_top_sf_log.pdf")
 
     # VV
@@ -293,7 +325,9 @@ def plot_fitted_sf(ws):
     # fitted shape
     # includes both fitted statistical and systematics
     # might need to multiply by bin width
-    n_sf_vv = ws.obj("n_sf_vv").getVal()
+    par = R.RooArgList(ws.obj("n_vv_sf"), ws.obj("alpha_vv_ratio"))
+    n_vv_sf_real = R.RooFormulaVar("n_vv_sf_real", "n_vv_sf_real", "n_vv_sf*(1-0.1*alpha_vv_ratio)", par)
+    n_sf_vv = n_vv_sf_real.getVal()
     vv_fitted = ws.obj("vv_sf_sf_overallSyst_x_StatUncert_x_sf_ww_syst_sf_ShapeSys")
     vv_syst_nom = ws.obj("vv_sf_sf_Hist_alphanominal")
 
@@ -410,6 +444,8 @@ def plot_fitted_sf(ws):
     ax.step(x, wjets_nom_points, color="b", linestyle="--", where="post")
     ax.set_title("Non-prompt SF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', "Shape Systematic", "Statistical Systematic"])
+
     plt.savefig("plots/template_wjets_sf.pdf")
 
     fig = plt.figure()
@@ -422,6 +458,8 @@ def plot_fitted_sf(ws):
     ax.set_ylim(0.01, 500)
     ax.set_title("Non-prompt SF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal', "Shape Systematic", "Statistical Systematic"])
+
     plt.savefig("plots/template_wjets_sf_log.pdf")
 
 
@@ -459,6 +497,8 @@ def plot_fitted_sf(ws):
     ax.step(x, z_nom_points, color="b", linestyle="--", where="post")
     ax.set_title("Z SF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal',"Shape Systematic", "Statistical Systematic"])
+
     plt.savefig("plots/template_z_sf.pdf")
 
     fig = plt.figure()
@@ -471,6 +511,8 @@ def plot_fitted_sf(ws):
     ax.set_ylim(0.01, 1000)
     ax.set_title("Z SF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal',"Shape Systematic", "Statistical Systematic"])
+
     plt.savefig("plots/template_z_sf_log.pdf")
 
 def plot_fitted_of(ws):
@@ -489,7 +531,10 @@ def plot_fitted_of(ws):
     stat_uncertainty_rel = 1./np.sqrt(stat_uncertainty_means)
 
     # top
-    n_of_top = ws.obj("n_of_top").getVal()
+    par = R.RooArgList(ws.obj("n_top_sf"), ws.obj("alpha_top_ratio"))
+    scale = ws.obj("n_top_of_scale").getVal()
+    n_top_of = R.RooFormulaVar("n_top_of", "n_top_of", "n_top_sf*{0}*(1+0.1*alpha_top_ratio)".format(scale), par)
+    n_of_top = n_top_of.getVal()
     top_fitted = ws.obj("top_of_of_overallSyst_x_StatUncert")
     top_nominal = ws.obj("top_of_of_nominal")
 
@@ -515,6 +560,8 @@ def plot_fitted_of(ws):
     ax.set_xlim(min(x), max(x)+10)
     ax.set_title("Top OF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal',"Statistical Systematic"])
+
     plt.savefig("plots/template_top_of.pdf")
 
     fig = plt.figure()
@@ -527,6 +574,8 @@ def plot_fitted_of(ws):
     ax.set_ylim(0.001, 5000)
     ax.set_title("Top OF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal', "Statistical Systematic"])
+
     plt.savefig("plots/template_top_of_log.pdf")
 
     # VV
@@ -534,7 +583,10 @@ def plot_fitted_of(ws):
     # fitted shape
     # includes both fitted statistical and systematics
     # might need to multiply by bin width
-    n_of_vv = ws.obj("n_of_vv").getVal()
+    par = R.RooArgList(ws.obj("n_vv_sf"), ws.obj("alpha_vv_ratio"))
+    scale = ws.obj("n_vv_of_scale").getVal()
+    n_vv_of = R.RooFormulaVar("n_vv_of", "n_vv_of", "n_vv_sf*{0}*(1+0.1*alpha_vv_ratio)".format(scale), par)
+    n_of_vv = n_vv_of.getVal()
     vv_fitted = ws.obj("vv_of_of_overallSyst_x_StatUncert_x_of_ww_syst_of_ShapeSys")
     vv_syst_nom = ws.obj("vv_of_of_Hist_alphanominal")
 
@@ -651,6 +703,8 @@ def plot_fitted_of(ws):
     ax.step(x, wjets_nom_points, color="b", linestyle="--", where="post")
     ax.set_title("Non-prompt OF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal', "Shape Systematic", "Statistical Systematic"])
+
     plt.savefig("plots/template_wjets_of.pdf")
 
     fig = plt.figure()
@@ -663,6 +717,8 @@ def plot_fitted_of(ws):
     ax.set_ylim(0.01, 500)
     ax.set_title("Non-prompt OF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal', "Shape Systematic", "Statistical Systematic"])
+
     plt.savefig("plots/template_wjets_of_log.pdf")
 
 
@@ -700,6 +756,8 @@ def plot_fitted_of(ws):
     ax.step(x, z_nom_points, color="b", linestyle="--", where="post")
     ax.set_title("Z OF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal', "Shape Systematic", "Statistical Systematic"])
+
     plt.savefig("plots/template_z_of.pdf")
 
     fig = plt.figure()
@@ -712,6 +770,8 @@ def plot_fitted_of(ws):
     ax.set_ylim(0.01, 1000)
     ax.set_title("Z OF")
     ax.set_xlabel(r"$M_{\mathrm{CT}\perp}$ (GeV)")
+    ax.legend(['Fitted', 'Nominal', "Shape Systematic", "Statistical Systematic"])
+
     plt.savefig("plots/template_z_of_log.pdf")
 
 if __name__ == '__main__':

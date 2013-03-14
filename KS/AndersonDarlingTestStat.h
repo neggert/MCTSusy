@@ -30,7 +30,7 @@ namespace RooStats {
 
         ~AndersonDarlingTestStat() {}
 
-        Double_t Evaluate(RooAbsData& data, RooArgSet& params);
+        Double_t Evaluate(RooAbsData& data, RooArgSet& paramsOfInterest);
         
         virtual void SetVarName(const char* name) { fVarName = name; }
         virtual const TString GetVarName() const {return fVarName;}

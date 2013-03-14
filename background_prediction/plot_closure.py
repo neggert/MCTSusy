@@ -25,11 +25,11 @@ def plot_top_closure(flavor):
     """Make closure plot for the top control sample"""
     truths = ['ttbar', 'tW', 'ttV', 'ttVV']
     truth = {}
-    truth['ttbar'] = smc['sig_'+flavor] & ((mc.mctype=='ttbar') | (mc.mctype=='TTG'))
-    truth['tW'] = smc['sig_'+flavor] & (mc.mctype=='tW')
-    truth['ttV'] = smc['sig_'+flavor] & ((mc.mctype=='ttW')|(mc.mctype=="TTZ"))
-    truth ['ttVV'] = smc['sig_'+flavor] & (mc.mctype=="TTWW")
-    all_truth = smc['sig_'+flavor] & (mc.mc_cat=='top')
+    truth['ttbar'] = smc['sig_mct_low_'+flavor] & ((mc.mctype=='TTbar') | (mc.mctype=='TTG'))
+    truth['tW'] = smc['sig_mct_low_'+flavor] & (mc.mctype=='tW')
+    truth['ttV'] = smc['sig_mct_low_'+flavor] & ((mc.mctype=='ttw')|(mc.mctype=="TTZ"))
+    truth ['ttVV'] = smc['sig_mct_low_'+flavor] & (mc.mctype=="TTWW")
+    all_truth = smc['sig_mct_low_'+flavor] & (mc.mc_cat=='top')
 
     f = figure(figsize=(6,6))
     f.set_facecolor('w')
@@ -64,9 +64,9 @@ def plot_top_closure(flavor):
     #     normed=True, label="Top MC Truth", color=(.9,.6,0), linewidth=2)
     # hist( mc[twtruth].mctperp, weights=mc[twtruth].weight, bins=nbins, range=nrange, histtype="step", fill=False, rwidth=1.,\
     #     normed=True, label="tW MC Truth", color=(0,.45,.7), linewidth=2)
-    hist(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels)
+    h1 = hist(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels)
 
-    he = hist_errorbars( mc[smc['top_ctrl_'+flavor]].mctperp.values, weights=mc[smc['top_ctrl_'+flavor]].weight.values, bins=nbins, range=nrange, normed=True,\
+    he = hist_errorbars( mc[smc['top_mct_low_'+flavor]].mctperp.values, weights=mc[smc['top_mct_low_'+flavor]].weight.values, bins=nbins, range=nrange, normed=True,\
         xerrs=False, color="k")
 
     he.set_label("$\geq$1 b-tags MC")

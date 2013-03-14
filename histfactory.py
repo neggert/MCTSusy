@@ -56,10 +56,27 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
             template = R.RooStats.HistFactory.Sample("{0}_{1}".format(bkg, ch), "{0}_template_{1}".format(bkg, ch), "templates.root")
             template.SetNormalizeByTheory(False)
             template.ActivateStatError()
-            template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 10000)
+            if bkg=="top":
+                template.AddNormFactor("n_top_sf".format(ch, bkg), 2000, 0, 10000)
+                if ch=="of":
+                    top_ratio_val = temp_file.Get("top_ratio")[0]
+                    template.AddNormFactor("n_top_of_scale", top_ratio_val, 1, 1, True)
+                    template.AddOverallSys("top_ratio", .9, 1.1)
+                else:
+                    template.AddOverallSys("top_ratio", 1.1, 0.9)
+            elif bkg=="vv":
+                template.AddNormFactor("n_vv_sf".format(ch, bkg), 2000, 0, 10000)
+                if ch=="of":
+                    vv_ratio_val = temp_file.Get("vv_ratio")[0]
+                    template.AddNormFactor("n_vv_of_scale", vv_ratio_val, 1, 1, True)
+                    template.AddOverallSys("vv_ratio", .9, 1.1)
+                else:
+                    template.AddOverallSys("vv_ratio", 1.1, 0.9)
+            else:
+                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 10000)
 
             if bkg == 'vv':
-                template.AddShapeSys("ww_syst"+ch, 0, "ww_syst_"+ch, "templates.root")
+                template.AddShapeSys("ww_syst_"+ch, 0, "ww_syst_"+ch, "templates.root")
                 template.AddHistoSys('WW_norm', "vv_syst_WW_"+ch+"Up", "templates.root", "", "vv_syst_WW_"+ch+"Down", "templates.root", "")
                 template.AddHistoSys('WZ_norm', "vv_syst_WZ_"+ch+"Up", "templates.root", "", "vv_syst_WZ_"+ch+"Down", "templates.root", "")
                 template.AddHistoSys('ZZ_norm', "vv_syst_ZZ_"+ch+"Up", "templates.root", "", "vv_syst_ZZ_"+ch+"Down", "templates.root", "")
@@ -82,22 +99,22 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
 
     ws = R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
 
-    top_ratio_val = temp_file.Get("top_ratio")[0]
-    ws.factory('expr::top_ratio("n_of_top/n_sf_top", n_of_top, n_sf_top)')
-    ws.factory('RooGaussian::top_ratio_constraint(top_ratio, nom_top_ratio[{0}], {1})'.format(top_ratio_val, top_ratio_val*0.1))
-    vv_ratio_val = temp_file.Get("vv_ratio")[0]
-    ws.factory('expr::vv_ratio("n_of_vv/n_sf_vv", n_of_vv, n_sf_vv)')
-    ws.factory('RooGaussian::vv_ratio_constraint(vv_ratio, nom_vv_ratio[{0}], {1})'.format(vv_ratio_val, vv_ratio_val*0.1))
-    ws.factory('PROD:constrPdf(simPdf, top_ratio_constraint, vv_ratio_constraint)')
+    # top_ratio_val = temp_file.Get("top_ratio")[0]
+    # ws.factory('expr::top_ratio("n_of_top/n_sf_top", n_of_top, n_sf_top)')
+    # ws.factory('RooGaussian::top_ratio_constraint(top_ratio, nom_top_ratio[{0}], {1})'.format(top_ratio_val, top_ratio_val*0.1))
+    # vv_ratio_val = temp_file.Get("vv_ratio")[0]
+    # ws.factory('expr::vv_ratio("n_of_vv/n_sf_vv", n_of_vv, n_sf_vv)')
+    # ws.factory('RooGaussian::vv_ratio_constraint(vv_ratio, nom_vv_ratio[{0}], {1})'.format(vv_ratio_val, vv_ratio_val*0.1))
+    # ws.factory('PROD:constrPdf(simPdf, top_ratio_constraint, vv_ratio_constraint)')
 
-    model = ws.obj("ModelConfig")
-    model.SetPdf(ws.obj("constrPdf"))
+    # model = ws.obj("ModelConfig")
+    # model.SetPdf(ws.obj("constrPdf"))
 
-    # ws.Print()
+    # # ws.Print()
 
-    rfile = R.TFile(prefix+"_constrained.root", "RECREATE")
-    ws.Write()
-    rfile.Close()
+    # rfile = R.TFile(prefix+"_constrained.root", "RECREATE")
+    # ws.Write()
+    # rfile.Close()
 
 if __name__ == '__main__':
     from docopt import docopt
@@ -117,10 +134,10 @@ if __name__ == '__main__':
         chans = ['of', 'sf']
 
     for m1,m2 in masses:
-        # try:
+        try:
             create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), chans)
-            break
-        # except:
-            # continue
+            # break
+        except:
+            continue
 
 

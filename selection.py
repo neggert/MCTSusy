@@ -95,7 +95,7 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['isolation_sig_emu'] = outdict['l1_passes_tight_iso'] & outdict['l2_passes_tight_iso'] & outdict['preselection'] & outdict['emu']
 
     outdict['isolation_ctrl'] = ( (outdict['l1_passes_tight_iso'] & outdict['l2_passes_ctrl_iso']) | (outdict['l1_passes_ctrl_iso'] & outdict['l2_passes_tight_iso']) )\
-                                  & outdict['preselection']
+                                  & outdict['same_sign']
 
     outdict['sf'] = outdict['ee'] | outdict['mumu']
     outdict['of'] = outdict['emu']
@@ -126,7 +126,7 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['moretag_ctrl'] = outdict['more_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['z_ctrl'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window']
-    outdict['wz_ctrl'] = outdict['bjets_sig'] & outdict['isolation_3l'] & outdict['pass_met'] & outdict['z_window']
+    outdict['wz_ctrl'] = outdict['bjets_sig'] & outdict['isolation_3l'] & outdict['pass_met']
     outdict['sig'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
 
     outdict['wjets_ctrl_sf'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']

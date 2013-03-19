@@ -134,10 +134,10 @@ if __name__ == '__main__':
         chans = ['of', 'sf']
 
     for m1,m2 in masses:
-        try:
+        # try:
             create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), chans)
-            # break
-        except:
-            continue
+            break
+        # except:
+            # continue
 
 

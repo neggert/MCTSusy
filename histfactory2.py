@@ -29,7 +29,7 @@ def create_histfactory(template_file, signal_file, m1, m2, data_file_name="data.
 
     channel_conf = R.RooStats.HistFactory.Channel('sf')
     channel_conf.SetData("data_sf", "data.root")
-    channel_conf.SetStatErrorConfig(0.1, "Poisson")
+    channel_conf.SetStatErrorConfig(0.01, "Poisson")
 
     # signal sample
     signal = R.RooStats.HistFactory.Sample("signal_sf", "sms_template_sf_{0}_{1}".format(m1, m2), signal_file)
@@ -82,6 +82,7 @@ if __name__ == '__main__':
     for m1,m2 in masses:
         try:
             create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2))
+            break
         except:
             continue
 

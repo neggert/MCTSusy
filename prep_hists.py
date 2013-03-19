@@ -116,8 +116,8 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
         # systematic on w+jets template
         rhist = R.TH1D("wjets_syst_"+ch, "wjets_syst_"+ch, bins, histrange[0], histrange[1])
         for i in xrange(bins):
-            if templates['wjets_'+ch].GetBinContent(i+1) > 0: #only do non-zero bins
-                rhist.SetBinContent(i+1, 0.3) # 50% systematic
+            # if templates['wjets_'+ch].GetBinContent(i+1) > 0: #only do non-zero bins
+            rhist.SetBinContent(i+1, 0.3) # 50% systematic
         templates['wjets_syst_'+ch] = rhist
 
         vv = mcvv[selvv['sig_'+ch]]
@@ -178,8 +178,8 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
             d_hist, d_edges = np.histogram(data_onz.mctperp, weights=data_onz.weight, bins=bins, range=histrange, normed=True)
 
             err = np.zeros(bins)
-            err[:11] = abs(mc_hist[:11]-d_hist[:11])/d_hist[:11]
-            err[11:] = 0.5
+            err[:] = np.max(abs(mc_hist[:10]-d_hist[:10])/d_hist[:10])
+            # err[10:] = 0.5
 
             # make a TH1 out of it
             rhist = R.TH1D("z_syst", "z_syst", bins, histrange[0], histrange[1])

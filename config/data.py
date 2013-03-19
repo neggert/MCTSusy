@@ -27,22 +27,6 @@ mumu_low_eta = smc['mumu'] & (abs(mc.eta2) < 1.)
 mc.weight *= (smc['ee'].astype(float)*ee_trigger_eff+mumu_high_eta.astype(float)*mumu_high_eta_trigger_eff
               +mumu_low_eta.astype(float)*mumu_low_eta_trigger_eff + smc['emu'].astype(float)*emu_trigger_eff)
 
-# Z MC MET re-weighting
-import json
-with open("z_weights.json") as f:
-	reweighting = json.load(f)
-
-z_weights = np.asarray(reweighting['scale_factors'])
-z_bins = np.asarray(reweighting['bins'])
-
-def reweight(val, weight_factors, bins):
-	i = np.argmax(np.where(bins<val, bins, 0))
-	if i > len(weight_factors)-1:
-		return 1.
-	return weight_factors[i]
-
-mc.weight[mc.mc_cat=="DY"] *= mc[mc.mc_cat=="DY"].metPt.apply(reweight, args=(z_weights, z_bins))
-
 # adjust some MC categories
 # cat = mc.pop('mc_cat')
 # cat[mc.mctype=="WWZNoGstar"] = "VVV"
@@ -58,7 +42,7 @@ pu_th1 = pu_file.Get("pileup")
 data_pu_hist = np.zeros(mc_pu_hist.shape)
 
 for i in xrange(len(data_pu_hist)):
-	data_pu_hist[i] = pu_th1.GetBinContent(i)
+	data_pu_hist[i] = pu_th1.GetBinContent(i+1)
 
 
 # normalize the histograms
@@ -72,6 +56,22 @@ pu_weights = data_pu_hist/mc_pu_hist
 mc.nTruePuVertices[mc.nTruePuVertices > 100] = 100
 event_pu_weights = mc.nTruePuVertices.apply(lambda n: pu_weights.item(int(n)))
 mc.weight *= event_pu_weights
+
+# Z MC MET re-weighting
+import json
+with open("z_weights.json") as f:
+	reweighting = json.load(f)
+
+z_weights = np.asarray(reweighting['scale_factors'])
+z_bins = np.asarray(reweighting['bins'])
+
+def reweight(val, weight_factors, bins):
+	i = np.argmax(np.where(bins<val, bins, 0))
+	if i > len(weight_factors)-1:
+		return 1.
+	return weight_factors[i]
+
+mc.weight[mc.mc_cat=="DY"] *= mc[mc.mc_cat=="DY"].metPt.apply(reweight, args=(z_weights, z_bins))
 
 # data
 t = HDFStore("work/data/data_20130304.hdf5")

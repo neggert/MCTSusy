@@ -64,7 +64,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     print sum([sum(weights) for weights in bkgwtpl])
 
     he = hist_errorbars( data_selected[variable], xerrs=False, bins=bins, range=plotrange)
-    he.set_label("Data")
+    he[-1].set_label("Data")
     fig.set_axisbelow(False)
 
     # move data to top of legend
@@ -128,10 +128,17 @@ def make_data_mc_plots():
 
     f,f2 = compare_data_mc('z_ctrl_0met', 'metPt', 30, (0,300))
     f.set_yscale('log', nonposy='clip')
-    f.set_ylim(.1, 100000)
+    f.set_ylim(.1, 1e7)
     f2.set_ylim(0, 2)
     xlabel("MET (GeV)")
     savefig("plots/data_mc_z_metdist.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_0met', 'mll', 30, (76,106))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(1e4, 1e7)
+    f2.set_ylim(0, 2)
+    xlabel("MET (GeV)")
+    savefig("plots/data_mc_z_mll.pdf")
 
     f,f2 = compare_data_mc('z_ctrl_30met', 'mctperp', 29, (10,300))
     f.set_yscale('log', nonposy='clip')
@@ -209,7 +216,7 @@ def make_data_mc_plots():
     savefig("plots/data_mc_z_0met_linear.pdf")
 
     f,f2 = compare_data_mc('z_ctrl_0met', 'metPt', 30, (0,300))
-    # f.set_ylim(.1, 100000)
+    # f.set_ylim(.1, 1e7)
     f2.set_ylim(0, 2)
     xlabel("MET (GeV)")
     savefig("plots/data_mc_z_metdist_linear.pdf")

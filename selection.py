@@ -101,7 +101,7 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['of'] = outdict['emu']
 
 
-    outdict['z_window'] = (data.mll < 96) & (data.mll > 86) & (abs(data.pdg1) == abs(data.pdg2))
+    outdict['z_window'] = (data.mll < 106) & (data.mll > 76) & (abs(data.pdg1) == abs(data.pdg2))
     outdict['off_z_window'] = (((data.mll > 106) | (data.mll < 76)) | (abs(data.pdg1) != abs(data.pdg2))) & (data.mll > 12)
     # outdict['off_z_window'] = ~outdict['z_window'] & (data.mll > 12)
 

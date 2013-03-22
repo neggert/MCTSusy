@@ -107,7 +107,7 @@ def make_money_plot():
         h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl,
                  zorder=1, linewidth=0.5, color=bkgctpl)
         he = hist_errorbars( data[sd['sig_'+ch]].mctperp, xerrs=False, bins=bins, range=plotrange)
-        he.set_label("Data")
+        he[-1].set_label("Data")
 
         # move data to top of legend
         handles, labels = fig.get_legend_handles_labels()
@@ -151,7 +151,7 @@ def make_money_plot():
         h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl,
                  zorder=1, linewidth=0.5, color=bkgctpl)
         he = hist_errorbars( data[sd['sig_'+ch]].mctperp, xerrs=False, bins=bins, range=plotrange)
-        he.set_label("Data")
+        he[-1].set_label("Data")
 
         # move data to top of legend
         handles, labels = fig.get_legend_handles_labels()

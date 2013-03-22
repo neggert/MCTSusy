@@ -21,6 +21,23 @@ fontp = FontProperties(family="Helvetica", size=12)
 fontpb = FontProperties(family="Helvetica", size=12, weight="book")
 
 
+def get_step_fill_between(x, y1, y2):
+
+    fill_x = np.zeros(2*len(x))
+    fill_x[::2] = x
+    fill_x[1:-1:2] = x[1:]
+    fill_x[-1] = 300
+    fill_y1 = np.zeros(fill_x.shape)
+    fill_y1[::2] = y1
+    fill_y1[1::2] = y1
+    fill_y2 = np.zeros(fill_x.shape)
+    fill_y2[::2] = y2
+    fill_y2[1::2] = y2
+
+
+
+    return np.append(fill_x, fill_x[::-1]), np.append(fill_y1, fill_y2[::-1])
+
 def plot_top_closure(flavor):
     """Make closure plot for the top control sample"""
     truths = ['ttbar', 'tW', 'ttV', 'ttVV']
@@ -67,7 +84,7 @@ def plot_top_closure(flavor):
     h1 = hist(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels)
 
     he = hist_errorbars( mc[smc['top_mct_low_'+flavor]].mctperp.values, weights=mc[smc['top_mct_low_'+flavor]].weight.values, bins=nbins, range=nrange, normed=True,\
-        xerrs=False, color="k")
+        xerrs=False, color="k")[2]
 
     he.set_label("$\geq$1 b-tags MC")
     ylim(1.e-7, .1)
@@ -178,24 +195,68 @@ def print_fs_closure():
     print t
 
 def plot_fake_closure():
-    """Make closure plot for the fake lepton control sample"""
-    faketruth = smc['sig'] & (mc.mc_cat=='fake')
+    """Make closure plot for the top control sample"""
+    truths = ['wjets', 'top']
+    truth = {}
+    truth['wjets'] = smc['sig_mct_low'] & (mc.mc_cat=="fake")
+    truth['top'] = smc['sig_mct_low'] & (mc.mc_cat=='top') & (mc.gen_neutrinos <= 1)
+    all_truth = truth['wjets'] | truth['top']
 
+
+    nbins = 29
+    nrange = (10., 300.)
     f = figure(figsize=(6,6))
     f.set_facecolor('w')
     fig = subplot2grid((4,1),(0,0), rowspan=3)
     fig.set_yscale('log', nonposy='clip')
-    fig.set_ylim(0.001, 10000)
+    fig.set_ylim(0.001, .1)
     fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
 
-    nbins = 9
-    nrange = (10., 100.)
-    hist( mc[faketruth].mctperp, weights=mc[faketruth].weight, bins=nbins, range=nrange, histtype="step", stacked=True,\
-        normed=True, label="W+Jets MC Truth", color=(.8,.4, 0), linewidth=2)
-    he = hist_errorbars( mc[smc['wjets_ctrl']].mctperp.values, weights=mc[smc['wjets_ctrl']].weight.values, bins=nbins, range=nrange, normed=True,\
-        xerrs=False, label="Control", color='k')
+    x = []
+    w = []
+    for t in truths:
+        x.append(mc[truth[t]].mctperp)
+        w.append(mc[truth[t]].weight)
+
+    c = [bkg_colors['fake'], bkg_colors['top']
+             ]
+    labels = ['W+Jets', 'Non-dilepton Top']
+
+    # hist( mc[toptruth].mctperp, weights=mc[toptruth].weight, bins=nbins, range=nrange, histtype="step", fill=False, rwidth=1.,\
+    #     normed=True, label="Top MC Truth", color=(.9,.6,0), linewidth=2)
+    # hist( mc[twtruth].mctperp, weights=mc[twtruth].weight, bins=nbins, range=nrange, histtype="step", fill=False, rwidth=1.,\
+    #     normed=True, label="tW MC Truth", color=(0,.45,.7), linewidth=2)
+    h1 = hist(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels)
+    wjets_nom = h1[0][0]
+
+    # find statistical uncertainties
+    unweighted_hist, bins = np.histogram(mc[all_truth].mctperp, bins=nbins, range=nrange)
+    weighted_hist, bins = np.histogram(mc[all_truth].mctperp, weights=mc[all_truth].weight, bins=nbins, range=nrange)
+
+    print unweighted_hist
+
+    # import pdb; pdb.set_trace()
+
+    uncertainties = np.sqrt(unweighted_hist)
+    uncertainties[unweighted_hist==0] = 0.
+    weight_scale = weighted_hist/unweighted_hist
+
+
+    norm_scale = 1./np.sum(weighted_hist)/((nrange[1]-nrange[0])/nbins)
+
+    scaled_uncertainties = uncertainties*weight_scale*norm_scale
+
+    scaled_uncertainties[np.isnan(scaled_uncertainties)] = 0.
+
+    fill(*get_step_fill_between(bins[:-1], wjets_nom+scaled_uncertainties, wjets_nom-scaled_uncertainties), color='r', alpha=0.3)
+
+
+    he = hist_errorbars( mc[smc['wjets_mct_low']].mctperp.values, weights=mc[smc['wjets_mct_low']].weight.values, bins=nbins, range=nrange, normed=True,\
+        xerrs=False, color="k")[2]
+
     he.set_label("Control Region MC")
-    ylim(1.e-4, .5)
+    ylim(1.e-7, .1)
+    fig.set_axisbelow(False)
 
     # move data to top of legend
     handles, labels = fig.get_legend_handles_labels()
@@ -210,7 +271,7 @@ def plot_fake_closure():
 
     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
 
-    hist_ratio(mc[smc['wjets_ctrl']].mctperp, mc[faketruth].mctperp, mc[faketruth].weight, mc[smc['wjets_ctrl']].weight, bins=nbins, range=nrange, normed=True)
+    h2 = hist_ratio(mc[smc['wjets_ctrl']].mctperp, mc[all_truth].mctperp, mc[all_truth].weight, mc[smc['wjets_ctrl']].weight, bins=nbins, range=nrange, normed=True)
     axhline(1, color="k")
     fig2.set_ylim(0,2)
     fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')
@@ -221,6 +282,52 @@ def plot_fake_closure():
              fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
 
     savefig("plots/closure_fake.pdf")
+
+
+# def plot_fake_closure():
+#     """Make closure plot for the fake lepton control sample"""
+#     faketruth = smc['sig'] & (mc.mc_cat=='fake') | ((mc.mc_cat=="top") & (mc.gen_neutrinos==1))
+
+#     f = figure(figsize=(6,6))
+#     f.set_facecolor('w')
+#     fig = subplot2grid((4,1),(0,0), rowspan=3)
+#     fig.set_yscale('log', nonposy='clip')
+#     fig.set_ylim(0.001, 10000)
+#     fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
+
+#     nbins = 9
+#     nrange = (10., 100.)
+#     hist( mc[faketruth].mctperp, weights=mc[faketruth].weight, bins=nbins, range=nrange, histtype="step", stacked=True,\
+#         normed=True, label="W+Jets MC Truth", color=(.8,.4, 0), linewidth=2)
+#     he = hist_errorbars( mc[smc['wjets_ctrl']].mctperp.values, weights=mc[smc['wjets_ctrl']].weight.values, bins=nbins, range=nrange, normed=True,\
+#         xerrs=False, label="Control", color='k')
+#     he.set_label("Control Region MC")
+#     ylim(1.e-4, .5)
+
+#     # move data to top of legend
+#     handles, labels = fig.get_legend_handles_labels()
+#     handles.insert(0,handles.pop())
+#     labels.insert(0,labels.pop())
+
+#     legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
+#     fig.set_axisbelow(False)
+
+#     minorticks = MultipleLocator(10)
+#     fig.xaxis.set_minor_locator(minorticks)
+
+#     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
+
+#     hist_ratio(mc[smc['wjets_ctrl']].mctperp, mc[faketruth].mctperp, mc[faketruth].weight, mc[smc['wjets_ctrl']].weight, bins=nbins, range=nrange, normed=True)
+#     axhline(1, color="k")
+#     fig2.set_ylim(0,2)
+#     fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')
+
+#     xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
+
+#     figtext(0.12, 0.92, r"CMS Simulation $\sqrt{\text{s}}=8\;\text{TeV}$", color='k',
+#              fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
+
+#     savefig("plots/closure_fake.pdf")
 
 def plot_fs_closure():
     """Make closure plot for the fake lepton control sample"""
@@ -271,7 +378,7 @@ def plot_fs_closure():
 
     hist(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels)
     he = hist_errorbars( mc[smc['sig_mct_low_of']].mctperp.values, weights=mc[smc['sig_mct_low_of']].weight.values, bins=nbins, range=nrange, normed=True,\
-        xerrs=False, label="Control", color='k')
+        xerrs=False, label="Control", color='k')[2]
     he.set_label("Control Region MC")
     ylim(1.e-7, .1)
 

@@ -78,6 +78,10 @@ def shuffle_leptons(event):
 
 wz = wz.apply(shuffle_leptons, axis=1)
 
+mt = np.sqrt(wz.pt3*wz.metPt*(1-np.cos(wz.phi3-wz.metPhi)))
+
+# wz = wz[(mt > 30) & (mt < 80)]
+
 # recalculate MCT
 
 wz.mctperp = wz.apply(recalc_MCT, axis=1)
@@ -87,8 +91,13 @@ wz.ThirdLepton = False
 swz = selection.get_samples(wz)
 wz = wz[swz['sig_of']]
 
-wz_data = data[data.ThirdLepton]
+wz_data = data[data.ThirdLepton & (data.metPt > 30)]
 wz_data = wz_data.apply(shuffle_leptons, axis=1)
+
+mt = np.sqrt(wz_data.pt3*wz_data.metPt*(1-np.cos(wz_data.phi3-wz_data.metPhi)))
+
+# wz_data = wz_data[(mt > 30) & (mt < 80)]
+
 wz_data.mctperp = wz_data.apply(recalc_MCT, axis=1)
 wz_data.mctperp *= 80.4/91.2
 wz_data.metPt = wz_data.apply(recalc_MET, axis=1)
@@ -107,14 +116,14 @@ f.set_facecolor('w')
 fig = subplot2grid((4,1),(0,0), rowspan=3)
 fig.set_yscale('log', nonposy='clip')
 fig.set_ylim(0.001, 1000)
-fig.set_ylabel("entries / 20 GeV", fontproperties=fontpb, color='k')
+fig.set_ylabel("1 / 20 GeV", fontproperties=fontpb, color='k')
 
 hist(ww.mctperp, weights=ww.weight, color=bkg_colors['WW'], bins=nbins, range=nrange, normed=True, histtype="step", label="WW MC")
 
 he = hist_errorbars( wz.mctperp, weights=wz.weight, bins=nbins, range=nrange, normed=True,
     xerrs=False, color="k")
 
-he.set_label(r"$3-1$ Lepton CR MC")
+he[-1].set_label(r"$3-1$ Lepton CR MC")
 ylim(1.e-7, .1)
 fig.set_axisbelow(False)
 
@@ -143,6 +152,79 @@ figtext(0.12, 0.92, r"CMS Simulation $\sqrt{\text{s}}=8\;\text{TeV}$", color='k'
 
 savefig("plots/3-1leptonCR.pdf")
 
+selected = wz
+data_selected = wz_data
+variable = 'mctperp'
+plotrange=(10,300)
+bins=29
+
+group_order = ['top', 'WW', 'WZ', 'ZZ', 'Rare', 'DY', 'fake']
+
+bkgtpl = []
+bkgwtpl = []
+bkgltpl = []
+bkgctpl = []
+
+for name in group_order:
+    if selected[(selected.mc_cat==name) & (selected[variable] > plotrange[0])&(selected[variable] < plotrange[1])][variable].count() > 0:
+        bkgtpl.append( selected[selected.mc_cat==name][variable])
+        bkgwtpl.append( selected[selected.mc_cat==name].weight)
+        bkgltpl.append(bkg_labels[name])
+        bkgctpl.append(bkg_colors[name])
+
+if len(bkgtpl) == 0:
+    raise RuntimeError('No Events')
+
+f = figure(figsize=(6,6))
+f.set_facecolor('w')
+fig = subplot2grid((4,1),(0,0), rowspan=3)
+# fig.set_yscale('log', nonposy='clip')
+# fig.set_ylim(0.001, 10000)
+fig.set_ylabel("1 / 10 GeV", fontproperties=fontpb, color='k')
+
+h = hist(bkgtpl, weights=bkgwtpl, histtype="step", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, color=bkgctpl, linewidth=0.5,
+		 normed=True)
+print sum([sum(weights) for weights in bkgwtpl])
+
+he = hist_errorbars( data_selected[variable], xerrs=False, bins=bins, range=plotrange, normed=True)
+he[-1].set_label("Data")
+fig.set_axisbelow(False)
+
+# move data to top of legend
+handles, labels = fig.get_legend_handles_labels()
+handles.insert(0,handles.pop())
+labels.insert(0,labels.pop())
+
+l = legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
+fig.set_axisbelow(False)
+
+minorticks = MultipleLocator(10)
+fig.xaxis.set_minor_locator(minorticks)
+
+fig2 = subplot2grid((4,1),(3,0), sharex=fig)
+hist_ratio(data_selected[variable], selected[variable], selected.weight, bins=bins, range=plotrange, normed=True)
+
+axhline(1, color="k")
+fig2.set_ylim(0.0,2.0)
+fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')
+
+xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
+
+figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=19.5\;\text{fb}^{-1}$", color='k',
+         fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
+
+fig.set_ylim(1e-5, 1)
+fig.set_yscale('log', nonposy='clip')
+
+savefig("plots/3-1datamc.pdf")
+
+
+
+
+
+
+
+
 
 #reweight
 ww_mc, bins = np.histogram(ww.mctperp, weights=ww.weight, bins=nbins, range=nrange, normed=True)
@@ -162,14 +244,14 @@ f.set_facecolor('w')
 fig = subplot2grid((4,1),(0,0), rowspan=3)
 fig.set_yscale('log', nonposy='clip')
 fig.set_ylim(0.001, 1000)
-fig.set_ylabel("entries / 20 GeV", fontproperties=fontpb, color='k')
+fig.set_ylabel("1 / 20 GeV", fontproperties=fontpb, color='k')
 
 hist(ww.mctperp, weights=ww.weight, color=bkg_colors['WW'], bins=nbins, range=nrange, normed=True, histtype="step", label="WW MC")
 
 he = hist_errorbars( wz_data.mctperp, weights=wz_data.weight, bins=nbins, range=nrange, normed=True,
     xerrs=False, color="k")
 
-he.set_label(r"$3-1$ Lepton Data")
+he[-1].set_label(r"$3-1$ Lepton Data")
 ylim(1.e-7, .1)
 fig.set_axisbelow(False)
 
@@ -197,3 +279,6 @@ figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{
          fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
 
 savefig("plots/3-1leptonData.pdf")
+
+
+

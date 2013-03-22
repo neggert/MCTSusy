@@ -68,9 +68,11 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     # run the fit
     R.RooMsgService.instance().setGlobalKillBelow(R.RooFit.ERROR)
-    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0))
     if do_minos:
-        res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.Minos())
+        res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0), R.RooFit.Minos(), R.RooFit.Hesse())
+    else: 
+        res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0))
+
 
     fitPars = res.floatParsFinal()
 
@@ -195,8 +197,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
             size = np.sqrt(np.abs(c))
             rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black', lw=0.1)
             ax.add_patch(rect)
-    ax.set_xlim(0, 140)
-    ax.set_ylim(0, 140)
+    ax.set_xlim(0, fullcor.GetNrows())
+    ax.set_ylim(0, fullcor.GetNrows())
     plt.gca().invert_yaxis()
     plt.tight_layout()
 
@@ -381,8 +383,8 @@ def plot_fitted_sf(ws):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="b", alpha=0.5)
-    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="b", alpha=0.5)
     ax.fill(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color="r", alpha=0.5)
     ax.step(x, vv_fitted_points, where="post", color="k")
     ax.step(x, vv_nom_points*n_sf_vv, where="post", linestyle="dashed", color="b")
@@ -397,8 +399,8 @@ def plot_fitted_sf(ws):
     ax = fig.add_subplot(111)
     ax.set_yscale("log", nonposy="clip")
 
-    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="b", alpha=0.5)
-    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="b", alpha=0.5)
     ax.fill(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color="r", alpha=0.5)
     ax.step(x, vv_fitted_points, where="post", color="k")
     ax.step(x, vv_nom_points*n_sf_vv, where="post", linestyle="--", color="b")
@@ -640,8 +642,8 @@ def plot_fitted_of(ws):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="b", alpha=0.5)
-    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="b", alpha=0.5)
     ax.fill(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color="r", alpha=0.5)
     ax.step(x, vv_fitted_points, where="post", color="k")
     ax.step(x, vv_nom_points*n_of_vv, where="post", linestyle="dashed", color="b")
@@ -656,8 +658,8 @@ def plot_fitted_of(ws):
     ax = fig.add_subplot(111)
     ax.set_yscale("log", nonposy="clip")
 
-    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="b", alpha=0.5)
-    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_syst_low_points, vv_syst_high_points), color="y", alpha=0.5)
+    ax.fill(*get_step_fill_between(x, vv_shape_low, vv_shape_high), color="b", alpha=0.5)
     ax.fill(*get_step_fill_between(x, vv_stat_low, vv_stat_high), color="r", alpha=0.5)
     ax.step(x, vv_fitted_points, where="post", color="k")
     ax.step(x, vv_nom_points*n_of_vv, where="post", linestyle="--", color="b")

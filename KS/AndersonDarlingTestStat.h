@@ -17,22 +17,34 @@
 namespace RooStats {
     class AndersonDarlingTestStat : public TestStatistic {
       public:
-        AndersonDarlingTestStat() {};
-        AndersonDarlingTestStat(RooAbsPdf& pdf) {
+        AndersonDarlingTestStat(): fPdf(NULL), fFitPdf(NULL) { fVarName = "Anderson-Darling Test Statistic"; }
+        AndersonDarlingTestStat(RooAbsPdf& pdf, RooAbsPdf *fitPdf=NULL) {
             fPdf = &pdf;
+            if (fitPdf==NULL){
+                fFitPdf = &pdf;
+            } else {
+                fFitPdf = fitPdf;
+            }
+            fVarName = "Anderson-Darling Test Statistic";
         }
 
         ~AndersonDarlingTestStat() {}
 
-        Double_t Evaluate(RooAbsData& data, RooArgSet& params);
+        Double_t Evaluate(RooAbsData& data, RooArgSet& paramsOfInterest);
+        
+        virtual void SetVarName(const char* name) { fVarName = name; }
+        virtual const TString GetVarName() const {return fVarName;}
 
-        const TString GetVarName() const { return TString("Anderson-Darling Statistic");}
 
         bool PValueIsRightTail(void) const { return true; }
 
         Double_t EvaluateADDistance(RooAbsPdf& pdf, RooAbsData& data, RooRealVar& observable);
 
       private:
-        RooAbsPdf* fPdf;
+        RooAbsPdf* fPdf, *fFitPdf;
+        TString fVarName;
+
+      protected:
+        ClassDef(AndersonDarlingTestStat,1)
     };
 }

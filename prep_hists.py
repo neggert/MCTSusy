@@ -21,6 +21,9 @@ reload(selection)
 from config.parameters import lumi
 from config.data import *
 
+import sys
+sys.path.append("import")
+import CMSPyLibs.general_calc as general_calc
 
 import ROOT as R
 import os
@@ -59,6 +62,51 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
     constraints = {}
 
+    # prep WW systematics
+    three_m1_mc = mc[mc.ThirdLepton & ~np.isnan(mc.pt3) & (mc.metPt > 30)]
+    three_m1_mc = three_m1_mc.apply(shuffle_leptons, axis=1)
+
+    three_m1_mc.mctperp = three_m1_mc.apply(recalc_MCT, axis=1)
+    three_m1_mc.mctperp *= 80.4/91.2
+    three_m1_mc.metPt = three_m1_mc.apply(recalc_MET, axis=1)
+    three_m1_mc.ThirdLepton = False
+    sthree_m1_mc = selection.get_samples(three_m1_mc)
+    three_m1_mc = three_m1_mc[sthree_m1_mc['sig_of']]
+
+    three_m1_data = data[data.ThirdLepton]
+    three_m1_data = three_m1_data.apply(shuffle_leptons, axis=1)
+    three_m1_data.mctperp = three_m1_data.apply(recalc_MCT, axis=1)
+    three_m1_data.mctperp *= 80.4/91.2
+    three_m1_data.metPt = three_m1_data.apply(recalc_MET, axis=1)
+    three_m1_data.ThirdLepton = False
+    sthree_m1_data = selection.get_samples(three_m1_data)
+    three_m1_data = three_m1_data[sthree_m1_data['sig_of']]
+
+    ww = mc[smc['sig_of'] & (mc.mc_cat=="WW")]
+
+    # re-weighting factors from comparing 3-1 lepton region to WW in MC
+    ww_hist, ww_bins = np.histogram(ww.mctperp, weights=ww.weight, bins=14, range=(10,290), normed=True)
+    three_m1_mc_hist, _ = np.histogram(three_m1_mc.mctperp, weights=three_m1_mc.weight, bins=14, range=(10,290), normed=True)
+    three_m1_reweighting = ww_hist/three_m1_mc_hist
+
+    def get_weight(mctperp):
+        i = np.argmax(np.where(ww_bins<mctperp, ww_bins, 0))
+        return three_m1_reweighting[i]
+
+    # re-weight data 3-1 region
+    reweighting = three_m1_data.mctperp.apply(get_weight)
+    three_m1_data.weight *= reweighting
+
+    # derive systematic from comparison of 3-1 data to MC
+    # systematic is the larger of fractional uncertainty on data and discrepancy between data and MC
+    three_m1_data_hist, _ = np.histogram(three_m1_data.mctperp, bins=14, range=(10,290)) # unweighted
+    three_m1_stat = 1./np.sqrt(three_m1_data_hist) # fractional
+    three_m1_data_hist_normed, _ = np.histogram(three_m1_data.mctperp, weights=three_m1_data.weight, bins=14, range=(10,290), normed=True)
+    ww_discrepancy = abs(three_m1_data_hist_normed-ww_hist)/ww_hist
+
+    ww_systematic = np.max((three_m1_stat, ww_discrepancy), axis=0)
+    ww_systematic[np.isinf(ww_systematic)] = 1.
+
     for ch in channels:
         top = data[sd['top_ctrl_'+ch]]
         templates['top_'+ch] = rootutils.create_TH1(top.mctperp, top.weight, "top_template_"+ch, bins, histrange, True)
@@ -68,12 +116,29 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
         # systematic on w+jets template
         rhist = R.TH1D("wjets_syst_"+ch, "wjets_syst_"+ch, bins, histrange[0], histrange[1])
         for i in xrange(bins):
-            if templates['wjets_'+ch].GetBinContent(i+1) > 0: #only do non-zero bins
-                rhist.SetBinContent(i+1, 0.3) # 50% systematic
+            # if templates['wjets_'+ch].GetBinContent(i+1) > 0: #only do non-zero bins
+            rhist.SetBinContent(i+1, 0.3) # 50% systematic
         templates['wjets_syst_'+ch] = rhist
 
         vv = mcvv[selvv['sig_'+ch]]
         templates['vv_'+ch] = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template_"+ch, bins, histrange, True)
+
+        ww_hist, template_bins = np.histogram(ww.mctperp, weights=ww.weight, bins=bins, range=histrange)
+        vv_hist, template_bins = np.histogram(vv.mctperp, weights=vv.weight, bins=bins, range=histrange)
+        ww_frac = ww_hist/vv_hist
+        ww_frac[np.isnan(ww_frac)] = 0.
+        bin_centers = (template_bins[1:]+template_bins[:-1])/2
+        rhist = R.TH1D("ww_syst_"+ch, "ww_syst_"+ch, bins, histrange[0], histrange[1])
+
+        for i, b in enumerate(bin_centers):
+            if b > ww_bins[-1]:
+                syst = 0.
+            else:
+                j = np.argmax(np.where(ww_bins<b, ww_bins, 0))
+                syst = ww_systematic[j]*ww_frac[i]
+                if np.isnan(syst): syst = 0.
+            rhist.SetBinContent(i+1, syst)
+        templates['ww_syst_'+ch] = rhist
 
         # shape systematic
         weights = vv.weight*(1+(vv.mc_cat=="WW")*0.10)
@@ -112,7 +177,9 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
             mc_hist, mc_edges = np.histogram(mc_onz.mctperp, weights=mc_onz.weight, bins=bins, range=histrange, normed=True)
             d_hist, d_edges = np.histogram(data_onz.mctperp, weights=data_onz.weight, bins=bins, range=histrange, normed=True)
 
-            err = abs(mc_hist[:11]-d_hist[:11])/d_hist[:11]
+            err = np.zeros(bins)
+            err[:] = np.max(abs(mc_hist[:10]-d_hist[:10])/d_hist[:10])
+            # err[10:] = 0.5
 
             # make a TH1 out of it
             rhist = R.TH1D("z_syst", "z_syst", bins, histrange[0], histrange[1])
@@ -126,14 +193,18 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
         eff = 2.*n_2tag/(n_1tag+2*n_2tag)*1.06
         ntop_pred = n_1tag/2.*(1-eff)/eff
 
-        constraints[ch] = R.TVectorD(1)
-        constraints[ch][0] = ntop_pred
+
+    constraints['top_ratio'] = R.TVectorD(1)
+    constraints['top_ratio'][0] = mc[smc['sig_mct_low_of'] & (mc.mc_cat=="top")].weight.sum()/mc[smc['sig_mct_low_sf'] & (mc.mc_cat=="top")].weight.sum()
+    constraints['vv_ratio'] = R.TVectorD(1)
+    constraints['vv_ratio'][0] = (mc[smc['sig_mct_low_of'] & (mc.mc_cat=="WW")].weight.sum()/mc[smc['sig_mct_low_sf'] & (mc.mc_cat=="WW")].weight.sum())\
+                                 * mcvv[selvv['sig_mct_low_sf']].weight.sum()/mcvv[selvv['sig_mct_low_of']].weight.sum()
 
     for k in templates.keys():
         templates[k].Write()
 
     for k in constraints.keys():
-        constraints[k].Write("ntop_"+k)
+        constraints[k].Write(k)
 
     rfile.Close()
 
@@ -281,6 +352,60 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
         jes_up_templates[k].Write()
 
     rfile.Close()
+
+
+calc = general_calc.VarCalculator()
+
+def recalc_MCT(event):
+    p4jet1 = R.TLorentzVector(0., 0., 0., 0.)
+    p4jet2 = R.TLorentzVector(0., 0., 0., 0.)
+    p4l1 = R.TLorentzVector(0., 0., 0., 0.)
+    p4l2 = R.TLorentzVector(0., 0., 0., 0.)
+    p4l1.SetPtEtaPhiM(event['pt1'], event['eta1'], event['phi1'], 0.)
+    p4l2.SetPtEtaPhiM(event['pt2'], event['eta2'], event['phi2'], 0.)
+
+    # Add third lepton into MET
+    # note that we don't care about eta or M for these vectors, as they're not used.
+    p4met = R.TLorentzVector(0., 0., 0., 0.)
+    p4met.SetPtEtaPhiM(event['metPt'], 0., event['metPhi'], 0.)
+    p4l3 = R.TLorentzVector(0., 0., 0., 0.)
+    p4l3.SetPtEtaPhiM(event['pt3'], 0., event['phi3'], 0.)
+
+    p4met += p4l3
+
+    calc.setP4s(p4jet1, p4jet2, p4l1, p4l2, p4met)
+    return calc.mctPerp_210()
+
+def recalc_MET(event):
+
+    # Add third lepton into MET
+    # note that we don't care about eta or M for these vectors, as they're not used.
+    p4met = R.TLorentzVector(0., 0., 0., 0.)
+    p4met.SetPtEtaPhiM(event['metPt'], 0., event['metPhi'], 0.)
+    p4l3 = R.TLorentzVector(0., 0., 0., 0.)
+    p4l3.SetPtEtaPhiM(event['pt3'], 0., event['phi3'], 0.)
+
+    p4met += p4l3
+
+    return p4met.Pt()
+
+# do some shuffling to recover as many events as possible
+def shuffle_leptons(event):
+    # make an OF pair if possible
+    if abs(event['pdg1']) == abs(event['pdg2']):
+        if abs(event['pdg1']) != abs(event['pdg3']):
+            event['pdg2'], event['pdg3'] = event['pdg3'], event['pdg2']
+            event['pt2'], event['pt3'] = event['pt3'], event['pt2']
+            event['eta2'], event['eta3'] = event['eta3'], event['eta2']
+            event['phi2'], event['phi3'] = event['phi3'], event['phi2']
+
+        elif abs(event['pdg2']) != abs(event['pdg3']):
+            event['pdg1'], event['pdg3'] = event['pdg3'], event['pdg1']
+            event['pt1'], event['pt3'] = event['pt3'], event['pt1']
+            event['eta1'], event['eta3'] = event['eta3'], event['eta1']
+            event['phi1'], event['phi3'] = event['phi3'], event['phi1']
+
+    return event
 
 if __name__ == '__main__':
     from docopt import docopt

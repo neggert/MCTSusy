@@ -11,7 +11,7 @@ typedef pair<Double_t, Double_t> double_pair;
 
 bool sort_pairs (double_pair i, double_pair j) {return (i.first < j.first);}
 
-Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSet& params) {
+Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSet& paramsOfInterest) {
     /*
     Find the Anderson-Darling difference between fPdf and the data. This is just
     the maximum over data points of the distance between the CDF and the emprical
@@ -22,6 +22,9 @@ Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSe
         cout << "problem with data" << endl;
         return 0;
     }
+
+
+    RooRealVar* poi = dynamic_cast<RooRealVar*>(paramsOfInterest.first());
 
     RooFit::MsgLevel msglevel = RooMsgService::instance().globalKillBelow();
     RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
@@ -36,9 +39,12 @@ Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSe
     // }
 
     //First, find the best fit values
-    RooArgSet* constraints = fPdf->getParameters(data);
-    RooStats::RemoveConstantParameters(constraints);
-    fPdf->fitTo(data, RooFit::Constrain(*constraints), RooFit::PrintLevel(-1), RooFit::Verbose(kFALSE));
+    RooArgSet* pdfParams = fFitPdf->getParameters(data);
+    RooRealVar* pdfPOI= dynamic_cast<RooRealVar*>(pdfParams->find(poi->GetName()));
+    pdfPOI->setVal(poi->getVal());
+    pdfPOI->setConstant();
+    RooStats::RemoveConstantParameters(pdfParams);
+    fFitPdf->fitTo(data, RooFit::Constrain(*pdfParams), RooFit::PrintLevel(-1), RooFit::Verbose(kFALSE));
 
     // unet POI constant so the fit doesn't adjust them
     // param_iter = params.createIterator();

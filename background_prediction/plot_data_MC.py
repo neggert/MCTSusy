@@ -32,9 +32,11 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     selected = mc[smc[selection_name]]
     data_selected = data[sd[selection_name]]
 
+    selected.mc_cat[selected.mc_cat.isin(["VVV", "HWW"])] = "Rare"
+
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WW', 'WZ', 'ZZ', 'VVV', 'HWW', 'DY', 'fake']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'Rare', 'DY', 'fake']
 
     bkgtpl = []
     bkgwtpl = []
@@ -54,7 +56,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     f = figure(figsize=(6,6))
     f.set_facecolor('w')
     fig = subplot2grid((4,1),(0,0), rowspan=3)
-    fig.set_yscale('log', nonposy='clip')
+    # fig.set_yscale('log', nonposy='clip')
     # fig.set_ylim(0.001, 10000)
     fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
 
@@ -62,7 +64,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     print sum([sum(weights) for weights in bkgwtpl])
 
     he = hist_errorbars( data_selected[variable], xerrs=False, bins=bins, range=plotrange)
-    he.set_label("Data")
+    he[-1].set_label("Data")
     fig.set_axisbelow(False)
 
     # move data to top of legend
@@ -126,10 +128,17 @@ def make_data_mc_plots():
 
     f,f2 = compare_data_mc('z_ctrl_0met', 'metPt', 30, (0,300))
     f.set_yscale('log', nonposy='clip')
-    f.set_ylim(.1, 100000)
+    f.set_ylim(.1, 1e7)
     f2.set_ylim(0, 2)
     xlabel("MET (GeV)")
     savefig("plots/data_mc_z_metdist.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_0met', 'mll', 30, (76,106))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(1e4, 1e7)
+    f2.set_ylim(0, 2)
+    xlabel("MET (GeV)")
+    savefig("plots/data_mc_z_mll.pdf")
 
     f,f2 = compare_data_mc('z_ctrl_30met', 'mctperp', 29, (10,300))
     f.set_yscale('log', nonposy='clip')
@@ -181,12 +190,88 @@ def make_data_mc_plots():
     xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
     savefig("plots/mc_only_sf.pdf")
 
+    for flavor in channels:
+        f,f2 = compare_data_mc('sig_'+flavor, 'mctperp', 29, (10,300))
+        # f.set_ylim(0.01, 5000)
+        f2.set_ylim(0, 2)
+        xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+        savefig("plots/data_mc_sig_{}_linear.pdf".format(flavor))
+
+        f,f2 = compare_data_mc('top_ctrl_'+flavor, 'mctperp', 29, (10,300))
+        # f.set_ylim(0.01, 100000)
+        f2.set_ylim(0, 2)
+        xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+        savefig("plots/data_mc_top_{}_linear.pdf".format(flavor))
+
+    f,f2 = compare_data_mc('z_ctrl_sf', 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 10000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_linear.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_0met', 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 1000000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_0met_linear.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_0met', 'metPt', 30, (0,300))
+    # f.set_ylim(.1, 1e7)
+    f2.set_ylim(0, 2)
+    xlabel("MET (GeV)")
+    savefig("plots/data_mc_z_metdist_linear.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_30met', 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 1000000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_30met_linear.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_sf', 'mctperp', 9, (10,100))
+    # f.set_ylim(1, 10000)
+    f2.set_ylabel("Data/MC")
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_lowmct_linear.pdf")
+
+    f,f2 = compare_data_mc('wjets_ctrl_sf', 'mctperp', 9, (10,100))
+    # f.set_ylim(0.01, 100000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_fake_linear.pdf")
+
+    f,f2 = compare_data_mc('wz_ctrl', 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 100)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_3l_linear.pdf")
+
+    f = plot_mc("sig", 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 10000)
+    f.set_xlim(10, 300)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/mc_only_linear.pdf")
+
+    f = plot_mc("sig_of", 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 5000)
+    f.set_xlim(10, 300)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/mc_only_of_linear.pdf")
+
+    f = plot_mc("sig_sf", 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 5000)
+    f.set_xlim(10, 300)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/mc_only_sf_linear.pdf")
+
 def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     selected = mc[smc[selection_name]]
 
+    selected.mc_cat[selected.mc_cat.isin(["VVV", "HWW"])] = "Rare"
+
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WW', 'WZ', 'ZZ', 'HWW', 'VVV', 'DY', 'fake']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'Rare', 'DY', 'fake']
 
     bkgtpl = []
     bkgwtpl = []

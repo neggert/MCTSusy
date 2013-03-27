@@ -39,12 +39,12 @@ Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSe
     // }
 
     //First, find the best fit values
-    RooArgSet* pdfParams = fFitPdf->getParameters(data);
+    RooArgSet* pdfParams = fPdf->getParameters(data);
     RooRealVar* pdfPOI= dynamic_cast<RooRealVar*>(pdfParams->find(poi->GetName()));
     pdfPOI->setVal(poi->getVal());
     pdfPOI->setConstant();
     RooStats::RemoveConstantParameters(pdfParams);
-    fFitPdf->fitTo(data, RooFit::Constrain(*pdfParams), RooFit::PrintLevel(-1), RooFit::Verbose(kFALSE));
+    fPdf->fitTo(data, RooFit::Constrain(*pdfParams), RooFit::PrintLevel(-1), RooFit::Verbose(kFALSE));
 
     // unet POI constant so the fit doesn't adjust them
     // param_iter = params.createIterator();

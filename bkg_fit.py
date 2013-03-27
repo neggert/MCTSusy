@@ -205,7 +205,10 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     plt.savefig("plots/correlation_full.pdf")
     # raw_input("...")
 
-    model.SetSnapshot(model.GetParametersOfInterest())
+    params = R.RooArgSet()
+    params.add(model.GetNuisanceParameters())
+    params.add(model.GetParametersOfInterest())
+    model.SetSnapshot(params)
 
     plot_fitted_sf(ws)
     plot_fitted_of(ws)
@@ -221,43 +224,60 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     # import IPython
     # IPython.embed()
 
+
     # calculate a p-value
     if get_p:
 
-        sampler = R.RooStats.ToyMCSampler(AD, 500)
-        sampler.SetPdf(model.GetPdf())
-        sampler.SetObservables(model.GetObservables())
-        sampler.SetGlobalObservables(model.GetGlobalObservables())
-        sampler.SetParametersForTestStat(model.GetParametersOfInterest())
 
-        params = R.RooArgSet()
-        params.add(model.GetNuisanceParameters())
-        params.add(model.GetParametersOfInterest())
 
-        if ncpu > 1:
-            pc = R.RooStats.ProofConfig(ws, ncpu, "")
-            sampler.SetProofConfig(pc)
+        results = []
+        from IPython.parallel import Client
 
-        sampDist = sampler.GetSamplingDistribution(params)
+        rc = Client()
+        dview = rc[:]
+        # with dview.sync_imports(): 
+        #     import ROOT as R
+        dview.execute("import ROOT as R")
+        dview.execute("R.gROOT.ProcessLineSync('.L KS/AndersonDarlingTestStat.cc+')")
+        lview = rc.load_balanced_view()
 
-        f = R.TFile("BkgADDist.root", "RECREATE")
+        for i in xrange(10):
+            r = lview.apply_async(get_p_value_dist, ws, 2)
+            results.append(r)
+
+        lview.wait(results)
+
+        sampDist = R.RooStats.SamplingDistribution()
+        for r in results:
+            sampDist.Add(r.result)
+
+
+        f = R.TFile("BkgADDist_test.root", "RECREATE")
         sampDist.Write("sampDist")
         f.Close()
 
         p = 1-sampDist.CDF(ts)
 
         print "P value:", p
-        print "Test statistic on data: {:.7f}".format(ts)
-
-        plot = R.RooStats.SamplingDistPlot()
-        plot.AddSamplingDistribution(sampDist)
-
-        plot.Draw()
-        raw_input("...")
 
     print "Test statistic on data: {:.7f}".format(ts)
 
     return fitresults
+
+def get_p_value_dist(ws, n):
+    model = ws.obj("ModelConfig")
+
+    AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
+
+    sampler = R.RooStats.ToyMCSampler(AD, n)
+    sampler.SetPdf(model.GetPdf())
+    sampler.SetObservables(model.GetObservables())
+    sampler.SetGlobalObservables(model.GetGlobalObservables())
+    sampler.SetParametersForTestStat(model.GetParametersOfInterest())
+
+    sampDist = sampler.GetSamplingDistribution(model.GetSnapshot())
+
+    return sampDist
 
 def plot_fitted_sf(ws):
     obs = ws.obj("obs_x_sf")

@@ -2,7 +2,7 @@
 """Run one point
 
 Usage:
-    run_one.py batch <batch_file> <batch_num> <label>
+    run_one.py batch <batch_file> <batch_num> <label> <output_folder>
 
 Options:
 
@@ -67,9 +67,9 @@ if __name__ == '__main__':
 
     if args['batch']:
         with open(args['<batch_file>']) as bf:
-            model_file, poi = bf.readlines()[int(args['<batch_num>'])].split()
+            model_file, poi = bf.readlines()[int(args['<batch_num>'])/30].split()
         m1, m2 = map(int, re.search("_(\d+)_(\d+)_", model_file).groups())
-        output_file = "hypotests/{0}_{1}_{2}_exp{3}.root".format(args["<label>"], m1, m2, int(args['<batch_num>']))
+        output_file = args['<output_folder>']+"/{0}_{1}_{2}_exp{3}.root".format(args["<label>"], m1, m2, int(args['<batch_num>']))
     else :
         model_file = args['<model_file>']
         poi = args['<poi_val>']

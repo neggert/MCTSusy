@@ -18,9 +18,9 @@ void cut_based() {
     RooRealVar *obs_of = wspace->obj("obs_x_of");
 
     obs_sf->setRange("fitRange", 10., 120.);
-    obs_sf->setRange(10., 300.);
+    obs_sf->setRange("full", 10., 300.);
     obs_of->setRange("fitRange", 10., 120.);
-    obs_of->setRange(10., 300.);
+    obs_of->setRange("full", 10., 300.);
 
 
 
@@ -35,8 +35,20 @@ void cut_based() {
 
     RooSimultaneous *pdf = model->GetPdf();
 
-    RooFitResult *res = model->GetPdf()->fitTo(*data, Constrain(constr), PrintLevel(0), Save(), InitialHesse(), Minos(),
+    RooFitResult *res = model->GetPdf()->fitTo(*data, Constrain(constr), PrintLevel(0), Save(),
                                                Range("fitRange"));
+
+    // RooNLLVar *nll = pdf->createNLL(*data, Constrain(constr), Range("fitRange"));
+
+    // RooMinuit m(*nll);
+    // m.setPrintLevel(0);
+    // m.hesse();
+    // m.migrad();
+    // m.improve();
+    // m.migrad();
+    // m.hesse();
+
+    // RooFitResult *res = m.save();
 
     RooArgSet* params = const_cast<RooArgSet*>(model->GetNuisanceParameters());
     params->add(*const_cast<RooArgSet*>(model->GetParametersOfInterest()));
@@ -46,26 +58,45 @@ void cut_based() {
 
     RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
 
-    ToyMCSampler* mc = new ToyMCSampler(dummy, 1000);
+    int ev_per_toy = 100000;
+
+    ToyMCSampler* mc = new ToyMCSampler(dummy, 1200);
     mc->SetPdf(*pdf);
     mc->SetObservables(*model->GetObservables());
     // mc->SetGlobalObservables(*model->GetObservables());
     mc->SetNuisanceParameters(*model->GetNuisanceParameters());
     mc->SetParametersForTestStat(*model->GetParametersOfInterest());
-    mc->SetNEventsPerToy(0); // draw from poisson
+    mc->SetNEventsPerToy(ev_per_toy); // draw from poisson
     mc->SetGenerateBinned();
 
-    get_results(wspace, res, data);
+
+
+
+    double true = get_results(wspace, res, data)->first;
+    cout << true << endl;
+
+    true *= 1.*ev_per_toy/(((RooAddPdf*)pdf->getPdf("of"))->expectedEvents(*obs_of)+((RooAddPdf*)pdf->getPdf("sf"))->expectedEvents(*obs_sf));
+
+    // RooRealIntegral *i = pdf->createIntegral(RooArgSet(obs_sf, obs_of), "full");
+    cout << true << endl;
 
     vector<double> vals;
 
+    // RooMinuit *m2;
+    pair<double,double> *yield;
+
+
     RooAbsData* toy_data;
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 100; i++) {
+        model->LoadSnapshot();
         toy_data = mc->GenerateToyData(*model->GetSnapshot());
         toy_data->Print();
-        res = pdf->fitTo(*toy_data, Constrain(constr), PrintLevel(-1), Save(), InitialHesse(), Minos(),
-                                               Range("fit"));
-        vals.push_back(get_results(wspace, res, data));
+        res = model->GetPdf()->fitTo(*toy_data, Constrain(constr), PrintLevel(0), Save(),
+                                                   Range("fitRange"));
+        yield = get_results(wspace, res, data);
+        vals.push_back((yield->first-true)/yield->second);
+
+        delete yield;
 
     }
 
@@ -76,7 +107,7 @@ void cut_based() {
 
 
 
-double get_results(RooWorkspace* wspace, RooFitResult* res, RooAbsData* data) {
+pair<double, double>* get_results(RooWorkspace* wspace, RooFitResult* res, RooAbsData* data) {
 
     RooRealVar *obs_sf = wspace->obj("obs_x_sf");
     RooRealVar *obs_of = wspace->obj("obs_x_of");
@@ -235,7 +266,7 @@ double get_results(RooWorkspace* wspace, RooFitResult* res, RooAbsData* data) {
     cout << "fake: " << fake_of_low << " +/- " << fake_of_low_err << "\t\t" << fake_of_high << " +/- " << fake_of_high_err << endl;
 
 
-    return sum_sf_high;
+    return new pair<double,double>(sum_sf_high, sum_sf_high_err);
 
 }
 

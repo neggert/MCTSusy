@@ -88,7 +88,7 @@ def run_bonly_fit(file_name, ncpu, data_prefix="data", data_file_name="data.root
     bkgSampleDist = f.Get("sampDist")
 
     c1 = R.TCanvas()
-    plot = R.RooStats.SamplingDistPlot(50)
+    plot = R.RooStats.SamplingDistPlot(50, 0, 10)
     plot.AddSamplingDistribution(sigSampleDist)
     plot.AddSamplingDistribution(bkgSampleDist)
 

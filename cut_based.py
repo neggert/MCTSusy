@@ -15,18 +15,19 @@ from collections import defaultdict
 import json
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.stats
 # import ROOT as R
 # plt.switch_backend("pdf")
 from copy import deepcopy
 
 from IPython.parallel import Client
 
-# rc = Client()
-# dview = rc[:]
-# with dview.sync_imports():
-import my_lib
-import ROOT
-# dview.execute("ROOT.gROOT.ProcessLineSync('.L IntegralError.C+')")
+rc = Client()
+dview = rc[:]
+with dview.sync_imports():
+    import my_lib
+    import ROOT
+dview.execute("ROOT.gROOT.ProcessLineSync('.L IntegralError.C+')")
 
 ROOT.gROOT.ProcessLineSync('.L IntegralError.C+')
 
@@ -41,39 +42,6 @@ def run_cut_based(file_name, ncpu):
     model = ws.obj("ModelConfig")
 
     constr = model.GetNuisanceParameters()
-    for x in xrange(11, 29):
-        try:
-            constr.find("gamma_z_syst_sf_bin_"+str(x)).setConstant(True)
-        except AttributeError:
-            pass
-        try:
-            constr.find("gamma_z_syst_of_bin_"+str(x)).setConstant(True)
-        except AttributeError:
-            pass
-        try:
-            constr.find("gamma_ww_syst_of_bin_"+str(x)).setConstant(True)
-        except AttributeError:
-            pass
-        try:
-            constr.find("gamma_ww_syst_sf_bin_"+str(x)).setConstant(True)
-        except AttributeError:
-            pass
-        try:
-            constr.find("gamma_wjets_syst_of_bin_"+str(x)).setConstant(True)
-        except AttributeError:
-            pass
-        try:
-            constr.find("gamma_wjets_syst_sf_bin_"+str(x)).setConstant(True)
-        except AttributeError:
-            pass
-        try:
-            constr.find("gamma_stat_of_bin_"+str(x)).setConstant(True)
-        except AttributeError:
-            pass
-        try:
-            constr.find("gamma_stat_sf_bin_"+str(x)).setConstant(True)
-        except AttributeError:
-            pass
 
 
     ROOT.RooStats.RemoveConstantParameters(constr)
@@ -97,71 +65,68 @@ def run_cut_based(file_name, ncpu):
     params.add(model.GetNuisanceParameters())
     model.SetSnapshot(params)
 
-
     r = ROOT.get_results(ws, res)
     data_results = results_to_dict(r)
     print json.dumps(data_results, indent=4)
 
-    n_events = model.GetPdf().getPdf("of").expectedEvents(ROOT.RooArgSet(obs_of))+\
-                model.GetPdf().getPdf("sf").expectedEvents(ROOT.RooArgSet(obs_sf))
+    n_sf_vv_nominal = ws.obj("n_vv_sf").getVal()
+    n_sf_top_nominal = ws.obj("n_top_sf").getVal()
 
-    n_toy_events = 10000
-    true = data_results['sf']['sum']['high'][0]*n_toy_events/n_events
-
-    temp_file = ROOT.TFile("temp.root", "recreate")
-    ws.Write()
-    temp_file.Close()
-    # local test
-    print fit_toy("temp.root", 1000000000)
-
-    # lview = rc.load_balanced_view()
-
-    means = []
-    widths=[]
-
-    # n = [10000, 50000, 70000, 100000, 200000, 300000, 400000, 500000, 700000, 1000000]
-    n = [10000, 1000000]
-
-    # all_results = defaultdict(list)
-
-    # for n_toy_events in n:
-    #     results = []
-    #     true = data_results['sf']['sum']['high'][0]*n_toy_events/n_events
-    #     # true = data_results['sf']['sum']['high'][0]
+    trial_n_vvs = np.linspace(1, n_sf_vv_nominal+n_sf_top_nominal, 10)
 
 
-    #     for i in xrange(100):
-    #         r = lview.apply_async(fit_toy, "temp.root", n_toy_events)
-    #         results.append(r)
+    lview = rc.load_balanced_view()
 
-    #     lview.wait(results)
+    all_results = [[] for _ in trial_n_vvs]
 
-    #     sf_vals = []
-    #     sf_errs = []
-    #     for r in results:
-    #             all_results[n_toy_events].append(r.result)
-    #             sf_vals.append(r.result['sf']['sum']['high'][0])
-    #             sf_errs.append(r.result['sf']['sum']['high'][1])
+    generated_vv_lows = [0 for _ in trial_n_vvs]
 
-    #     dview.results.clear()
-    #     # dview.clear(block=True)
-    #     sf_vals = np.asarray(sf_vals)
-    #     sf_errs = np.asarray(sf_errs)
+    for j, trial_n_vv in enumerate(trial_n_vvs):
 
-    #     pulls = (sf_vals-true)/sf_vals.std()
+        ws.obj("n_vv_sf").setVal(trial_n_vv)
+        ws.obj("n_vv_sf").setConstant(True)
 
-    #     means.append(pulls.mean())
-    #     widths.append(pulls.std())
+        res = model.GetPdf().fitTo(data, ROOT.RooFit.Constrain(constr), ROOT.RooFit.Save(), ROOT.RooFit.PrintLevel(0),
+                                   ROOT.RooFit.Range("fitRange"), ROOT.RooFit.SplitRange())
+        ws.obj("n_vv_sf").setConstant(False)
 
-    # means = np.asarray(means)
-    # widths = np.asarray(widths)
-    # plt.plot(n, means, color="k")
-    # # plt.fill_between(n, means-widths, means+widths, color="b", alpha=0.5)
-    # plt.show()
+        r = ROOT.get_results(ws, res)
+        data_results = results_to_dict(r)
+        generated_vv_lows[j] = data_results['sf']['vv']['low'][0]
+
+        model.SetSnapshot(params)
+        temp_file = ROOT.TFile("temp.root", "recreate")
+        ws.Write()
+        temp_file.Close()
+
+        results = []
+        
+        for i in xrange(100):
+            r = lview.apply_async(fit_toy, "temp.root", 0)
+            results.append(r)
+
+        lview.wait(results)
+
+        for r in results:
+                all_results[j].append(r.result)
 
 
-    # import IPython
-    # IPython.embed()
+        dview.results.clear()
+        # dview.clear(block=True)
+
+    means = np.asarray([np.median([x['sf']['vv']['low'][0] for x in a]) for a in all_results])
+    low = np.asarray([scipy.stats.scoreatpercentile([x['sf']['vv']['low'][0] for x in a], 16) for a in all_results])
+    high = np.asarray([scipy.stats.scoreatpercentile([x['sf']['vv']['low'][0] for x in a], 84) for a in all_results])
+
+    plt.plot(generated_vv_lows, means, color="k")
+    plt.fill_between(generated_vv_lows, low, high, color="b", alpha=0.5)
+    x = np.linspace(0, max(generated_vv_lows), 500)
+    plt.plot(x, x, '--', color='k')
+    plt.show()
+
+
+    import IPython
+    IPython.embed()
 
 def results_to_dict(r):
     results = defaultdict(lambda: defaultdict(dict))
@@ -189,61 +154,10 @@ def results_to_dict(r):
     return results
 
 def fit_toy(ws_filename, n):
-    # ROOT.SetMemoryPolicy(ROOT.kMemoryStrict)
-
-
-    # f = ROOT.TFile(ws_filename)
-    # ws = f.Get("combined")
-    # model = ws.obj("ModelConfig")
-
-    # # ROOT.SetOwnership(ws, True)
-    # ROOT.SetOwnership(model, True)
-
-    # dummy = ROOT.RooStats.NumEventsTestStat(model.GetPdf()) # this doesn't do anything, we just need something to give ToyMCSampler
-    # mc = ROOT.RooStats.ToyMCSampler(dummy, 1)
-    # mc.SetPdf(model.GetPdf())
-    # mc.SetObservables(model.GetObservables())
-    # mc.SetGlobalObservables(model.GetGlobalObservables())
-    # mc.SetParametersForTestStat(model.GetParametersOfInterest())
-    # mc.SetNEventsPerToy(n)
-
-    # constr = model.GetNuisanceParameters()
-    # ROOT.RooStats.RemoveConstantParameters(constr)
-    # ROOT.SetOwnership(constr, True)
-
-    # toy_data = mc.GenerateToyData(model.GetSnapshot())
-    # res = model.GetPdf().fitTo(toy_data, ROOT.RooFit.Constrain(constr), ROOT.RooFit.PrintLevel(0), ROOT.RooFit.Save())
-    # ROOT.SetOwnership(toy_data, True)
-    # ROOT.SetOwnership(res, True)
-    
-    # r = ROOT.get_results(ws, res)
-    # result = my_lib.results_to_dict(r)
-    # result['generated_sig']['sf'] = toy_data.sumEntries("(channelCat==channelCat::sf) & (obs_x_sf > 120.)")
-    # result['generated_sig']['of'] = toy_data.sumEntries("(channelCat==channelCat::of) & (obs_x_of > 120.)")
 
     r = ROOT.fit_toy(ws_filename, n)
     result = my_lib.results_to_dict(r)
     return result
-
-    # print "mc"
-    # #mc.IsA().Destructor( mc )
-    # print "dummy"
-    # #dummy.IsA().Destructor( dummy )
-    # print "constr"
-    # constr.IsA().Destructor( constr )
-    # print "toy_data"
-    # toy_data.IsA().Destructor( toy_data )
-    # print "res"
-    # res.IsA().Destructor( res )
-    # print "model"
-    # model.IsA().Destructor( model )
-    # print "ws"
-    # ws.Delete()
-    # print "done"
-
-    # f.Close()
-
-    # return result
 
 
 if __name__ == '__main__':

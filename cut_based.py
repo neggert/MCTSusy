@@ -65,44 +65,30 @@ def run_cut_based(file_name, ncpu):
     params.add(model.GetNuisanceParameters())
     model.SetSnapshot(params)
 
-    r = ROOT.get_results(ws, res)
+    temp_file = ROOT.TFile("temp.root", "recreate")
+    ws.Write()
+    temp_file.Close()
+
+    r = ROOT.get_results(ws, res, 120)
     data_results = results_to_dict(r)
     print json.dumps(data_results, indent=4)
 
-    n_sf_vv_nominal = ws.obj("n_vv_sf").getVal()
-    n_sf_top_nominal = ws.obj("n_top_sf").getVal()
-
-    trial_n_vvs = np.linspace(1, n_sf_vv_nominal+n_sf_top_nominal, 10)
-
+    trial_cuts = np.arange(100, 300, 10)
 
     lview = rc.load_balanced_view()
 
-    all_results = [[] for _ in trial_n_vvs]
+    all_results = [[] for _ in trial_cuts]
 
-    generated_vv_lows = [0 for _ in trial_n_vvs]
+    true_vals = [0 for _ in trial_cuts]
 
-    for j, trial_n_vv in enumerate(trial_n_vvs):
-
-        ws.obj("n_vv_sf").setVal(trial_n_vv)
-        ws.obj("n_vv_sf").setConstant(True)
-
-        res = model.GetPdf().fitTo(data, ROOT.RooFit.Constrain(constr), ROOT.RooFit.Save(), ROOT.RooFit.PrintLevel(0),
-                                   ROOT.RooFit.Range("fitRange"), ROOT.RooFit.SplitRange())
-        ws.obj("n_vv_sf").setConstant(False)
-
-        r = ROOT.get_results(ws, res)
-        data_results = results_to_dict(r)
-        generated_vv_lows[j] = data_results['sf']['vv']['low'][0]
-
-        model.SetSnapshot(params)
-        temp_file = ROOT.TFile("temp.root", "recreate")
-        ws.Write()
-        temp_file.Close()
+    for j, trial_cut in enumerate(trial_cuts):
+        r = ROOT.get_results(ws, res, trial_cut)
+        true_vals[j] = results_to_dict(r)['sf']['sum']['high'][0]
 
         results = []
         
         for i in xrange(100):
-            r = lview.apply_async(fit_toy, "temp.root", 0)
+            r = lview.apply_async(fit_toy, "temp.root", 0, trial_cut)
             results.append(r)
 
         lview.wait(results)
@@ -114,14 +100,15 @@ def run_cut_based(file_name, ncpu):
         dview.results.clear()
         # dview.clear(block=True)
 
-    means = np.asarray([np.median([x['sf']['vv']['low'][0] for x in a]) for a in all_results])
-    low = np.asarray([scipy.stats.scoreatpercentile([x['sf']['vv']['low'][0] for x in a], 16) for a in all_results])
-    high = np.asarray([scipy.stats.scoreatpercentile([x['sf']['vv']['low'][0] for x in a], 84) for a in all_results])
+    means = np.asarray([np.mean([x['sf']['sum']['high'][0] for x in a]) for a in all_results])
+    stds = np.asarray([np.std([x['sf']['sum']['high'][0] for x in a]) for a in all_results])
 
-    plt.plot(generated_vv_lows, means, color="k")
-    plt.fill_between(generated_vv_lows, low, high, color="b", alpha=0.5)
-    x = np.linspace(0, max(generated_vv_lows), 500)
-    plt.plot(x, x, '--', color='k')
+    low = np.asarray([scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in a], 16) for a in all_results])
+    high = np.asarray([scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in a], 84) for a in all_results])
+
+    plt.plot(trial_cuts, means, color="k")
+    plt.fill_between(trial_cuts, low, high, color="b", alpha=0.5)
+    plt.plot(trial_cuts, true_vals, '--', color='k')
     plt.show()
 
 
@@ -153,9 +140,9 @@ def results_to_dict(r):
 
     return results
 
-def fit_toy(ws_filename, n):
+def fit_toy(ws_filename, n, cut):
 
-    r = ROOT.fit_toy(ws_filename, n)
+    r = ROOT.fit_toy(ws_filename, n, cut)
     result = my_lib.results_to_dict(r)
     return result
 

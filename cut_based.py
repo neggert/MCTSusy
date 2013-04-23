@@ -73,43 +73,43 @@ def run_cut_based(file_name, ncpu):
     data_results = results_to_dict(r)
     print json.dumps(data_results, indent=4)
 
-    trial_cuts = np.arange(100, 300, 10)
+    # trial_cuts = np.arange(100, 300, 10)
 
     lview = rc.load_balanced_view()
 
-    all_results = [[] for _ in trial_cuts]
+    all_results = []
 
-    true_vals = [0 for _ in trial_cuts]
+    # true_vals = [0 for _ in trial_cuts]
 
-    for j, trial_cut in enumerate(trial_cuts):
-        r = ROOT.get_results(ws, res, trial_cut)
-        true_vals[j] = results_to_dict(r)['sf']['sum']['high'][0]
+    # for j, trial_cut in enumerate(trial_cuts):
+        # r = ROOT.get_results(ws, res, trial_cut)
+        # true_vals[j] = results_to_dict(r)['sf']['sum']['high'][0]
 
-        results = []
-        
-        for i in xrange(100):
-            r = lview.apply_async(fit_toy, "temp.root", 0, trial_cut)
-            results.append(r)
+    results = []
+    
+    for i in xrange(100):
+        r = lview.apply_async(fit_toy, "temp.root", 0, 120.)
+        results.append(r)
 
-        lview.wait(results)
+    lview.wait(results)
 
-        for r in results:
-                all_results[j].append(r.result)
+    for r in results:
+            all_results.append(r.result)
 
 
-        dview.results.clear()
+    dview.results.clear()
         # dview.clear(block=True)
 
-    means = np.asarray([np.mean([x['sf']['sum']['high'][0] for x in a]) for a in all_results])
-    stds = np.asarray([np.std([x['sf']['sum']['high'][0] for x in a]) for a in all_results])
+    means = np.mean([x['sf']['sum']['high'][0] for x in all_results])
+    stds = np.std([x['sf']['sum']['high'][0] for x in all_results])
 
-    low = np.asarray([scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in a], 16) for a in all_results])
-    high = np.asarray([scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in a], 84) for a in all_results])
+    low = scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in all_results], 16)
+    high = scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in all_results], 84)
 
-    plt.plot(trial_cuts, means, color="k")
-    plt.fill_between(trial_cuts, low, high, color="b", alpha=0.5)
-    plt.plot(trial_cuts, true_vals, '--', color='k')
-    plt.show()
+    # plt.plot(trial_cuts, means, color="k")
+    # plt.fill_between(trial_cuts, low, high, color="b", alpha=0.5)
+    # plt.plot(trial_cuts, true_vals, '--', color='k')
+    # plt.show()
 
 
     import IPython

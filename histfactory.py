@@ -60,18 +60,22 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
                 template.AddNormFactor("n_top_sf".format(ch, bkg), 2000, 0, 1000000)
                 if ch=="of":
                     top_ratio_val = temp_file.Get("top_ratio")[0]
-                    template.AddNormFactor("n_top_of_scale", top_ratio_val, top_ratio_val, top_ratio_val, True)
+                    template.AddNormFactor("n_top_of_scale", top_ratio_val, top_ratio_val, top_ratio_val, True) # r3
                     template.AddOverallSys("top_ratio", .9, 1.1)
-                else:
-                    template.AddOverallSys("top_ratio", 1.1, 0.9)
+                # else:
+                    # template.AddOverallSys("top_ratio", 1.1, 0.9)
+                    # template.AddOverallSys("t_vv_ratio_sf", 1.1, 0.9)
             elif bkg=="vv":
-                template.AddNormFactor("n_vv_sf".format(ch, bkg), 2000, 0, 1000000)
+                t_vv_ratio_sf = 0.502
+                template.AddNormFactor("n_top_sf".format(ch, bkg), 2000, 0, 1000000)
+                template.AddNormFactor("t_vv_ratio_sf", t_vv_ratio_sf, t_vv_ratio_sf, t_vv_ratio_sf, True) # r4
+                template.AddOverallSys("t_vv_ratio_sf", .9, 1.1)
                 if ch=="of":
                     vv_ratio_val = temp_file.Get("vv_ratio")[0]
-                    template.AddNormFactor("n_vv_of_scale", vv_ratio_val, vv_ratio_val, vv_ratio_val, True)
+                    template.AddNormFactor("n_vv_of_scale", vv_ratio_val, vv_ratio_val, vv_ratio_val, True) # r1
                     template.AddOverallSys("vv_ratio", .9, 1.1)
-                else:
-                    template.AddOverallSys("vv_ratio", 1.1, 0.9)
+                # else:
+                    # template.AddOverallSys("vv_ratio", 1.1, 0.9)
             else:
                 template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 500, 0, 1000000)
 

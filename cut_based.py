@@ -54,62 +54,89 @@ def run_cut_based(file_name, ncpu):
 
     obs_sf.setRange("fitRange_sf", 10., 120.)
     obs_of.setRange("fitRange_of", 10., 120.)
-
+    params = model.GetParametersOfInterest()
+    params.add(model.GetNuisanceParameters())
+    model.SetSnapshot(params)
 
     # run the fit
     ROOT.RooMsgService.instance().setGlobalKillBelow(ROOT.RooFit.ERROR)
     res = model.GetPdf().fitTo(data, ROOT.RooFit.Constrain(constr), ROOT.RooFit.Save(), ROOT.RooFit.PrintLevel(0),
                                ROOT.RooFit.Range("fitRange"), ROOT.RooFit.SplitRange())
 
-    params = model.GetParametersOfInterest()
-    params.add(model.GetNuisanceParameters())
-    model.SetSnapshot(params)
 
-    temp_file = ROOT.TFile("temp.root", "recreate")
-    ws.Write()
-    temp_file.Close()
 
-    r = ROOT.get_results(ws, res, 120)
+    r = ROOT.get_results(ws, res)
     data_results = results_to_dict(r)
     print json.dumps(data_results, indent=4)
 
-    # trial_cuts = np.arange(100, 300, 10)
+    # n_sf_vv_nominal = ws.obj("n_vv_sf").getVal()
+    # n_sf_top_nominal = ws.obj("n_top_sf").getVal()
 
     lview = rc.load_balanced_view()
 
-    all_results = []
+    n_tries = 20
+    all_results = [[] for _ in xrange(n_tries)]
 
-    # true_vals = [0 for _ in trial_cuts]
+    true_sum_highs = []
 
-    # for j, trial_cut in enumerate(trial_cuts):
-        # r = ROOT.get_results(ws, res, trial_cut)
-        # true_vals[j] = results_to_dict(r)['sf']['sum']['high'][0]
+    for j in xrange(n_tries):
 
-    results = []
-    
-    for i in xrange(100):
-        r = lview.apply_async(fit_toy, "temp.root", 0, 120.)
-        results.append(r)
+        model.LoadSnapshot()
+        rv = generate_random_norms(5393,5314)
+        print rv
+        ws.obj("n_top_sf").setVal(rv['n_top_sf'])
+        ws.obj("n_sf_z").setVal(rv['n_z_sf'])
+        ws.obj("n_sf_wjets").setVal(rv['n_fake_sf'])
+        ws.obj("n_of_z").setVal(rv['n_z_of'])
+        ws.obj("n_of_wjets").setVal(rv['n_fake_of'])
+        ws.obj("alpha_t_vv_ratio_sf").setVal(0.)
+        ws.obj("alpha_top_ratio").setVal(0.)
+        ws.obj("alpha_vv_ratio").setVal(0.)
+        model.SetSnapshot(params)
 
-    lview.wait(results)
+        r = ROOT.get_results(ws, res)
+        data_results = results_to_dict(r)
+        true_sum_highs.append(data_results['sf']['sum']['high'][0])
 
-    for r in results:
-            all_results.append(r.result)
+        model.SetSnapshot(params)
+        temp_file = ROOT.TFile("temp.root", "recreate")
+        ws.Write()
+        temp_file.Close()
+
+        results = []
+        
+        for i in xrange(100):
+            r = lview.apply_async(fit_toy, "temp.root", 0)
+            results.append(r)
+
+        lview.wait(results)
+
+        for r in results:
+                all_results[j].append(r.result)
 
 
-    dview.results.clear()
+        dview.results.clear()
         # dview.clear(block=True)
 
-    means = np.mean([x['sf']['sum']['high'][0] for x in all_results])
-    stds = np.std([x['sf']['sum']['high'][0] for x in all_results])
+    true_sum_highs = np.asarray(true_sum_highs)
 
-    low = scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in all_results], 16)
-    high = scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in all_results], 84)
+    means = np.asarray([np.median([x['sf']['sum']['high'][0] for x in a]) for a in all_results])
+    std = np.asarray([np.median([x['sf']['sum']['high'][0] for x in a]) for a in all_results])/np.sqrt(100)
 
-    # plt.plot(trial_cuts, means, color="k")
-    # plt.fill_between(trial_cuts, low, high, color="b", alpha=0.5)
-    # plt.plot(trial_cuts, true_vals, '--', color='k')
-    # plt.show()
+    low = np.asarray([scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in a], 16) for a in all_results])
+    high = np.asarray([scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in a], 84) for a in all_results])
+
+    sort_order = np.argsort(true_sum_highs)
+    true_sum_highs = true_sum_highs[sort_order]
+    means = means[sort_order]
+    low = low[sort_order]
+    high = high[sort_order]
+
+    plt.errorbar(true_sum_highs, means, yerr=std, color="k")
+    # plt.fill_between(true_sum_highs, low, high, color="b", alpha=0.5)
+    x = np.linspace(min(true_sum_highs), max(true_sum_highs), 500)
+    plt.plot(x, x, '--', color='k')
+    plt.show()
 
 
     import IPython
@@ -140,12 +167,39 @@ def results_to_dict(r):
 
     return results
 
-def fit_toy(ws_filename, n, cut):
+def fit_toy(ws_filename, n):
 
-    r = ROOT.fit_toy(ws_filename, n, cut)
+    r = ROOT.fit_toy(ws_filename, n)
     result = my_lib.results_to_dict(r)
     return result
 
+def generate_random_norms(n_sf, n_of):
+    n_top_sf = np.random.random()*n_sf
+    n_top_of = n_top_sf*1.35275
+    n_vv_sf = n_top_sf*0.502
+    n_vv_of = n_vv_sf*1.06567
+
+    n_sf_left = n_sf - n_top_sf - n_vv_sf
+    n_of_left = n_of - n_top_of - n_vv_of
+
+    if n_sf_left < 0 or n_of_left < 0:
+        return generate_random_norms(n_sf, n_of)
+
+    n_z_sf = np.random.random()*n_sf_left
+    n_fake_sf = n_sf_left-n_z_sf
+
+    n_z_of = np.random.random()*n_of_left
+    n_fake_of = n_of_left - n_z_of
+
+    return {"n_top_sf":n_top_sf,
+            "n_top_of": n_top_of,
+            "n_vv_sf":n_vv_sf,
+            "n_vv_of":n_vv_of,
+            "n_z_sf":n_z_sf,
+            "n_z_of":n_z_of,
+            "n_fake_of":n_fake_of,
+            "n_fake_sf":n_fake_sf
+    }
 
 if __name__ == '__main__':
     from docopt import docopt

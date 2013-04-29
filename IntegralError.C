@@ -248,10 +248,10 @@ result get_results(RooWorkspace* wspace, RooFitResult* res) {
 
 }
 
-result fit_toy(char* filename, int n) {
+result fit_toy(RooWorkspace* wspace, int n, const RooArgSet* globals) {
     RooRandom::randomGenerator()->SetSeed(0);
-    TFile f(filename);
-    RooWorkspace *wspace = (RooWorkspace*)f.Get("combined");
+    // TFile f(filename);
+    // RooWorkspace *wspace = (RooWorkspace*)f.Get("combined");
     ModelConfig* model = (ModelConfig*)wspace->obj("ModelConfig");
 
     RooAbsPdf* pdf;
@@ -263,7 +263,7 @@ result fit_toy(char* filename, int n) {
     ToyMCSampler* mc = new ToyMCSampler(*dummy, 1);
     mc->SetPdf(*pdf);
     mc->SetObservables(*model->GetObservables());
-    // mc->SetGlobalObservables(*model->GetGlobalObservables());
+    mc->SetGlobalObservables(*globals);
     mc->SetNuisanceParameters(*model->GetNuisanceParameters());
     mc->SetParametersForTestStat(*model->GetParametersOfInterest());
     mc->SetNEventsPerToy(n);
@@ -282,11 +282,11 @@ result fit_toy(char* filename, int n) {
 
     delete mc;
     delete dummy;
-    f.Close();
+    // f.Close();
 
     return yield;
 }
 
-void IntegralError() {
-    fit_toy("temp.root", 1000000);
-}
+// void IntegralError() {
+//     fit_toy("temp.root", 1000000);
+// }

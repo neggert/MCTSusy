@@ -69,7 +69,7 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
                 t_vv_ratio_sf = 0.502
                 template.AddNormFactor("n_top_sf".format(ch, bkg), 2000, 0, 1000000)
                 template.AddNormFactor("t_vv_ratio_sf", t_vv_ratio_sf, t_vv_ratio_sf, t_vv_ratio_sf, True) # r4
-                template.AddOverallSys("t_vv_ratio_sf", .9, 1.1)
+                template.AddOverallSys("t_vv_ratio_sf_sys", .9, 1.1)
                 if ch=="of":
                     vv_ratio_val = temp_file.Get("vv_ratio")[0]
                     template.AddNormFactor("n_vv_of_scale", vv_ratio_val, vv_ratio_val, vv_ratio_val, True) # r1
@@ -103,22 +103,22 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
 
     ws = R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
 
-    # top_ratio_val = temp_file.Get("top_ratio")[0]
-    # ws.factory('expr::top_ratio("n_of_top/n_sf_top", n_of_top, n_sf_top)')
-    # ws.factory('RooGaussian::top_ratio_constraint(top_ratio, nom_top_ratio[{0}], {1})'.format(top_ratio_val, top_ratio_val*0.1))
-    # vv_ratio_val = temp_file.Get("vv_ratio")[0]
-    # ws.factory('expr::vv_ratio("n_of_vv/n_sf_vv", n_of_vv, n_sf_vv)')
-    # ws.factory('RooGaussian::vv_ratio_constraint(vv_ratio, nom_vv_ratio[{0}], {1})'.format(vv_ratio_val, vv_ratio_val*0.1))
-    # ws.factory('PROD:constrPdf(simPdf, top_ratio_constraint, vv_ratio_constraint)')
+    top_ratio_val = temp_file.Get("top_ratio")[0]
+    ws.factory('expr::top_ratio("n_of_top/n_sf_top", n_of_top, n_sf_top)')
+    ws.factory('RooGaussian::top_ratio_constraint(top_ratio, nom_top_ratio[{0}], {1})'.format(top_ratio_val, top_ratio_val*0.1))
+    vv_ratio_val = temp_file.Get("vv_ratio")[0]
+    ws.factory('expr::vv_ratio("n_of_vv/n_sf_vv", n_of_vv, n_sf_vv)')
+    ws.factory('RooGaussian::vv_ratio_constraint(vv_ratio, nom_vv_ratio[{0}], {1})'.format(vv_ratio_val, vv_ratio_val*0.1))
+    ws.factory('PROD:constrPdf(simPdf, top_ratio_constraint, vv_ratio_constraint)')
 
-    # model = ws.obj("ModelConfig")
-    # model.SetPdf(ws.obj("constrPdf"))
+    model = ws.obj("ModelConfig")
+    model.SetPdf(ws.obj("constrPdf"))
 
-    # # ws.Print()
+    # ws.Print()
 
-    # rfile = R.TFile(prefix+"_constrained.root", "RECREATE")
-    # ws.Write()
-    # rfile.Close()
+    rfile = R.TFile(prefix+"_constrained.root", "RECREATE")
+    ws.Write()
+    rfile.Close()
 
 if __name__ == '__main__':
     from docopt import docopt

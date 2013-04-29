@@ -54,8 +54,10 @@ def run_cut_based(file_name, ncpu):
 
     obs_sf.setRange("fitRange_sf", 10., 120.)
     obs_of.setRange("fitRange_of", 10., 120.)
+
     params = model.GetParametersOfInterest()
     params.add(model.GetNuisanceParameters())
+
     model.SetSnapshot(params)
 
     # run the fit
@@ -74,16 +76,25 @@ def run_cut_based(file_name, ncpu):
 
     lview = rc.load_balanced_view()
 
-    n_tries = 20
+    n_tries = 10
     all_results = [[] for _ in xrange(n_tries)]
 
-    true_sum_highs = []
+    true_sum_highs_sf = []
+    true_sum_highs_of = []
+
+
 
     for j in xrange(n_tries):
 
         model.LoadSnapshot()
         rv = generate_random_norms(5393,5314)
-        print rv
+        # rv = {'n_top_sf':2271,
+        #      'n_z_sf':920,
+        #      'n_fake_sf': 607,
+        #      'n_z_of': 58,
+        #      'n_fake_of': 0.1
+        #      }
+        # print rv
         ws.obj("n_top_sf").setVal(rv['n_top_sf'])
         ws.obj("n_sf_z").setVal(rv['n_z_sf'])
         ws.obj("n_sf_wjets").setVal(rv['n_fake_sf'])
@@ -96,7 +107,8 @@ def run_cut_based(file_name, ncpu):
 
         r = ROOT.get_results(ws, res)
         data_results = results_to_dict(r)
-        true_sum_highs.append(data_results['sf']['sum']['high'][0])
+        true_sum_highs_sf.append(data_results['sf']['sum']['high'][0])
+        true_sum_highs_of.append(data_results['of']['sum']['high'][0])
 
         model.SetSnapshot(params)
         temp_file = ROOT.TFile("temp.root", "recreate")
@@ -106,7 +118,7 @@ def run_cut_based(file_name, ncpu):
         results = []
         
         for i in xrange(100):
-            r = lview.apply_async(fit_toy, "temp.root", 0)
+            r = lview.apply_async(fit_toy, ws, 0)
             results.append(r)
 
         lview.wait(results)
@@ -118,24 +130,45 @@ def run_cut_based(file_name, ncpu):
         dview.results.clear()
         # dview.clear(block=True)
 
-    true_sum_highs = np.asarray(true_sum_highs)
+    true_sum_highs_sf = np.asarray(true_sum_highs_sf)
+    true_sum_highs_of = np.asarray(true_sum_highs_of)
 
-    means = np.asarray([np.median([x['sf']['sum']['high'][0] for x in a]) for a in all_results])
-    std = np.asarray([np.median([x['sf']['sum']['high'][0] for x in a]) for a in all_results])/np.sqrt(100)
 
-    low = np.asarray([scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in a], 16) for a in all_results])
-    high = np.asarray([scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in a], 84) for a in all_results])
 
-    sort_order = np.argsort(true_sum_highs)
-    true_sum_highs = true_sum_highs[sort_order]
-    means = means[sort_order]
-    low = low[sort_order]
-    high = high[sort_order]
+    means_sf = np.asarray([np.median([x['sf']['sum']['high'][0] for x in a]) for a in all_results])
+    std_sf = np.asarray([np.std([x['sf']['sum']['high'][0] for x in a]) for a in all_results])
 
-    plt.errorbar(true_sum_highs, means, yerr=std, color="k")
-    # plt.fill_between(true_sum_highs, low, high, color="b", alpha=0.5)
-    x = np.linspace(min(true_sum_highs), max(true_sum_highs), 500)
-    plt.plot(x, x, '--', color='k')
+    pull_means_sf = np.asarray([np.mean( [(x['sf']['sum']['high'][0]-true_sum_highs_sf[j]) / x['sf']['sum']['high'][1] for x in a]) for j,a in enumerate(all_results)])
+    pull_std_sf = np.asarray([np.std( [(x['sf']['sum']['high'][0]-true_sum_highs_sf[j]) / x['sf']['sum']['high'][1] for x in a]) for j,a in enumerate(all_results)])
+
+    pull_means_of = np.asarray([np.mean( [(x['of']['sum']['high'][0]-true_sum_highs_of[j]) / x['of']['sum']['high'][1] for x in a]) for j,a in enumerate(all_results)])
+    pull_std_of = np.asarray([np.std( [(x['of']['sum']['high'][0]-true_sum_highs_of[j]) / x['of']['sum']['high'][1] for x in a]) for j,a in enumerate(all_results)])
+
+    means_of = np.asarray([np.median([x['of']['sum']['high'][0] for x in a]) for a in all_results])
+    std_of = np.asarray([np.std([x['of']['sum']['high'][0] for x in a]) for a in all_results])
+
+    # low = np.asarray([scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in a], 16) for a in all_results])
+    # high = np.asarray([scipy.stats.scoreatpercentile([x['sf']['sum']['high'][0] for x in a], 84) for a in all_results])
+
+
+    plt.figure()
+    plt.errorbar(true_sum_highs_sf, means_sf, yerr=std_sf, color="k", fmt='.')
+    x = np.linspace(min(true_sum_highs_sf), max(true_sum_highs_sf), 500)
+    plt.plot(x, x, '--', color='b')
+    plt.legend(['Averaged Fitted Value (100 Toys)', 'Unit Slope'], loc="upper left")
+    plt.xlabel("Generated Signal Events")
+    plt.ylabel("Fitted Signal Events")
+    plt.title("Same-Flavor")
+
+    plt.figure()
+    plt.errorbar(true_sum_highs_of, means_of, yerr=std_of, color="k", fmt='.')
+    x = np.linspace(min(true_sum_highs_of), max(true_sum_highs_of), 500)
+    plt.plot(x, x, '--', color='b')
+    plt.legend(['Averaged Fitted Value (100 Toys)', 'Unit Slope'], loc="upper left")
+    plt.xlabel("Generated Signal Events")
+    plt.ylabel("Fitted Signal Events")
+    plt.title("Opposite-Flavor")
+
     plt.show()
 
 
@@ -167,9 +200,27 @@ def results_to_dict(r):
 
     return results
 
-def fit_toy(ws_filename, n):
+def fit_toy(ws, n):
 
-    r = ROOT.fit_toy(ws_filename, n)
+    # globals = ROOT.RooArgSet()
+    # for i in xrange(29):
+    #     globals.add(ws.obj("nom_gamma_z_syst_sf_bin_{}".format(i)))
+    #     globals.add(ws.obj("nom_gamma_wjets_syst_sf_bin_{}".format(i)))
+    #     globals.add(ws.obj("nom_gamma_stat_sf_bin_{}".format(i)))
+    # for i in xrange(10):
+    #     globals.add(ws.obj("nom_gamma_ww_syst_sf_bin_{}".format(i)))
+    # globals.add(ws.obj("nom_alpha_HWW_norm"))
+    # globals.add(ws.obj("nom_alpha_VVV_norm"))
+    # globals.add(ws.obj("nom_alpha_WW_norm"))
+    # globals.add(ws.obj("nom_alpha_WZ_norm"))
+    # globals.add(ws.obj("nom_alpha_ZZ_norm"))
+    # globals.add(ws.obj("nom_alpha_t_vv_ratio_sf"))
+    # globals.add(ws.obj("nom_alpha_top_ratio"))
+    # globals.add(ws.obj("nom_alpha_vv_ratio"))
+
+    globals = ws.obj("ModelConfig").GetGlobalObservables()
+
+    r = ROOT.fit_toy(ws, n, globals)
     result = my_lib.results_to_dict(r)
     return result
 

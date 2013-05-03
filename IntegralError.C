@@ -11,7 +11,7 @@
 #include "RooStats/RooStatsUtils.h"
 #include "RooStats/NumEventsTestStat.h"
 #include "RooStats/ToyMCSampler.h"
-
+#include "RooNumber.h"
 
 using namespace RooFit;
 using namespace RooStats;
@@ -256,7 +256,34 @@ result fit_toy(RooWorkspace* wspace, int n, const RooArgSet* globals) {
 
     RooAbsPdf* pdf;
     pdf = model->GetPdf();
-    pdf->Print();
+
+    RooAbsPdf* top_constraint = (RooAbsPdf*)wspace->obj("top_ratio_constraint");
+    RooAbsPdf* vv_constraint = (RooAbsPdf*)wspace->obj("vv_ratio_constraint");
+    RooAbsPdf* top_vv_constraint_sf = (RooAbsPdf*)wspace->obj("top_vv_ratio_sf_constraint");
+    RooAbsPdf* top_vv_constraint_of = (RooAbsPdf*)wspace->obj("top_vv_ratio_of_constraint");
+
+
+    // generate constraint global observables
+    RooRealVar *nom_top_ratio = (RooRealVar*)wspace->obj("nom_top_ratio");
+    nom_top_ratio->setRange(0, 100);
+    RooRealVar *nom_vv_ratio = (RooRealVar*)wspace->obj("nom_vv_ratio");
+    nom_vv_ratio->setRange(0,100);
+    RooRealVar *nom_top_vv_ratio_sf = (RooRealVar*)wspace->obj("nom_top_vv_ratio_sf");
+    nom_top_vv_ratio_sf->setRange(0,100);
+    RooRealVar *nom_top_vv_ratio_of = (RooRealVar*)wspace->obj("nom_top_vv_ratio_of");
+    nom_top_vv_ratio_of->setRange(0,100);
+
+    RooDataSet *nom_top_generated = top_constraint->generateSimGlobal(RooArgSet(*nom_top_ratio), 1);
+    nom_top_ratio->setVal(((RooRealVar*)nom_top_generated->get(0)->find("nom_top_ratio"))->getVal());
+
+    RooDataSet *nom_vv_generated = vv_constraint->generateSimGlobal(RooArgSet(*nom_vv_ratio), 1);
+    nom_vv_ratio->setVal(((RooRealVar*)nom_vv_generated->get(0)->find("nom_vv_ratio"))->getVal());
+
+    RooDataSet *nom_top_vv_sf_generated = top_vv_constraint_sf->generateSimGlobal(RooArgSet(*nom_top_vv_ratio_sf), 1);
+    nom_top_vv_ratio_sf->setVal(((RooRealVar*)nom_top_vv_sf_generated->get(0)->find("nom_top_vv_ratio_sf"))->getVal());
+
+    RooDataSet *nom_top_vv_of_generated = top_vv_constraint_of->generateSimGlobal(RooArgSet(*nom_top_vv_ratio_of), 1);
+    nom_top_vv_ratio_of->setVal(((RooRealVar*)nom_top_vv_of_generated->get(0)->find("nom_top_vv_ratio_of"))->getVal());
 
     NumEventsTestStat* dummy = new NumEventsTestStat(*pdf);
 
@@ -273,9 +300,10 @@ result fit_toy(RooWorkspace* wspace, int n, const RooArgSet* globals) {
     RemoveConstantParameters(&constr);
 
     RooDataSet* toy_data = (RooDataSet*)mc->GenerateToyData(*const_cast<RooArgSet*>(model->GetSnapshot()));
-    toy_data->Print();
+
     RooFitResult *res = pdf->fitTo(*toy_data, Constrain(constr), PrintLevel(0), Save(),
-                                               Range("fitRange"), InitialHesse(), SplitRange());
+                                               Range("fitRange"), InitialHesse(),
+                                               ExternalConstraints(RooArgSet(*top_constraint, *vv_constraint, *top_vv_constraint_sf, *top_vv_constraint_of)));
     result yield = get_results(wspace, res);
     yield.of.generated_sum.val = toy_data->sumEntries("(channelCat==channelCat::of) & (obs_x_of>120)");
     yield.sf.generated_sum.val = toy_data->sumEntries("(channelCat==channelCat::sf) & (obs_x_sf>120)");

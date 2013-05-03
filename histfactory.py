@@ -57,25 +57,15 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
             template.SetNormalizeByTheory(False)
             template.ActivateStatError()
             if bkg=="top":
-                template.AddNormFactor("n_top_sf".format(ch, bkg), 2000, 0, 1000000)
                 if ch=="of":
-                    top_ratio_val = temp_file.Get("top_ratio")[0]
-                    template.AddNormFactor("n_top_of_scale", top_ratio_val, top_ratio_val, top_ratio_val, True) # r3
-                    template.AddOverallSys("top_ratio", .9, 1.1)
-                # else:
-                    # template.AddOverallSys("top_ratio", 1.1, 0.9)
-                    # template.AddOverallSys("t_vv_ratio_sf", 1.1, 0.9)
+                    template.AddNormFactor("n_of_top".format(ch, bkg), 2000, 0, 1000000)
+                else:
+                    template.AddNormFactor("n_sf_top".format(ch, bkg), 2000, 0, 1000000)
             elif bkg=="vv":
-                t_vv_ratio_sf = 0.502
-                template.AddNormFactor("n_top_sf".format(ch, bkg), 2000, 0, 1000000)
-                template.AddNormFactor("t_vv_ratio_sf", t_vv_ratio_sf, t_vv_ratio_sf, t_vv_ratio_sf, True) # r4
-                template.AddOverallSys("t_vv_ratio_sf_sys", .9, 1.1)
                 if ch=="of":
-                    vv_ratio_val = temp_file.Get("vv_ratio")[0]
-                    template.AddNormFactor("n_vv_of_scale", vv_ratio_val, vv_ratio_val, vv_ratio_val, True) # r1
-                    template.AddOverallSys("vv_ratio", .9, 1.1)
-                # else:
-                    # template.AddOverallSys("vv_ratio", 1.1, 0.9)
+                    template.AddNormFactor("n_of_vv".format(ch, bkg), 2000, 0, 1000000)
+                else:
+                    template.AddNormFactor("n_sf_vv".format(ch, bkg), 2000, 0, 1000000)
             else:
                 template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 500, 0, 1000000)
 
@@ -105,16 +95,26 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
 
     top_ratio_val = temp_file.Get("top_ratio")[0]
     ws.factory('expr::top_ratio("n_of_top/n_sf_top", n_of_top, n_sf_top)')
-    ws.factory('RooGaussian::top_ratio_constraint(top_ratio, nom_top_ratio[{0}], {1})'.format(top_ratio_val, top_ratio_val*0.1))
+    ws.factory('frac_uncertainty[0.1]')
+    ws.factory('expr::gamma("1/frac_uncertainty/frac_uncertainty", frac_uncertainty)')
+    ws.factory('expr::top_ratio_beta("frac_uncertainty*frac_uncertainty*nom_top_ratio", frac_uncertainty, nom_top_ratio[{0}])'.format(top_ratio_val))
+    ws.factory('RooGamma::top_ratio_constraint(top_ratio, gamma, top_ratio_beta, 0)')
+
     vv_ratio_val = temp_file.Get("vv_ratio")[0]
     ws.factory('expr::vv_ratio("n_of_vv/n_sf_vv", n_of_vv, n_sf_vv)')
-    ws.factory('RooGaussian::vv_ratio_constraint(vv_ratio, nom_vv_ratio[{0}], {1})'.format(vv_ratio_val, vv_ratio_val*0.1))
-    ws.factory('PROD:constrPdf(simPdf, top_ratio_constraint, vv_ratio_constraint)')
+    ws.factory('expr::vv_ratio_beta("frac_uncertainty*frac_uncertainty*nom_vv_ratio", frac_uncertainty, nom_vv_ratio[{0}])'.format(vv_ratio_val))
+    ws.factory('RooGamma::vv_ratio_constraint(vv_ratio, gamma, vv_ratio_beta, 0)')
 
-    model = ws.obj("ModelConfig")
-    model.SetPdf(ws.obj("constrPdf"))
+    top_vv_ratio_sf = 1.82
+    ws.factory('expr::top_vv_ratio_sf("n_sf_top/n_sf_vv", n_sf_top, n_sf_vv)') 
+    ws.factory('expr::top_vv_ratio_sf_beta("frac_uncertainty*frac_uncertainty*nom_top_vv_ratio_sf", frac_uncertainty, nom_top_vv_ratio_sf[{0}])'.format(top_vv_ratio_sf))
+    ws.factory('RooGamma::top_vv_ratio_sf_constraint(top_vv_ratio_sf, gamma, top_vv_ratio_sf_beta, 0)')
 
-    # ws.Print()
+
+    top_vv_ratio_of = 2.09
+    ws.factory('expr::top_vv_ratio_of("n_of_top/n_of_vv", n_of_top, n_of_vv)') 
+    ws.factory('expr::top_vv_ratio_of_beta("frac_uncertainty*frac_uncertainty*nom_top_vv_ratio_of", frac_uncertainty, nom_top_vv_ratio_of[{0}])'.format(top_vv_ratio_of))
+    ws.factory('RooGamma::top_vv_ratio_of_constraint(top_vv_ratio_of, gamma, top_vv_ratio_of_beta, 0)')
 
     rfile = R.TFile(prefix+"_constrained.root", "RECREATE")
     ws.Write()
@@ -138,10 +138,10 @@ if __name__ == '__main__':
         chans = ['of', 'sf']
 
     for m1,m2 in masses:
-        try:
+        # try:
             create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), chans)
             break
-        except:
-            continue
+        # except:
+            # continue
 
 

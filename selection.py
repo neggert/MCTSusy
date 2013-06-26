@@ -102,6 +102,11 @@ def get_samples( data, mctcut=100., real_data=False) :
 
 
     outdict['z_window'] = (data.mll < 106) & (data.mll > 76) & (abs(data.pdg1) == abs(data.pdg2))
+    if 'm23' in data.columns:
+        outdict['z_23'] = (data.m23 < 106) & (data.m23 > 76) & (data.pdg2 == -data.pdg3)
+        outdict['z_13'] = (data.m13 < 106) & (data.m13 > 76) & (data.pdg1 == -data.pdg3)
+
+
     outdict['off_z_window'] = (((data.mll > 106) | (data.mll < 76)) | (abs(data.pdg1) != abs(data.pdg2))) & (data.mll > 12)
     # outdict['off_z_window'] = ~outdict['z_window'] & (data.mll > 12)
 
@@ -126,7 +131,8 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['top_ctrl'] = outdict['bjets_ctrl'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['moretag_ctrl'] = outdict['more_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
     outdict['z_ctrl'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window']
-    outdict['wz_ctrl'] = outdict['bjets_sig'] & outdict['isolation_3l'] & outdict['pass_met']
+    if 'z_23' in outdict:
+        outdict['wz_ctrl'] = outdict['bjets_sig'] & outdict['isolation_3l'] & outdict['pass_met'] & (outdict['z_window'] | outdict['z_23'] | outdict['z_13'])
     outdict['sig'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window']
 
     outdict['wjets_ctrl_sf'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
@@ -138,6 +144,8 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['z_ctrl_0met'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['z_window'] & outdict['sf']
     outdict['z_ctrl_30met'] = outdict['bjets_sig'] & outdict['isolation_sig'] & (data.metPt > 30) & outdict['z_window'] & outdict['sf']
     outdict['sig_sf'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
+    outdict['wz_ctrl_sf'] = outdict['bjets_sig'] & outdict['isolation_3l'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['sf']
+
 
     outdict['wjets_ctrl_of'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
     outdict['1tag_ctrl_of'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
@@ -146,6 +154,8 @@ def get_samples( data, mctcut=100., real_data=False) :
     outdict['moretag_ctrl_of'] = outdict['more_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
     outdict['z_ctrl_of'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['z_window'] & outdict['of']
     outdict['sig_of'] = outdict['bjets_sig'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
+    outdict['wz_ctrl_of'] = outdict['bjets_sig'] & outdict['isolation_3l'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['of']
+
 
     outdict['wjets_ctrl_ee'] = outdict['bjets_sig'] & outdict['isolation_ctrl'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['ee']
     outdict['1tag_ctrl_ee'] = outdict['1_bjets'] & outdict['isolation_sig'] & outdict['pass_met'] & outdict['off_z_window'] & outdict['ee']

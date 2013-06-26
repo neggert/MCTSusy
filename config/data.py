@@ -6,6 +6,9 @@ reload(selection)
 import numpy as np
 import ROOT as R
 
+def im(pta, phia, etaa, ptb, phib, etab):
+	return np.sqrt(2*pta*ptb*(np.cosh(etaa-etab)-np.cos(phia-phib)))
+
 # background MC
 s = HDFStore("work/mc/mc_20130308.hdf5")
 mc = s['data']
@@ -17,6 +20,8 @@ weights.name="weight"
 mc = mc.join(weights)
 
 # apply trigger efficiencies
+mc['m23'] = im(mc.pt2, mc.phi2, mc.eta2, mc.pt3, mc.phi3, mc.eta3)
+mc['m13'] = im(mc.pt1, mc.phi1, mc.eta1, mc.pt3, mc.phi3, mc.eta3)
 
 smc = selection.get_samples(mc)
 
@@ -76,6 +81,10 @@ mc.weight[mc.mc_cat=="DY"] *= mc[mc.mc_cat=="DY"].metPt.apply(reweight, args=(z_
 # data
 t = HDFStore("work/data/data_20130304.hdf5")
 data = t['data']
+
+data['m23'] = im(data.pt2, data.phi2, data.eta2, data.pt3, data.phi3, data.eta3)
+data['m13'] = im(data.pt1, data.phi1, data.eta1, data.pt3, data.phi3, data.eta3)
+
 sd = selection.get_samples(data, 100., True)
 # add a weight column
 data = data.join(Series(np.ones(data.mctperp.count()), name="weight", index=data.index))
@@ -98,9 +107,9 @@ sel_slep = selection.get_samples(slep)
 mumu_high_eta_slep = sel_slep['opposite_sign_mumu'] & (abs(slep.eta2) > 1.)
 mumu_low_eta_slep = sel_slep['opposite_sign_mumu'] & (abs(slep.eta2) < 1.)
 
-# slep.weight *= (sel_slep['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta_slep.astype(float)*mumu_high_eta_trigger_eff
-              # +mumu_low_eta_slep.astype(float)*mumu_low_eta_trigger_eff + sel_slep['opposite_sign_emu'].astype(float)*emu_trigger_eff)
+slep['weight'] = (sel_slep['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta_slep.astype(float)*mumu_high_eta_trigger_eff
+              +mumu_low_eta_slep.astype(float)*mumu_low_eta_trigger_eff + sel_slep['opposite_sign_emu'].astype(float)*emu_trigger_eff)
 
-stchiww = HDFStore("work/sms/sms_tchiww.hdf5")
-tchiww = stchiww['data']
-sel_tchiww = selection.get_samples(tchiww)
+# stchiww = HDFStore("work/sms/sms_tchiww.hdf5")
+# tchiww = stchiww['data']
+# sel_tchiww = selection.get_samples(tchiww)

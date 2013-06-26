@@ -24,6 +24,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import IndexLocator, FixedFormatter
 import numpy as np
 from prettytable import PrettyTable
+import money_take2
 # plt.switch_backend("pdf")
 
 bkgs = ['top', 'vv', 'wjets', 'z']
@@ -99,21 +100,11 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     print t
 
     #find the actual parameter vlaues
-    par = R.RooArgList(ws.obj("n_top_sf"), ws.obj("alpha_top_ratio"))
-    n_top_sf_real = R.RooFormulaVar("n_top_sf_real", "n_top_sf_real", "n_top_sf*(1-0.1*alpha_top_ratio)", par)
-    scale = ws.obj("n_top_of_scale").getVal()
-    n_top_of = R.RooFormulaVar("n_top_of", "n_top_of", "n_top_sf*{0}*(1+0.1*alpha_top_ratio)".format(scale), par)
+    n_top_sf = ws.obj("n_of_top")
+    n_top_of = ws.obj("n_sf_top")
 
-    par = R.RooArgList(ws.obj("n_vv_sf"), ws.obj("alpha_vv_ratio"))
-    vv_ratio = ws.obj("alpha_vv_ratio")
-    n_vv_sf = ws.obj("n_vv_sf")
-    n_vv_sf_real = R.RooFormulaVar("n_vv_sf_real", "n_vv_sf_real", "n_vv_sf*(1-0.1*alpha_vv_ratio)", par)
-    n_vv_sf_err = n_vv_sf_real.getVal()*np.sqrt((n_vv_sf.getError()/n_vv_sf.getVal())**2+(0.1*vv_ratio.getError()/(1-0.1*vv_ratio.getVal()))**2)
-
-    scale = ws.obj("n_vv_of_scale").getVal()
-    n_vv_of = R.RooFormulaVar("n_vv_of", "n_vv_of", "n_vv_sf*{0}*(1+0.1*alpha_vv_ratio)".format(scale), par)
-
-    n_vv_of_err = n_vv_of.getVal()*np.sqrt((n_vv_sf.getError()/n_vv_sf.getVal())**2+(0.1*vv_ratio.getError()/(1+0.1*vv_ratio.getVal()))**2)
+    n_vv_sf = ws.obj("n_sf_vv")
+    n_vv_of = ws.obj("n_of_vv")
 
     fitresults = defaultdict(dict)
     chans = ['of','sf']
@@ -125,10 +116,10 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
             elif b == 'wjets':
                 b = 'fake'
             fitresults[ch][b] = (fitvar.getVal(), fitvar.getError())
-    fitresults['sf']['top'] = (n_top_sf_real.getVal(), n_top_sf_real.getPropagatedError(res))
+    fitresults['sf']['top'] = (n_top_sf.getVal(), n_top_sf.getPropagatedError(res))
     fitresults['of']['top'] = (n_top_of.getVal(), n_top_of.getPropagatedError(res))
-    fitresults['sf']['vv'] = (n_vv_sf_real.getVal(), n_vv_sf_err)
-    fitresults['of']['vv'] = (n_vv_of.getVal(), n_vv_of_err)
+    fitresults['sf']['vv'] = (n_vv_sf.getVal(), n_vv_sf.getPropagatedError(res))
+    fitresults['of']['vv'] = (n_vv_of.getVal(), n_vv_of.getPropagatedError(res))
 
     f = open("fit_results.json", 'w')
 
@@ -209,6 +200,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     params.add(model.GetNuisanceParameters())
     params.add(model.GetParametersOfInterest())
     model.SetSnapshot(params)
+
+    money_take2.build_background_shape(ws)
 
     plot_fitted_sf(ws)
     plot_fitted_of(ws)

@@ -95,6 +95,9 @@ def run_bonly_fit(file_name, ncpu, data_prefix="data", data_file_name="data.root
     plot.Draw()
     c1.SaveAs("plots/adtest.pdf")
 
+    import IPython
+    IPython.embed()
+
 
     # raw_input("...")
 

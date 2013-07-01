@@ -24,6 +24,7 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import IndexLocator, FixedFormatter
 import numpy as np
 from prettytable import PrettyTable
+import money_take2
 # plt.switch_backend("pdf")
 
 bkgs = ['top', 'vv', 'wjets', 'z']
@@ -209,6 +210,12 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     params.add(model.GetNuisanceParameters())
     params.add(model.GetParametersOfInterest())
     model.SetSnapshot(params)
+
+    money_take2.build_background_shape(ws, 'sf', money_take2.sf_backgrounds, log=True)
+    money_take2.build_background_shape(ws, 'of', money_take2.of_backgrounds, log=True)
+    money_take2.build_background_shape(ws, 'sf', money_take2.sf_backgrounds, log=False)
+    money_take2.build_background_shape(ws, 'of', money_take2.of_backgrounds, log=False)
+
 
     plot_fitted_sf(ws)
     plot_fitted_of(ws)

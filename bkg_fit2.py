@@ -27,6 +27,8 @@ from matplotlib.ticker import IndexLocator, FixedFormatter
 from bkg_fit import get_step_fill_between
 from prettytable import PrettyTable
 
+import money_take2_2 as money_take2
+
 bkgs = ['of', 'vv', 'wjets', 'z']
 
 def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="data.root", do_minos=False):
@@ -119,6 +121,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     plt.savefig("plots/correlation_full_sf.pdf")
 
     model.SetSnapshot(model.GetParametersOfInterest())
+
+    money_take2.build_background_shape(ws, 'sf', money_take2.sf_backgrounds, log=True)
 
     R.gROOT.ProcessLineSync(".L KS/AndersonDarlingTestStat.cc+")
 

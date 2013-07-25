@@ -4,10 +4,11 @@ from config.parameters import *
 from matplotlib import rc
 rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
 rc('text', usetex=True)
-rc('text.latex', preamble = '\usepackage{amsmath}')
+rc('text.latex', preamble = '\usepackage{amsmath}\usepackage{hepnicenames}\usepackage{hepunits}')
 from matplotlib.ticker import MultipleLocator
 
 import simplejson as json
+import ROOT as R
 
 from matplotlib.font_manager import *
 import matplotlib.pyplot as plt
@@ -49,6 +50,13 @@ def extract_data_hist(ws, x, obs_name):
         out[i] = data.weight()
     return out
 
+def extract_points_from_th1(th1, bins):
+    y = []
+    for i, b in enumerate(bins):
+        y.append(th1.GetBinContent(i+1))
+
+    return np.asarray(y)
+
 sf_backgrounds = [
 {"obs_name": "obs_x_sf", "shape_name": "wjets_sf_overallSyst_x_StatUncert_x_sf_wjets_syst_ShapeSys", "name":"wjets"},
 {"obs_name": "obs_x_sf", "shape_name": "z_sf_overallSyst_x_StatUncert_x_sf_z_syst_ShapeSys", "name": "DY"},
@@ -65,7 +73,7 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
     dibosons = ['ZZ', 'WZ']
 
     fontp = FontProperties(family="Helvetica", size=12)
-    fontpb = FontProperties(family="Helvetica", size=12, weight="book")
+    fontpb = FontProperties(family="Helvetica", size=10, weight="book")
 
     x = np.arange(10, 300, 10)
     bin_heights = [np.zeros(x.shape)]
@@ -87,7 +95,7 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
     ax = plt.subplot2grid((4,1),(0,0), rowspan=3)
     if log:
         ax.set_yscale('log', nonposy='clip')
-        ax.set_ylim(0.01, 2000)
+        ax.set_ylim(0.01, 5000)
     else:
         ax.set_ylim(0., 1500)
     ax.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
@@ -99,6 +107,22 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
         top = top+bin_heights[i+1]
         ax.fill(*get_step_fill_between(x, bottom, top), facecolor=bkg_colors[names[i]],
                 label=bkg_labels[names[i]], closed=True)
+
+    # plot SMS
+    sms_file = R.TFile("signal_slep.root")
+    sms1 = sms_file.Get("sms_template_{}_150_0".format(ch))
+    sms2 = sms_file.Get("sms_template_{}_300_0".format(ch))
+
+    sms1_points = extract_points_from_th1(sms1, x)
+    sms2_points = extract_points_from_th1(sms2, x)
+
+    sms_x = np.append(x, 300)
+    sms1_points = np.append(sms1_points, sms1_points[-1])
+    sms2_points = np.append(sms2_points, sms2_points[-1])
+
+
+    ax.plot(sms_x, sms1_points, drawstyle="steps-post", linestyle="--", dashes=(3, 2), color="r", label=r'\noindent$m_{\PSlepton}=150\;\GeV$')
+    ax.plot(sms_x, sms2_points, drawstyle="steps-post", linestyle="--", dashes=(3, 2), color="b", label=r'\noindent$m_{\PSlepton}=300\;\GeV$')
 
     data_height = extract_data_hist(ws, x, "obs_x_"+ch)
     data_x = x+5

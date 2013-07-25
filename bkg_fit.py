@@ -24,9 +24,13 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import IndexLocator, FixedFormatter
 import numpy as np
 from prettytable import PrettyTable
+import money_take2
+import ROOT
 # plt.switch_backend("pdf")
 
 bkgs = ['top', 'vv', 'wjets', 'z']
+
+ROOT.gROOT.ProcessLineSync('.L IntegralErrorShape.C+')
 
 def get_step_fill_between(x, y1, y2):
 
@@ -44,6 +48,21 @@ def get_step_fill_between(x, y1, y2):
 
 
     return np.append(fill_x, fill_x[::-1]), np.append(fill_y1, fill_y2[::-1])
+
+def results_to_dict(r):
+    results = defaultdict(lambda: defaultdict(dict))
+    results['sf']['sum'] = (r.sf.sum.low.val, r.sf.sum.low.error)
+    results['sf']['vv'] = (r.sf.vv.low.val, r.sf.vv.low.error)
+    results['sf']['top'] = (r.sf.top.low.val, r.sf.top.low.error)
+    results['sf']['z'] = (r.sf.z.low.val, r.sf.z.low.error)
+    results['sf']['fake'] = (r.sf.fake.low.val, r.sf.fake.low.error)
+    results['of']['sum'] = (r.of.sum.low.val, r.of.sum.low.error)
+    results['of']['vv'] = (r.of.vv.low.val, r.of.vv.low.error)
+    results['of']['top'] = (r.of.top.low.val, r.of.top.low.error)
+    results['of']['z'] = (r.of.z.low.val, r.of.z.low.error)
+    results['of']['fake'] = (r.of.fake.low.val, r.of.fake.low.error)
+
+    return results
 
 def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="data.root", do_minos=False):
 
@@ -73,6 +92,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     else: 
         res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0))
 
+    r = ROOT.get_results(ws, res)
+    data_results = results_to_dict(r)
 
     fitPars = res.floatParsFinal()
 
@@ -115,149 +136,175 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     n_vv_of_err = n_vv_of.getVal()*np.sqrt((n_vv_sf.getError()/n_vv_sf.getVal())**2+(0.1*vv_ratio.getError()/(1+0.1*vv_ratio.getVal()))**2)
 
-    fitresults = defaultdict(dict)
-    chans = ['of','sf']
-    for ch in chans:
-        for b in ['z', 'wjets']:
-            fitvar = fitPars.find('n_{}_{}'.format(ch, b))
-            if b == 'z':
-                b = "DY"
-            elif b == 'wjets':
-                b = 'fake'
-            fitresults[ch][b] = (fitvar.getVal(), fitvar.getError())
-    fitresults['sf']['top'] = (n_top_sf_real.getVal(), n_top_sf_real.getPropagatedError(res))
-    fitresults['of']['top'] = (n_top_of.getVal(), n_top_of.getPropagatedError(res))
-    fitresults['sf']['vv'] = (n_vv_sf_real.getVal(), n_vv_sf_err)
-    fitresults['of']['vv'] = (n_vv_of.getVal(), n_vv_of_err)
+    # fitresults = defaultdict(dict)
+    # chans = ['of','sf']
+    # for ch in chans:
+    #     for b in ['z', 'wjets']:
+    #         fitvar = fitPars.find('n_{}_{}'.format(ch, b))
+    #         if b == 'z':
+    #             b = "DY"
+    #         elif b == 'wjets':
+    #             b = 'fake'
+    #         fitresults[ch][b] = (fitvar.getVal(), fitvar.getError())
+    # fitresults['sf']['top'] = (n_top_sf_real.getVal(), n_top_sf_real.getPropagatedError(res))
+    # fitresults['of']['top'] = (n_top_of.getVal(), n_top_of.getPropagatedError(res))
+    # fitresults['sf']['vv'] = (n_vv_sf_real.getVal(), n_vv_sf_err)
+    # fitresults['of']['vv'] = (n_vv_of.getVal(), n_vv_of_err)
 
     f = open("fit_results.json", 'w')
 
-    json.dump(fitresults, f, indent=3)
+    json.dump(data_results, f, indent=3)
 
     f.close()
 
-    # plot the relevant portion of the correlation matrix
-    fullcor = res.correlationMatrix()
-    cor = fullcor.GetSub(129, 136, 129, 136)
-    # import pdb; pdb.set_trace()
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.patch.set_facecolor('gray')
-    ax.set_aspect('equal', 'box')
-    labels = FixedFormatter(['',
-                            'OF Top',
-                             'OF Diboson',
-                             'OF Z',
-                             'OF WJets',
-                             'SF Top',
-                             'SF Diboson',
-                             'SF Z',
-                             'SF WJets'])
-    ax.xaxis.set_major_formatter(labels)
-    ax.xaxis.tick_top()
-    ax.yaxis.set_major_formatter(labels)
-    for t in ax.get_xticklabels():
-        t.set_rotation(40)
-        t.set_ha('left')
+    # # plot the relevant portion of the correlation matrix
+    # fullcor = res.correlationMatrix()
+    # cor = fullcor.GetSub(129, 136, 129, 136)
+    # # import pdb; pdb.set_trace()
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.patch.set_facecolor('gray')
+    # ax.set_aspect('equal', 'box')
+    # labels = FixedFormatter(['',
+    #                         'OF Top',
+    #                          'OF Diboson',
+    #                          'OF Z',
+    #                          'OF WJets',
+    #                          'SF Top',
+    #                          'SF Diboson',
+    #                          'SF Z',
+    #                          'SF WJets'])
+    # ax.xaxis.set_major_formatter(labels)
+    # ax.xaxis.tick_top()
+    # ax.yaxis.set_major_formatter(labels)
+    # for t in ax.get_xticklabels():
+    #     t.set_rotation(40)
+    #     t.set_ha('left')
 
 
-    # make Hinton-style correlation plot
-    for i in xrange(cor.GetNrows()):
-        for j in xrange(cor.GetNcols()):
-            # if i<=j: continue
-            c = cor[i][j]
-            if abs(c) < 0.01: continue
-            if c > 0: color='white'
-            else: color='black'
-            size = np.sqrt(np.abs(c))
-            rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black', lw=0.1)
-            ax.add_patch(rect)
-    ax.autoscale_view()
-    plt.gca().invert_yaxis()
-    plt.tight_layout()
+    # # make Hinton-style correlation plot
+    # for i in xrange(cor.GetNrows()):
+    #     for j in xrange(cor.GetNcols()):
+    #         # if i<=j: continue
+    #         c = cor[i][j]
+    #         if abs(c) < 0.01: continue
+    #         if c > 0: color='white'
+    #         else: color='black'
+    #         size = np.sqrt(np.abs(c))
+    #         rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black', lw=0.1)
+    #         ax.add_patch(rect)
+    # ax.autoscale_view()
+    # plt.gca().invert_yaxis()
+    # plt.tight_layout()
 
-    plt.savefig("plots/correlation.pdf")
+    # plt.savefig("plots/correlation.pdf")
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.patch.set_facecolor('gray')
-    ax.set_aspect('equal', 'box')
+    # fig = plt.figure()
+    # ax = fig.add_subplot(111)
+    # ax.patch.set_facecolor('gray')
+    # ax.set_aspect('equal', 'box')
 
-    cor.Print()
-
-
-    # make Hinton-style correlation plot
-    for i in xrange(fullcor.GetNrows()):
-        for j in xrange(fullcor.GetNcols()):
-            # if i<=j: continue
-            c = fullcor[i][j]
-            if abs(c) < 0.01: continue
-            if c > 0: color='white'
-            else: color='black'
-            size = np.sqrt(np.abs(c))
-            rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black', lw=0.1)
-            ax.add_patch(rect)
-    ax.set_xlim(0, fullcor.GetNrows())
-    ax.set_ylim(0, fullcor.GetNrows())
-    plt.gca().invert_yaxis()
-    plt.tight_layout()
-
-    plt.savefig("plots/correlation_full.pdf")
-    # raw_input("...")
-
-    model.SetSnapshot(model.GetParametersOfInterest())
-
-    plot_fitted_sf(ws)
-    plot_fitted_of(ws)
+    # cor.Print()
 
 
-    # plot the fitted templates
+    # # make Hinton-style correlation plot
+    # for i in xrange(fullcor.GetNrows()):
+    #     for j in xrange(fullcor.GetNcols()):
+    #         # if i<=j: continue
+    #         c = fullcor[i][j]
+    #         if abs(c) < 0.01: continue
+    #         if c > 0: color='white'
+    #         else: color='black'
+    #         size = np.sqrt(np.abs(c))
+    #         rect = Rectangle([i-size/2, j-size/2], size, size, facecolor=color, edgecolor='black', lw=0.1)
+    #         ax.add_patch(rect)
+    # ax.set_xlim(0, fullcor.GetNrows())
+    # ax.set_ylim(0, fullcor.GetNrows())
+    # plt.gca().invert_yaxis()
+    # plt.tight_layout()
 
-    # get the test statistic on data    
+    # plt.savefig("plots/correlation_full.pdf")
+    # # raw_input("...")
+
+    params = R.RooArgSet()
+    params.add(model.GetNuisanceParameters())
+    params.add(model.GetParametersOfInterest())
+    model.SetSnapshot(params)
+
+    money_take2.build_background_shape(ws, 'sf', money_take2.sf_backgrounds, log=True)
+    money_take2.build_background_shape(ws, 'of', money_take2.of_backgrounds, log=True)
+    money_take2.build_background_shape(ws, 'sf', money_take2.sf_backgrounds, log=False)
+    money_take2.build_background_shape(ws, 'of', money_take2.of_backgrounds, log=False)
+
+
+    # plot_fitted_sf(ws)
+    # plot_fitted_of(ws)
+
+
+    # # plot the fitted templates
+
+    # # get the test statistic on data    
     R.gROOT.ProcessLineSync(".L KS/AndersonDarlingTestStat.cc+")
     AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
     ts = AD.Evaluate(data, model.GetParametersOfInterest())
 
-    # import IPython
-    # IPython.embed()
+    # # import IPython
+    # # IPython.embed()
+
 
     # calculate a p-value
     if get_p:
 
-        sampler = R.RooStats.ToyMCSampler(AD, 500)
-        sampler.SetPdf(model.GetPdf())
-        sampler.SetObservables(model.GetObservables())
-        sampler.SetGlobalObservables(model.GetGlobalObservables())
-        sampler.SetParametersForTestStat(model.GetParametersOfInterest())
 
-        params = R.RooArgSet()
-        params.add(model.GetNuisanceParameters())
-        params.add(model.GetParametersOfInterest())
 
-        if ncpu > 1:
-            pc = R.RooStats.ProofConfig(ws, ncpu, "")
-            sampler.SetProofConfig(pc)
+        results = []
+        from IPython.parallel import Client
 
-        sampDist = sampler.GetSamplingDistribution(params)
+        rc = Client()
+        dview = rc[:]
+        # with dview.sync_imports(): 
+        #     import ROOT as R
+        dview.execute("import ROOT as R")
+        dview.execute("R.gROOT.ProcessLineSync('.L KS/AndersonDarlingTestStat.cc+')")
+        lview = rc.load_balanced_view()
 
-        f = R.TFile("BkgADDist.root", "RECREATE")
+        for i in xrange(50):
+            r = lview.apply_async(get_p_value_dist, ws, 100)
+            results.append(r)
+
+        lview.wait(results)
+
+        sampDist = R.RooStats.SamplingDistribution()
+        for r in results:
+            sampDist.Add(r.result)
+
+
+        f = R.TFile("BkgADDist_test.root", "RECREATE")
         sampDist.Write("sampDist")
         f.Close()
 
         p = 1-sampDist.CDF(ts)
 
         print "P value:", p
-        print "Test statistic on data: {:.7f}".format(ts)
-
-        plot = R.RooStats.SamplingDistPlot()
-        plot.AddSamplingDistribution(sampDist)
-
-        plot.Draw()
-        raw_input("...")
 
     print "Test statistic on data: {:.7f}".format(ts)
 
-    return fitresults
+    return data_results
+
+def get_p_value_dist(ws, n):
+    model = ws.obj("ModelConfig")
+
+    AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
+
+    sampler = R.RooStats.ToyMCSampler(AD, n)
+    sampler.SetPdf(model.GetPdf())
+    sampler.SetObservables(model.GetObservables())
+    sampler.SetGlobalObservables(model.GetGlobalObservables())
+    sampler.SetParametersForTestStat(model.GetParametersOfInterest())
+
+    sampDist = sampler.GetSamplingDistribution(model.GetSnapshot())
+
+    return sampDist
 
 def plot_fitted_sf(ws):
     obs = ws.obj("obs_x_sf")

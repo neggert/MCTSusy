@@ -61,7 +61,7 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
                 template.AddNormFactor("n_top_sf".format(ch, bkg), 2000, 0, 10000)
                 if ch=="of":
                     top_ratio_val = temp_file.Get("top_ratio")[0]
-                    template.AddNormFactor("n_top_of_scale", top_ratio_val, 1, 1, True)
+                    template.AddNormFactor("n_top_of_scale", top_ratio_val, top_ratio_val, top_ratio_val, True)
                     template.AddOverallSys("top_ratio", .9, 1.1)
                 else:
                     template.AddOverallSys("top_ratio", 1.1, 0.9)
@@ -69,7 +69,7 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
                 template.AddNormFactor("n_vv_sf".format(ch, bkg), 2000, 0, 10000)
                 if ch=="of":
                     vv_ratio_val = temp_file.Get("vv_ratio")[0]
-                    template.AddNormFactor("n_vv_of_scale", vv_ratio_val, 1, 1, True)
+                    template.AddNormFactor("n_vv_of_scale", vv_ratio_val, vv_ratio_val, vv_ratio_val, True)
                     template.AddOverallSys("vv_ratio", .9, 1.1)
                 else:
                     template.AddOverallSys("vv_ratio", 1.1, 0.9)
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     for m1,m2 in masses:
         try:
             create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), chans)
-            # break
+            break
         except:
             continue
 

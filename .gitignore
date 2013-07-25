@@ -1,5 +1,8 @@
 *.pyc
 *.so
+*.o
+*.d
+*.pdf
 *.sublime-*
 work/*
 limits/*

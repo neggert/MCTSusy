@@ -252,40 +252,40 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     # # IPython.embed()
 
 
-    # # calculate a p-value
-    # if get_p:
+    # calculate a p-value
+    if get_p:
 
 
 
-    #     results = []
-    #     from IPython.parallel import Client
+        results = []
+        from IPython.parallel import Client
 
-    #     rc = Client()
-    #     dview = rc[:]
-    #     # with dview.sync_imports(): 
-    #     #     import ROOT as R
-    #     dview.execute("import ROOT as R")
-    #     dview.execute("R.gROOT.ProcessLineSync('.L KS/AndersonDarlingTestStat.cc+')")
-    #     lview = rc.load_balanced_view()
+        rc = Client()
+        dview = rc[:]
+        # with dview.sync_imports(): 
+        #     import ROOT as R
+        dview.execute("import ROOT as R")
+        dview.execute("R.gROOT.ProcessLineSync('.L KS/AndersonDarlingTestStat.cc+')")
+        lview = rc.load_balanced_view()
 
-    #     for i in xrange(10):
-    #         r = lview.apply_async(get_p_value_dist, ws, 2)
-    #         results.append(r)
+        for i in xrange(50):
+            r = lview.apply_async(get_p_value_dist, ws, 100)
+            results.append(r)
 
-    #     lview.wait(results)
+        lview.wait(results)
 
-    #     sampDist = R.RooStats.SamplingDistribution()
-    #     for r in results:
-    #         sampDist.Add(r.result)
+        sampDist = R.RooStats.SamplingDistribution()
+        for r in results:
+            sampDist.Add(r.result)
 
 
-    #     f = R.TFile("BkgADDist_test.root", "RECREATE")
-    #     sampDist.Write("sampDist")
-    #     f.Close()
+        f = R.TFile("BkgADDist_test.root", "RECREATE")
+        sampDist.Write("sampDist")
+        f.Close()
 
-    #     p = 1-sampDist.CDF(ts)
+        p = 1-sampDist.CDF(ts)
 
-    #     print "P value:", p
+        print "P value:", p
 
     print "Test statistic on data: {:.7f}".format(ts)
 

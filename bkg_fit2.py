@@ -26,10 +26,23 @@ from matplotlib.patches import Rectangle
 from matplotlib.ticker import IndexLocator, FixedFormatter
 from bkg_fit import get_step_fill_between
 from prettytable import PrettyTable
+import ROOT
 
 import money_take2_2 as money_take2
 
 bkgs = ['of', 'vv', 'wjets', 'z']
+
+ROOT.gROOT.ProcessLineSync('.L IntegralErrorShape2.C+')
+
+def results_to_dict(r):
+    results = defaultdict(lambda: defaultdict(dict))
+    results['sf']['sum'] = (r.sum.low.val, r.sum.low.error)
+    results['sf']['vv'] = (r.vv.low.val, r.vv.low.error)
+    results['sf']['top'] = (r.top.low.val, r.top.low.error)
+    results['sf']['z'] = (r.z.low.val, r.z.low.error)
+    results['sf']['fake'] = (r.fake.low.val, r.fake.low.error)
+
+    return results
 
 def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="data.root", do_minos=False):
 
@@ -79,18 +92,12 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     print t
 
-    fitresults = {}
-    for b in bkgs:
-        fitvar = fitPars.find('n_{}'.format(b))
-        if b == 'z':
-            b = "DY"
-        elif b == 'wjets':
-            b = 'fake'
-        fitresults[b] = (fitvar.getVal(), fitvar.getError())
+    r = ROOT.get_results2(ws, res)
+    data_results = results_to_dict(r)
 
     f = open("fit_results2.json", 'w')
 
-    json.dump(fitresults, f, indent=3)
+    json.dump(data_results, f, indent=3)
 
     f.close()
 
@@ -123,6 +130,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     model.SetSnapshot(model.GetParametersOfInterest())
 
     money_take2.build_background_shape(ws, 'sf', money_take2.sf_backgrounds, log=True)
+    money_take2.build_background_shape(ws, 'sf', money_take2.sf_backgrounds, log=False)
+
 
     R.gROOT.ProcessLineSync(".L KS/AndersonDarlingTestStat.cc+")
 
@@ -162,7 +171,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     print "Test statistic on data: {:.7f}".format(ts)
 
-    return fitresults
+    return data_results
 
 def plot_fitted_sf(ws):
     obs = ws.obj("obs_x_sf")

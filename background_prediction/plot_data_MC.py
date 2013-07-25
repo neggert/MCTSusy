@@ -1,6 +1,8 @@
 import sys
 sys.path.append("import/")
-from CMSPyLibs.plot import *
+import CMSPyLibs.plot
+reload(CMSPyLibs.plot)
+# from CMSPyLibs.plot import *
 from config.data import *
 from config.parameters import bkg_colors, bkg_labels
 from prettytable import PrettyTable
@@ -60,10 +62,10 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     # fig.set_ylim(0.001, 10000)
     fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
 
-    h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, color=bkgctpl, linewidth=0.5)
+    h = CMSPyLibs.plot.hist_errorbars(bkgtpl, plotstyle="filled", weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, color=bkgctpl, linewidth=0.5)
     print sum([sum(weights) for weights in bkgwtpl])
 
-    he = hist_errorbars( data_selected[variable], xerrs=False, bins=bins, range=plotrange)
+    he = CMSPyLibs.plot.hist_errorbars( data_selected[variable], xerrs=False, bins=bins, range=plotrange)
     he[-1].set_label("Data")
     fig.set_axisbelow(False)
 
@@ -79,7 +81,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     fig.xaxis.set_minor_locator(minorticks)
 
     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
-    hist_ratio(data_selected[variable], selected[variable], selected.weight, bins=bins, range=plotrange)
+    CMSPyLibs.plot.hist_ratio(data_selected[variable], selected[variable], selected.weight, bins=bins, range=plotrange)
 
     axhline(1, color="k")
     fig2.set_ylim(0.5,1.5)

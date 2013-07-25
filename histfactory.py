@@ -12,6 +12,7 @@ Options:
 """
 import ROOT as R
 from collections import defaultdict
+import sys
 backgrounds = ['top', 'vv', 'wjets', 'z']
 
 
@@ -121,6 +122,7 @@ if __name__ == '__main__':
     import json
 
     args = docopt(__doc__)
+    sys.argv = [sys.argv[0], "-b"]
 
     sig_file = args['<signal_file>']
 

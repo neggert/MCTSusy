@@ -1,0 +1,159 @@
+../limits/sig_chi_750_0_combined_meas_model.root 3.0
+../limits/sig_chi_750_0_combined_meas_model.root 3.5
+../limits/sig_chi_750_0_combined_meas_model.root 4.0
+../limits/sig_chi_750_0_combined_meas_model.root 4.5
+../limits/sig_chi_100_0_combined_meas_model.root 2.12233817
+../limits/sig_chi_100_0_combined_meas_model.root 2.65138345076
+../limits/sig_chi_100_0_combined_meas_model.root 3.18042873152
+../limits/sig_chi_100_0_combined_meas_model.root 3.70947401229
+../limits/sig_chi_100_0_combined_meas_model.root 4.23851929305
+../limits/sig_chi_100_0_combined_meas_model.root 2.28180216947
+../limits/sig_chi_100_0_combined_meas_model.root 2.44126616893
+../limits/sig_chi_100_0_combined_meas_model.root 2.6007301684
+../limits/sig_chi_100_0_combined_meas_model.root 2.76019416787
+../limits/sig_chi_350_275_combined_meas_model.root 125
+../limits/sig_chi_350_275_combined_meas_model.root 130
+../limits/sig_chi_350_275_combined_meas_model.root 135
+../limits/sig_chi_350_275_combined_meas_model.root 140
+../limits/sig_chi_350_275_combined_meas_model.root 145
+../limits/sig_chi_350_275_combined_meas_model.root 150
+../limits/sig_chi_350_275_combined_meas_model.root 155
+../limits/sig_chi_350_275_combined_meas_model.root 160
+../limits/sig_chi_350_275_combined_meas_model.root 165
+../limits/sig_chi_350_275_combined_meas_model.root 170
+../limits/sig_chi_350_275_combined_meas_model.root 175
+../limits/sig_chi_350_275_combined_meas_model.root 180
+../limits/sig_chi_125_0_combined_meas_model.root 2.5
+../limits/sig_chi_125_0_combined_meas_model.root 2.6
+../limits/sig_chi_125_0_combined_meas_model.root 2.7
+../limits/sig_chi_125_0_combined_meas_model.root 2.8
+../limits/sig_chi_125_0_combined_meas_model.root 2.9
+../limits/sig_chi_150_50_combined_meas_model.root 7.5
+../limits/sig_chi_150_50_combined_meas_model.root 8.0
+../limits/sig_chi_150_50_combined_meas_model.root 8.5
+../limits/sig_chi_150_50_combined_meas_model.root 9.0
+../limits/sig_chi_150_50_combined_meas_model.root 9.5
+../limits/sig_chi_150_50_combined_meas_model.root 10.0
+../limits/sig_chi_125_25_combined_meas_model.root 5.25239859669
+../limits/sig_chi_125_25_combined_meas_model.root 5.5
+../limits/sig_chi_125_25_combined_meas_model.root 6.0
+../limits/sig_chi_125_25_combined_meas_model.root 6.5
+../limits/sig_chi_125_25_combined_meas_model.root 7.0
+../limits/sig_chi_125_25_combined_meas_model.root 7.5
+../limits/sig_chi_125_25_combined_meas_model.root 8.0
+../limits/sig_chi_100_25_combined_meas_model.root 4.07178888711
+../limits/sig_chi_100_25_combined_meas_model.root 4.39167589672
+../limits/sig_chi_100_25_combined_meas_model.root 4.71156290633
+../limits/sig_chi_100_25_combined_meas_model.root 5.03144991595
+../limits/sig_chi_100_25_combined_meas_model.root 5.35133692556
+../limits/sig_chi_250_150_combined_meas_model.root 22.1837291544
+../limits/sig_chi_250_150_combined_meas_model.root 25.0160943631
+../limits/sig_chi_250_150_combined_meas_model.root 27.8484595718
+../limits/sig_chi_250_150_combined_meas_model.root 30.6808247805
+../limits/sig_chi_250_150_combined_meas_model.root 33.5131899892
+../limits/sig_chi_250_150_combined_meas_model.root 35
+../limits/sig_chi_250_150_combined_meas_model.root 40
+../limits/sig_chi_250_150_combined_meas_model.root 45
+../limits/sig_chi_250_150_combined_meas_model.root 50
+../limits/sig_chi_250_150_combined_meas_model.root 55
+../limits/sig_chi_250_150_combined_meas_model.root 60
+../limits/sig_chi_275_100_combined_meas_model.root 0.15000000000000002
+../limits/sig_chi_275_100_combined_meas_model.root 0.2
+../limits/sig_chi_275_100_combined_meas_model.root 0.25
+../limits/sig_chi_275_100_combined_meas_model.root 0.30000000000000004
+../limits/sig_chi_275_100_combined_meas_model.root 0.35
+../limits/sig_chi_275_100_combined_meas_model.root 0.4
+../limits/sig_chi_275_100_combined_meas_model.root 0.45000000000000007
+../limits/sig_chi_275_100_combined_meas_model.root 0.5
+../limits/sig_chi_275_100_combined_meas_model.root 0.55
+../limits/sig_chi_275_100_combined_meas_model.root 0.6
+../limits/sig_chi_275_100_combined_meas_model.root 0.65
+../limits/sig_chi_275_100_combined_meas_model.root 0.7000000000000001
+../limits/sig_chi_275_100_combined_meas_model.root 0.75
+../limits/sig_chi_275_100_combined_meas_model.root 0.8
+../limits/sig_chi_275_100_combined_meas_model.root 0.85
+../limits/sig_chi_275_100_combined_meas_model.root 0.9
+../limits/sig_chi_275_100_combined_meas_model.root 0.9500000000000001
+../limits/sig_chi_275_100_combined_meas_model.root 1.0
+../limits/sig_chi_275_100_combined_meas_model.root 1.05
+../limits/sig_chi_275_100_combined_meas_model.root 1.1
+../limits/sig_chi_275_100_combined_meas_model.root 1.1500000000000001
+../limits/sig_chi_275_100_combined_meas_model.root 1.2000000000000002
+../limits/sig_chi_275_100_combined_meas_model.root 1.2500000000000002
+../limits/sig_chi_275_100_combined_meas_model.root 1.3000000000000003
+../limits/sig_chi_275_100_combined_meas_model.root 1.35
+../limits/sig_chi_275_100_combined_meas_model.root 1.4000000000000001
+../limits/sig_chi_275_100_combined_meas_model.root 1.4500000000000002
+../limits/sig_chi_275_100_combined_meas_model.root 1.5000000000000002
+../limits/sig_chi_275_100_combined_meas_model.root 1.5500000000000003
+../limits/sig_chi_275_100_combined_meas_model.root 1.6
+../limits/sig_chi_275_100_combined_meas_model.root 1.6500000000000001
+../limits/sig_chi_275_100_combined_meas_model.root 1.7000000000000002
+../limits/sig_chi_275_100_combined_meas_model.root 1.7500000000000002
+../limits/sig_chi_275_100_combined_meas_model.root 1.8000000000000003
+../limits/sig_chi_275_100_combined_meas_model.root 1.85
+../limits/sig_chi_275_100_combined_meas_model.root 1.9000000000000001
+../limits/sig_chi_275_100_combined_meas_model.root 1.9500000000000002
+../limits/sig_chi_275_100_combined_meas_model.root 2.0
+../limits/sig_chi_275_100_combined_meas_model.root 2.0500000000000003
+../limits/sig_chi_275_100_combined_meas_model.root 2.1
+../limits/sig_chi_275_100_combined_meas_model.root 2.1500000000000004
+../limits/sig_chi_275_100_combined_meas_model.root 2.2
+../limits/sig_chi_275_100_combined_meas_model.root 2.25
+../limits/sig_chi_425_0_combined_meas_model.root 0.15000000000000002
+../limits/sig_chi_425_0_combined_meas_model.root 0.2
+../limits/sig_chi_425_0_combined_meas_model.root 0.25
+../limits/sig_chi_425_0_combined_meas_model.root 0.30000000000000004
+../limits/sig_chi_425_0_combined_meas_model.root 0.35
+../limits/sig_chi_425_0_combined_meas_model.root 0.4
+../limits/sig_chi_425_0_combined_meas_model.root 0.45000000000000007
+../limits/sig_chi_425_0_combined_meas_model.root 0.5
+../limits/sig_chi_425_0_combined_meas_model.root 0.55
+../limits/sig_chi_425_0_combined_meas_model.root 0.6
+../limits/sig_chi_425_0_combined_meas_model.root 0.65
+../limits/sig_chi_425_0_combined_meas_model.root 0.7000000000000001
+../limits/sig_chi_425_0_combined_meas_model.root 0.75
+../limits/sig_chi_425_0_combined_meas_model.root 0.8
+../limits/sig_chi_425_0_combined_meas_model.root 0.85
+../limits/sig_chi_425_0_combined_meas_model.root 0.9
+../limits/sig_chi_425_0_combined_meas_model.root 0.9500000000000001
+../limits/sig_chi_425_0_combined_meas_model.root 1.0
+../limits/sig_chi_425_0_combined_meas_model.root 1.05
+../limits/sig_chi_425_0_combined_meas_model.root 1.1
+../limits/sig_chi_425_0_combined_meas_model.root 1.1500000000000001
+../limits/sig_chi_425_0_combined_meas_model.root 1.2000000000000002
+../limits/sig_chi_425_0_combined_meas_model.root 1.2500000000000002
+../limits/sig_chi_425_0_combined_meas_model.root 1.3000000000000003
+../limits/sig_chi_425_0_combined_meas_model.root 1.35
+../limits/sig_chi_425_0_combined_meas_model.root 1.4000000000000001
+../limits/sig_chi_425_0_combined_meas_model.root 1.4500000000000002
+../limits/sig_chi_425_0_combined_meas_model.root 1.5000000000000002
+../limits/sig_chi_425_0_combined_meas_model.root 1.5500000000000003
+../limits/sig_chi_425_0_combined_meas_model.root 1.6
+../limits/sig_chi_425_0_combined_meas_model.root 1.6500000000000001
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

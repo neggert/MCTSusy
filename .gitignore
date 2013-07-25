@@ -7,3 +7,6 @@ limits/*
 *.json
 2012HCP
 batch/*.sh.*
+batch/LSF*
+limit_batch/LSF*
+*~

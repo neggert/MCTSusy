@@ -1,6 +1,7 @@
 #! /bin/sh
-#BSUB -J "chi_limits[5001-6000]"
+#BSUB -J "chi_limits[1-500]`
 #BSUB -q 8nh
+
 
 echo $LSB_JOBINDEX
 
@@ -12,4 +13,4 @@ pythonbrew use 2.7.3
 
 
 cd $HOME/work/MCTSusy/limit_batch
-pythonbrew py -p 2.7.3 run_one.py batch chi_batch_extra.txt $(($LSB_JOBINDEX-1)) chi extra
+pythonbrew py -p 2.7.3 run_one.py batch chi_batch_extra8.txt $(($LSB_JOBINDEX-1)) chi extra8

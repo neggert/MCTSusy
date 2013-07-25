@@ -51,6 +51,9 @@ def main(input_files, output_file, plot):
                 poi = res.GetXValue(i)
                 obs_cls = res.CLs(i)
                 exp_cls_dist = res.GetExpectedPValueDist(i)
+                size = exp_cls_dist.GetSize()
+                if size < 2500:
+                    print "Only {} toys at point".format(size), poi, m1, m2
                 exp_cls = exp_cls_dist.InverseCDF(0.5)
                 expp1_cls = exp_cls_dist.InverseCDF(0.84)
                 expm1_cls = exp_cls_dist.InverseCDF(0.16)
@@ -62,56 +65,83 @@ def main(input_files, output_file, plot):
                 expp1_CLs_vs_poi.append(expp1_cls)
                 expm1_CLs_vs_poi.append(expm1_cls)
 
-            pois = np.asarray(pois)[:,np.newaxis]
-            obs_CLs_vs_poi = np.asarray(obs_CLs_vs_poi)
-            exp_CLs_vs_poi = np.asarray(exp_CLs_vs_poi)
-            expp1_CLs_vs_poi = np.asarray(expp1_CLs_vs_poi)
-            expm1_CLs_vs_poi = np.asarray(expm1_CLs_vs_poi)
+            sort_order = np.argsort(pois)
+            pois = np.asarray(pois)[:,np.newaxis][sort_order]
+            obs_CLs_vs_poi = np.asarray(obs_CLs_vs_poi)[sort_order]
+            exp_CLs_vs_poi = np.asarray(exp_CLs_vs_poi)[sort_order]
+            expp1_CLs_vs_poi = np.asarray(expp1_CLs_vs_poi)[sort_order]
+            expm1_CLs_vs_poi = np.asarray(expm1_CLs_vs_poi)[sort_order]
             target_cls = 0.05
 
-            obs_limit, obs, do_plot_a = get_limit(pois, obs_CLs_vs_poi, target_cls, m1, m2)
-            exp_limit, exp, do_plot_b = get_limit(pois, exp_CLs_vs_poi, target_cls, m1, m2)
-            expp1_limit, expp1, do_plot_c = get_limit(pois, expp1_CLs_vs_poi, target_cls, m1, m2)
-            expm1_limit, expm1, do_plot_d = get_limit(pois, expm1_CLs_vs_poi, target_cls, m1, m2)
+            if max(pois) > 999 and any([min(obs_CLs_vs_poi)>target_cls, min(exp_CLs_vs_poi)>target_cls,
+                                        min(expp1_CLs_vs_poi)>target_cls, min(expm1_CLs_vs_poi)>target_cls]):
+                continue
+
+            try: 
+                obs_limit, obs, do_plot_a = get_limit(pois, obs_CLs_vs_poi, target_cls, m1, m2)
+                exp_limit, exp, do_plot_b = get_limit(pois, exp_CLs_vs_poi, target_cls, m1, m2)
+                expp1_limit, expp1, do_plot_c = get_limit(pois, expp1_CLs_vs_poi, target_cls, m1, m2)
+                expm1_limit, expm1, do_plot_d = get_limit(pois, expm1_CLs_vs_poi, target_cls, m1, m2)
+            except ValueError:
+                print "Not enough non-zero points at ", m1, m2
+                print zip(pois, obs_CLs_vs_poi)
+                print zip(pois, exp_CLs_vs_poi)
+
+
+                continue
             if any([do_plot_a, do_plot_b, do_plot_c, do_plot_d]):
                 do_plot = True
             
-        	# if any(map(np.isnan, [obs, exp, expp1, expm1])) or do_plot:
-         #        fig = plt.figure()
-         #        plt.plot(pois, obs_CLs_vs_poi)
-         #        plt.plot(pois, exp_CLs_vs_poi)
-         #        plt.plot(pois, expp1_CLs_vs_poi)
-         #        plt.plot(pois, expm1_CLs_vs_poi)
-         #        plt.xlabel("Signal Strength")
-         #        plt.ylabel("CLs")
-         #        plt.yscale("log")
-         #        plt.axhline(0.05)
-         #        plt.legend(['Observed', 'Expected', "+1 sigma", "-1 sigma"])
-         #        plt.savefig("figs/{0}_{1}_cls.png".format(m1, m2))
-         #        fig = plt.figure()
+        	if any(map(np.isnan, [obs, exp, expp1, expm1]) ) or do_plot:
+                    fig = plt.figure()
+                plt.plot(pois, obs_CLs_vs_poi)
+                plt.plot(pois, exp_CLs_vs_poi)
+                plt.plot(pois, expp1_CLs_vs_poi)
+                plt.plot(pois, expm1_CLs_vs_poi)
+                plt.xlabel("Signal Strength")
+                plt.ylabel("CLs")
+                plt.yscale("log")
+                plt.axhline(0.05)
+                plt.legend(['Observed', 'Expected', "+1 sigma", "-1 sigma"])
+                plt.savefig("figs/{0}_{1}_cls.png".format(m1, m2))
+                fig = plt.figure()
 
-         #        cls_all = np.linspace(min(exp_CLs_vs_poi), max(exp_CLs_vs_poi), 100)
-         #        plt.plot(cls_all, map(obs_limit.interp.predict, cls_all))
-         #        plt.plot(cls_all, map(exp_limit.interp.predict, cls_all))
-         #        plt.plot(cls_all, map(expp1_limit.interp.predict, cls_all))
-         #        plt.plot(cls_all, map(expm1_limit.interp.predict, cls_all))
-         #        plt.xlabel("Signal Strength")
-         #        plt.ylabel("CLs")
-         #        plt.yscale("log")
-         #        plt.axhline(0.05)
-         #        plt.legend(['Observed', 'Expected', "+1 sigma", "-1 sigma"])
-         #        plt.savefig("figs/{0}_{1}_cls_interpolated.png".format(m1, m2))
+                cls_all = np.linspace(min(exp_CLs_vs_poi), max(exp_CLs_vs_poi), 100)
+                plt.plot(cls_all, map(obs_limit.interp.predict, cls_all))
+                plt.plot(cls_all, map(exp_limit.interp.predict, cls_all))
+                plt.plot(cls_all, map(expp1_limit.interp.predict, cls_all))
+                plt.plot(cls_all, map(expm1_limit.interp.predict, cls_all))
+                plt.xlabel("Signal Strength")
+                plt.ylabel("CLs")
+                plt.yscale("log")
+                plt.axhline(0.05)
+                plt.legend(['Observed', 'Expected', "+1 sigma", "-1 sigma"])
+                plt.savefig("figs/{0}_{1}_cls_interpolated.png".format(m1, m2))
 
             f.write("{0}\t{1}\t{2:.3f}\t{3:.3f}\t{4:.3f}\t{5:.3f}\n".format(m1, m2, float(exp), float(expm1), float(expp1), float(obs)))
 
 class LimitFinder(object):
     """docstring for LimitFinder"""
     def __init__(self, poi, cls, target_cls):
+        # self.get_non_zero_cls(poi, cls)
         self.poi = poi
         self.cls = cls
         self.target_cls = target_cls
         self.interp = gp.GaussianProcess()
         self.interp.fit(self.poi, self.cls)
+
+    def get_non_zero_cls(self, poi, cls):
+        non_zero_indices = np.where(cls > 0.)
+        # add the first 0 index
+        try:
+            non_zero_indices = np.append(non_zero_indices, np.min(np.where(cls == 0)))
+        except ValueError:
+            # probably weren't any 0 points
+            pass
+        if len(non_zero_indices) < 2:
+            raise ValueError("Need at least two non-zero CLs values")
+        self.poi = poi[non_zero_indices]
+        self.cls = cls[non_zero_indices]
 
     def limit(self):
         return scipy.optimize.brentq(lambda x: self.interp.predict(x)-self.target_cls, min(self.poi), max(self.poi))
@@ -127,6 +157,7 @@ def get_limit(poi, cls, target_cls, m1, m2):
         limit = limit_finder.limit()
         if limit_finder.get_rel_uncertainty_at_limit() > 0.01:
             print "Large uncertainty at point", m1, m2
+            print zip(poi, cls)
             do_plot = True
     except ValueError:
         print "Failed to interpolate limit for point", m1, m2
@@ -137,7 +168,7 @@ def get_limit(poi, cls, target_cls, m1, m2):
             points = suggest_extra_points(poi, cls)
             for p in points:
                 print get_file_name(m1, m2), p
-        except RuntimeWarning:
+        except:
             print "Couldn't suggest points"
 
     return limit_finder, limit, do_plot
@@ -183,7 +214,7 @@ def fill_poi(poi, cls):
 
 def rerun_bad_points(poi, cls):
     ids = np.where(np.diff(cls) > 0)
-    return poi[ids, 0]
+    return poi[ids, 0].reshape(len(ids))
 
 def get_file_name(m1, m2):
     return "../limits/sig_chi_{}_{}_combined_meas_model.root".format(m1,m2)

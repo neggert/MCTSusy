@@ -2,15 +2,11 @@
 #BSUB -J "chi_limits[1-500]`
 #BSUB -q 8nh
 
+source /afs/cern.ch/sw/lcg/external/gcc/4.6.3/x86_64-slc6/setup.sh
 
-echo $LSB_JOBINDEX
+source $HOME/mctpy/bin/activate
 
-cd $HOME/work/CMSSW_5_2_5/src
-eval `scramv1 runtime -sh`
-cd /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.04/x86_64-slc5-gcc46-opt/root/
-source bin/thisroot.sh
-pythonbrew use 2.7.3
-
+source /afs/cern.ch/sw/lcg/app/releases/ROOT/5.34.04/x86_64-slc6-gcc46-opt/root/bin/thisroot.sh
 
 cd $HOME/work/MCTSusy/limit_batch
-pythonbrew py -p 2.7.3 run_one.py batch chi_batch_extra8.txt $(($LSB_JOBINDEX-1)) chi extra8
+python run_one.py batch chi_batch_550_0.txt $(($LSB_JOBINDEX-1)) chi 550_0

@@ -17,16 +17,19 @@
 namespace RooStats {
     class AndersonDarlingTestStat : public TestStatistic {
       public:
-        AndersonDarlingTestStat() {};
+        AndersonDarlingTestStat(): fPdf(NULL) { fVarName = "Anderson-Darling Test Statistic"; }
         AndersonDarlingTestStat(RooAbsPdf& pdf) {
             fPdf = &pdf;
+            fVarName = "Anderson-Darling Test Statistic";
         }
 
         ~AndersonDarlingTestStat() {}
 
-        Double_t Evaluate(RooAbsData& data, RooArgSet& params);
+        Double_t Evaluate(RooAbsData& data, RooArgSet& paramsOfInterest);
+        
+        virtual void SetVarName(const char* name) { fVarName = name; }
+        virtual const TString GetVarName() const {return fVarName;}
 
-        const TString GetVarName() const { return TString("Anderson-Darling Statistic");}
 
         bool PValueIsRightTail(void) const { return true; }
 
@@ -34,5 +37,9 @@ namespace RooStats {
 
       private:
         RooAbsPdf* fPdf;
+        TString fVarName;
+
+      protected:
+        ClassDef(AndersonDarlingTestStat,1)
     };
 }

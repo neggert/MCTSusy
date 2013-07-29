@@ -25,7 +25,11 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     Create a ROOT file containing all of the background templates
     """
 
-    mcvv = mc[(mc.mc_cat=='ZZ')]
+    wz_sf = (mc.mc_cat=="WZ") & abs(mc.parentParentPdg1).isin([22,23]) & abs(mc.parentParentPdg1).isin([22,23])
+
+    mczz = mc[(mc.mc_cat=='ZZ')]
+    mcwz = mc[wz_sf]
+    mcvv = mczz.append(mcwz)
     mcz = mc[mc.mc_cat=='DY']
     selvv = selection.get_samples( mcvv, 100.)
     selz = selection.get_samples( mcz, 100.)
@@ -43,12 +47,22 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     # systematic on w+jets template
     rhist = R.TH1D("wjets_syst", "wjets_syst", bins, histrange[0], histrange[1])
     for i in xrange(bins):
-        if templates['wjets'].GetBinContent(i+1) > 0: #only do non-zero bins
-            rhist.SetBinContent(i+1, 0.3) # 50% systematic
+        # if templates['wjets'].GetBinContent(i+1) > 0: #only do non-zero bins
+        rhist.SetBinContent(i+1, 0.3) # 50% systematic
     templates['wjets_syst'] = rhist
 
     vv = mcvv[selvv['sig_sf']]
     templates['vv'] = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template", bins, histrange, True)
+
+    weights = vv.weight*(1+(vv.mc_cat=="WZ")*0.10)
+    templates['vv_syst_WZ_Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WZ_Up", bins, histrange, True)
+    weights = vv.weight*(1-(vv.mc_cat=="WZ")*0.10)
+    templates['vv_syst_WZ_Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WZ_Down", bins, histrange, True)
+
+    weights = vv.weight*(1+(vv.mc_cat=="ZZ")*0.10)
+    templates['vv_syst_ZZ_Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_Up", bins, histrange, True)
+    weights = vv.weight*(1-(vv.mc_cat=="ZZ")*0.10)
+    templates['vv_syst_ZZ_Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_Down", bins, histrange, True)
 
     z = mcz[selz['sig_sf']]
     templates['z'] = rootutils.create_TH1(z.mctperp, z.weight, "z_template", bins, histrange, True)
@@ -60,7 +74,9 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     mc_hist, mc_edges = np.histogram(mc_onz.mctperp, weights=mc_onz.weight, bins=bins, range=histrange, normed=True)
     d_hist, d_edges = np.histogram(data_onz.mctperp, weights=data_onz.weight, bins=bins, range=histrange, normed=True)
 
-    err = abs(mc_hist[:11]-d_hist[:11])
+    err = np.zeros(bins)
+    err[:] = np.max(abs(mc_hist[:10]-d_hist[:10])/d_hist[:10])
+    # err[10:] = 0.5
 
     # make a TH1 out of it
     rhist = R.TH1D("z_syst", "z_syst", bins, histrange[0], histrange[1])

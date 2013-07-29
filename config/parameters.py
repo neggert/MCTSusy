@@ -14,11 +14,16 @@ mu_selection_eff_frac_unc = 0.02
 
 bkg_colors = {"top": (.9,.6,0),
           "WW": (.35, .7, .9),
+          "diboson": (.35, .7, .9),
           "WZ": (0,.6,.5),
+          "FS": (.35, .7, .9),
           "ZZ": (.95, .9, .25),
-          "Z": (0, .45, .70),
-          "DY": (0, .45, .7),
-          "wjets": (.8,.4, .0)
+          'Rare': (0, .45, .70),
+          'Z': (.80,.40,0),
+          'DY': (.80,.40,0),
+          "wjets": (.80, .60, .7),
+          "fake": (.80, .60, .7),
+          # "fake": (0.65, 0.48, 0.36)
          }
 
 bkg_labels = {"top": "Top",
@@ -27,6 +32,11 @@ bkg_labels = {"top": "Top",
               "ZZ": "ZZ",
               "Z": r"Z/$\gamma^*$",
               "DY": r"Z/$\gamma^*$",
+              "HWW": r"H$\rightarrow$WW",
+              "Rare": "Rare SM",
+              "diboson": "Diboson & Rare SM",
+              "VVV": "VVV",
               "wjets": "Non-prompt",
-              "fake": "Non-prompt"
+              "fake": "Non-prompt",
+              "FS": "Flavor-Symmetric"
              }

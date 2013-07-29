@@ -1,6 +1,8 @@
 import sys
 sys.path.append("import/")
-from CMSPyLibs.plot import *
+import CMSPyLibs.plot
+reload(CMSPyLibs.plot)
+# from CMSPyLibs.plot import *
 from config.data import *
 from config.parameters import bkg_colors, bkg_labels
 from prettytable import PrettyTable
@@ -32,9 +34,11 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     selected = mc[smc[selection_name]]
     data_selected = data[sd[selection_name]]
 
+    selected.mc_cat[selected.mc_cat.isin(["VVV", "HWW"])] = "Rare"
+
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WW', 'WZ', 'ZZ', 'DY', 'wjets']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'Rare', 'DY', 'fake']
 
     bkgtpl = []
     bkgwtpl = []
@@ -54,15 +58,15 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     f = figure(figsize=(6,6))
     f.set_facecolor('w')
     fig = subplot2grid((4,1),(0,0), rowspan=3)
-    fig.set_yscale('log', nonposy='clip')
+    # fig.set_yscale('log', nonposy='clip')
     # fig.set_ylim(0.001, 10000)
     fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
 
-    h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, color=bkgctpl, linewidth=0.5)
+    h = CMSPyLibs.plot.hist_errorbars(bkgtpl, plotstyle="filled", weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, color=bkgctpl, linewidth=0.5)
     print sum([sum(weights) for weights in bkgwtpl])
 
-    he = hist_errorbars( data_selected[variable], xerrs=False, bins=bins, range=plotrange)
-    he.set_label("Data")
+    he = CMSPyLibs.plot.hist_errorbars( data_selected[variable], xerrs=False, bins=bins, range=plotrange)
+    he[-1].set_label("Data")
     fig.set_axisbelow(False)
 
     # move data to top of legend
@@ -77,7 +81,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     fig.xaxis.set_minor_locator(minorticks)
 
     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
-    hist_ratio(data_selected[variable], selected[variable], selected.weight, bins=bins, range=plotrange)
+    CMSPyLibs.plot.hist_ratio(data_selected[variable], selected[variable], selected.weight, bins=bins, range=plotrange)
 
     axhline(1, color="k")
     fig2.set_ylim(0.5,1.5)
@@ -126,10 +130,17 @@ def make_data_mc_plots():
 
     f,f2 = compare_data_mc('z_ctrl_0met', 'metPt', 30, (0,300))
     f.set_yscale('log', nonposy='clip')
-    f.set_ylim(.1, 100000)
+    f.set_ylim(.1, 1e7)
     f2.set_ylim(0, 2)
     xlabel("MET (GeV)")
     savefig("plots/data_mc_z_metdist.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_0met', 'mll', 30, (76,106))
+    f.set_yscale('log', nonposy='clip')
+    f.set_ylim(1e4, 1e7)
+    f2.set_ylim(0, 2)
+    xlabel("MET (GeV)")
+    savefig("plots/data_mc_z_mll.pdf")
 
     f,f2 = compare_data_mc('z_ctrl_30met', 'mctperp', 29, (10,300))
     f.set_yscale('log', nonposy='clip')
@@ -181,12 +192,88 @@ def make_data_mc_plots():
     xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
     savefig("plots/mc_only_sf.pdf")
 
+    for flavor in channels:
+        f,f2 = compare_data_mc('sig_'+flavor, 'mctperp', 29, (10,300))
+        # f.set_ylim(0.01, 5000)
+        f2.set_ylim(0, 2)
+        xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+        savefig("plots/data_mc_sig_{}_linear.pdf".format(flavor))
+
+        f,f2 = compare_data_mc('top_ctrl_'+flavor, 'mctperp', 29, (10,300))
+        # f.set_ylim(0.01, 100000)
+        f2.set_ylim(0, 2)
+        xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+        savefig("plots/data_mc_top_{}_linear.pdf".format(flavor))
+
+    f,f2 = compare_data_mc('z_ctrl_sf', 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 10000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_linear.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_0met', 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 1000000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_0met_linear.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_0met', 'metPt', 30, (0,300))
+    # f.set_ylim(.1, 1e7)
+    f2.set_ylim(0, 2)
+    xlabel("MET (GeV)")
+    savefig("plots/data_mc_z_metdist_linear.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_30met', 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 1000000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_30met_linear.pdf")
+
+    f,f2 = compare_data_mc('z_ctrl_sf', 'mctperp', 9, (10,100))
+    # f.set_ylim(1, 10000)
+    f2.set_ylabel("Data/MC")
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_z_lowmct_linear.pdf")
+
+    f,f2 = compare_data_mc('wjets_ctrl_sf', 'mctperp', 9, (10,100))
+    # f.set_ylim(0.01, 100000)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_fake_linear.pdf")
+
+    f,f2 = compare_data_mc('wz_ctrl', 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 100)
+    f2.set_ylim(0, 2)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/data_mc_3l_linear.pdf")
+
+    f = plot_mc("sig", 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 10000)
+    f.set_xlim(10, 300)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/mc_only_linear.pdf")
+
+    f = plot_mc("sig_of", 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 5000)
+    f.set_xlim(10, 300)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/mc_only_of_linear.pdf")
+
+    f = plot_mc("sig_sf", 'mctperp', 29, (10,300))
+    # f.set_ylim(0.01, 5000)
+    f.set_xlim(10, 300)
+    xlabel("$M_{\mathrm{CT}\perp}$ (GeV)")
+    savefig("plots/mc_only_sf_linear.pdf")
+
 def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     selected = mc[smc[selection_name]]
 
+    selected.mc_cat[selected.mc_cat.isin(["VVV", "HWW"])] = "Rare"
+
     # groups = selected.groupby('mc_cat')
 
-    group_order = ['top', 'WW', 'WZ', 'ZZ', 'DY', 'wjets']
+    group_order = ['top', 'WW', 'WZ', 'ZZ', 'Rare', 'DY', 'fake']
 
     bkgtpl = []
     bkgwtpl = []
@@ -207,7 +294,7 @@ def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     f.set_facecolor('w')
     fig = subplot(111)
     fig.set_yscale('log', nonposy='clip')
-    fig.set_ylim(0.01, 10000)
+    fig.set_ylim(0.01, 50000)
     fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
 
     h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl, color=bkgctpl, linewidth=0.5)
@@ -265,10 +352,11 @@ def print_ZZ_datamc():
         control_data[i] = data_cr[data_cr.mctperp > cut].weight.sum()
         control_errs[i] = np.sqrt(sum(data_cr[data_cr.mctperp > cut].weight**2))
 
-    t = PrettyTable(["",]+map(str, cuts.tolist()))
+    t = PrettyTable(["",]+[str(c)+"\GeV" for c in cuts.tolist()])
+    t.vertical_char = "&"
     data_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], data)
     err_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], errs)
-    combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+    combined = [datastr+" $\pm$ "+errstr for datastr, errstr in zip(data_strings, err_strings)]
     combined.insert(0, "Monte Carlo")
     t.add_row(combined)
     data_strings = map(str.format, ["{:d}" for _ in xrange(len(cuts))], map(int, control_data))
@@ -290,7 +378,7 @@ def print_WZ_datamc():
     mc_cr = mc[smc['wz_ctrl']]
     data_cr = data[sd['wz_ctrl']]
 
-    cuts = np.arange(20, 320, 20)
+    cuts = np.arange(20, 300, 20)
 
     data = np.zeros(len(cuts))
     errs = np.zeros(data.shape)
@@ -303,10 +391,11 @@ def print_WZ_datamc():
         control_data[i] = data_cr[data_cr.mctperp > cut].weight.sum()
         control_errs[i] = np.sqrt(sum(data_cr[data_cr.mctperp > cut].weight**2))
 
-    t = PrettyTable(["",]+map(str, cuts.tolist()))
+    t = PrettyTable(["\mctp\ Cut",]+map(str, cuts.tolist()))
+    t.vertical_char = "&"
     data_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], data)
     err_strings = map(str.format, ["{:.1f}" for _ in xrange(len(cuts))], errs)
-    combined = [datastr+" +- "+errstr for datastr, errstr in zip(data_strings, err_strings)]
+    combined = [datastr+" $\pm$ "+errstr for datastr, errstr in zip(data_strings, err_strings)]
     combined.insert(0, "Monte Carlo")
     t.add_row(combined)
     data_strings = map(str.format, ["{:d}" for _ in xrange(len(cuts))], map(int, control_data))

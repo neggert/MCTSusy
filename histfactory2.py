@@ -29,7 +29,7 @@ def create_histfactory(template_file, signal_file, m1, m2, data_file_name="data.
 
     channel_conf = R.RooStats.HistFactory.Channel('sf')
     channel_conf.SetData("data_sf", "data.root")
-    channel_conf.SetStatErrorConfig(0.1, "Poisson")
+    channel_conf.SetStatErrorConfig(0.01, "Poisson")
 
     # signal sample
     signal = R.RooStats.HistFactory.Sample("signal_sf", "sms_template_sf_{0}_{1}".format(m1, m2), signal_file)
@@ -38,7 +38,7 @@ def create_histfactory(template_file, signal_file, m1, m2, data_file_name="data.
     signal.ActivateStatError()
     signal.AddOverallSys("trigger", 0.95, 1.05)
     signal.AddOverallSys("id_and_selection", 0.98, 1.02)
-    signal.AddOverallSys("b_veto", 0.94, 1.06)
+    signal.AddOverallSys("b_veto", 0.95, 1.05)
     signal.AddHistoSys("jes", "sms_template_jes_down_sf_{0}_{1}".format(m1, m2), signal_file, "",
                        "sms_template_jes_up_sf_{0}_{1}".format(m1, m2), signal_file, "")
     channel_conf.AddSample(signal)
@@ -54,6 +54,9 @@ def create_histfactory(template_file, signal_file, m1, m2, data_file_name="data.
             template.AddShapeSys("z_syst", 0, "z_syst", template_file)
         if bkg == 'wjets':
             template.AddShapeSys("wjets_syst", 0, "wjets_syst", template_file)
+        if bkg == "vv":
+            template.AddHistoSys('WZ_norm', "vv_syst_WZ_Up", "templates2.root", "", "vv_syst_WZ_Down", "templates2.root", "")
+            template.AddHistoSys('ZZ_norm', "vv_syst_ZZ_Up", "templates2.root", "", "vv_syst_ZZ_Down", "templates2.root", "")
 
         samples[bkg] = template
         channel_conf.AddSample(samples[bkg])
@@ -79,6 +82,7 @@ if __name__ == '__main__':
     for m1,m2 in masses:
         try:
             create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2))
+            # break
         except:
             continue
 

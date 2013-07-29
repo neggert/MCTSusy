@@ -29,6 +29,8 @@ plotrange = (10,300)
 
 def make_money_plot():
 
+    wz_sf = (mc.mc_cat=="WZ") & abs(mc.parentParentPdg1).isin([22,23]) & abs(mc.parentParentPdg1).isin([22,23])
+
     fontp = FontProperties(family="Helvetica", size=12)
     fontpb = FontProperties(family="Helvetica", size=12, weight="book")
 
@@ -52,17 +54,25 @@ def make_money_plot():
     bkgctpl.append(bkg_colors['WW'])
 
     ch = "sf"
-    bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="ZZ")].mctperp )
-    data_norm = sum(mc[smc['sig_mct_low_'+ch]&(mc.mc_cat=="ZZ")].weight)
+    bkgtpl.append( mc[smc['sig_'+ch]&wz_sf].mctperp )
+    allvv_norm = sum(mc[smc['sig_mct_low_'+ch]&((mc.mc_cat=='ZZ') | wz_sf)].weight)
     est_events = float(results['vv'][0])
-    sf = est_events/data_norm
+    sf = est_events/allvv_norm
+    bkgwtpl.append( sf*mc[smc['sig_'+ch]&wz_sf].weight )
+    bkgltpl.append("WZ")
+    bkgctpl.append(bkg_colors['WZ'])
+
+    ch = "sf"
+    bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="ZZ")].mctperp )
+    est_events = float(results['vv'][0])
+    sf = est_events/allvv_norm
     bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="ZZ")].weight )
     bkgltpl.append("ZZ")
     bkgctpl.append(bkg_colors['ZZ'])
 
     bkgtpl.append( mc[smc['sig_'+ch]&(mc.mc_cat=="DY")].mctperp )
     data_norm = sum(mc[smc['sig_mct_low_'+ch]&(mc.mc_cat=="DY")].weight)
-    est_events = float(results['z'][0])
+    est_events = float(results['DY'][0])
     sf = est_events/data_norm
     bkgwtpl.append( sf*mc[smc['sig_'+ch]&(mc.mc_cat=="DY")].weight )
     bkgltpl.append("Z/$\gamma^*$")
@@ -70,7 +80,7 @@ def make_money_plot():
 
     bkgtpl.append( data[sd['wjets_ctrl_'+ch]].mctperp )
     data_norm = data[sd['wjets_mct_low_'+ch]].mctperp.count()
-    est_events = float(results['wjets'][0])
+    est_events = float(results['fake'][0])
     sf = est_events/data_norm
     bkgwtpl.append( sf*np.ones(data[sd['wjets_ctrl_'+ch]].mctperp.count()) )
     bkgltpl.append("Non-prompt")
@@ -85,7 +95,7 @@ def make_money_plot():
     h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange,
              label=bkgltpl, zorder=1, linewidth=0.5, color=bkgctpl)
     he = hist_errorbars( data[sd['sig_'+ch]].mctperp, xerrs=False, bins=bins, range=plotrange)
-    he.set_label("Data")
+    he[-1].set_label("Data")
 
     # move data to top of legend
     handles, labels = fig.get_legend_handles_labels()
@@ -119,6 +129,30 @@ def make_money_plot():
     savefig("plots/money"+ch+"2.pdf")
 
     figs.append(fig)
+
+    f = figure(figsize=(6,6))
+    f.set_facecolor('w')
+    fig = f.add_subplot(111)
+    # fig.set_yscale('log', nonposy='clip')
+    # fig.set_ylim(0.01, 2000)
+    fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
+    h = hist(bkgtpl, weights=bkgwtpl, histtype="stepfilled", stacked=True, rwidth=1, bins=bins, range=plotrange, label=bkgltpl,
+             zorder=1, linewidth=0.5, color=bkgctpl)
+    he = hist_errorbars( data[sd['sig_'+ch]].mctperp, xerrs=False, bins=bins, range=plotrange)
+    he[-1].set_label("Data")
+
+    # move data to top of legend
+    handles, labels = fig.get_legend_handles_labels()
+    handles.insert(0,handles.pop())
+    labels.insert(0,labels.pop())
+
+    legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1)
+    fig.set_axisbelow(False)
+
+    minorticks = MultipleLocator(10)
+    fig.xaxis.set_minor_locator(minorticks)
+
+    savefig("plots/money"+ch+"2_linear.pdf")
 
     return fig
 

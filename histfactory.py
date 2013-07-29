@@ -12,6 +12,7 @@ Options:
 """
 import ROOT as R
 from collections import defaultdict
+import sys
 backgrounds = ['top', 'vv', 'wjets', 'z']
 
 
@@ -46,7 +47,7 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
         signal.ActivateStatError()
         signal.AddOverallSys("trigger", 0.95, 1.05)
         signal.AddOverallSys("id_and_selection", 0.98, 1.02)
-        signal.AddOverallSys("b_veto", 0.94, 1.06)
+        signal.AddOverallSys("b_veto", 0.95, 1.05)
         signal.AddHistoSys("jes", "sms_template_jes_down_{0}_{1}_{2}".format(ch, m1, m2), signal_file, "",
                            "sms_template_jes_up_{0}_{1}_{2}".format(ch, m1, m2), signal_file, "")
         channel_confs[ch].AddSample(signal)
@@ -56,12 +57,33 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
             template = R.RooStats.HistFactory.Sample("{0}_{1}".format(bkg, ch), "{0}_template_{1}".format(bkg, ch), "templates.root")
             template.SetNormalizeByTheory(False)
             template.ActivateStatError()
-            if bkg == 'banana':
-                ntop_pred = temp_file.Get("ntop_"+ch)[0]
-                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), ntop_pred, 0, 2*ntop_pred, True)
-                template.AddOverallSys("top_norm_"+ch, 0.88, 1.12)
-            else :
+            if bkg=="top":
+                template.AddNormFactor("n_top_sf".format(ch, bkg), 2000, 0, 10000)
+                if ch=="of":
+                    top_ratio_val = temp_file.Get("top_ratio")[0]
+                    template.AddNormFactor("n_top_of_scale", top_ratio_val, top_ratio_val, top_ratio_val, True)
+                    template.AddOverallSys("top_ratio", .9, 1.1)
+                else:
+                    template.AddOverallSys("top_ratio", 1.1, 0.9)
+            elif bkg=="vv":
+                template.AddNormFactor("n_vv_sf".format(ch, bkg), 2000, 0, 10000)
+                if ch=="of":
+                    vv_ratio_val = temp_file.Get("vv_ratio")[0]
+                    template.AddNormFactor("n_vv_of_scale", vv_ratio_val, vv_ratio_val, vv_ratio_val, True)
+                    template.AddOverallSys("vv_ratio", .9, 1.1)
+                else:
+                    template.AddOverallSys("vv_ratio", 1.1, 0.9)
+            else:
                 template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 10000)
+
+            if bkg == 'vv':
+                template.AddShapeSys("ww_syst_"+ch, 0, "ww_syst_"+ch, "templates.root")
+                template.AddHistoSys('WW_norm', "vv_syst_WW_"+ch+"Up", "templates.root", "", "vv_syst_WW_"+ch+"Down", "templates.root", "")
+                template.AddHistoSys('WZ_norm', "vv_syst_WZ_"+ch+"Up", "templates.root", "", "vv_syst_WZ_"+ch+"Down", "templates.root", "")
+                template.AddHistoSys('ZZ_norm', "vv_syst_ZZ_"+ch+"Up", "templates.root", "", "vv_syst_ZZ_"+ch+"Down", "templates.root", "")
+                template.AddHistoSys('VVV_norm', "vv_syst_VVV_"+ch+"Up", "templates.root", "", "vv_syst_VVV_"+ch+"Down", "templates.root", "")
+                template.AddHistoSys('HWW_norm', "vv_syst_HWW_"+ch+"Up", "templates.root", "", "vv_syst_HWW_"+ch+"Down", "templates.root", "")
+
 
             if bkg == 'z':
                 template.AddShapeSys("z_syst_"+ch, 0, "z_syst", "templates.root")
@@ -76,13 +98,31 @@ def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_n
 
     meas.CollectHistograms()
 
-    R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
+    ws = R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
+
+    # top_ratio_val = temp_file.Get("top_ratio")[0]
+    # ws.factory('expr::top_ratio("n_of_top/n_sf_top", n_of_top, n_sf_top)')
+    # ws.factory('RooGaussian::top_ratio_constraint(top_ratio, nom_top_ratio[{0}], {1})'.format(top_ratio_val, top_ratio_val*0.1))
+    # vv_ratio_val = temp_file.Get("vv_ratio")[0]
+    # ws.factory('expr::vv_ratio("n_of_vv/n_sf_vv", n_of_vv, n_sf_vv)')
+    # ws.factory('RooGaussian::vv_ratio_constraint(vv_ratio, nom_vv_ratio[{0}], {1})'.format(vv_ratio_val, vv_ratio_val*0.1))
+    # ws.factory('PROD:constrPdf(simPdf, top_ratio_constraint, vv_ratio_constraint)')
+
+    # model = ws.obj("ModelConfig")
+    # model.SetPdf(ws.obj("constrPdf"))
+
+    # # ws.Print()
+
+    # rfile = R.TFile(prefix+"_constrained.root", "RECREATE")
+    # ws.Write()
+    # rfile.Close()
 
 if __name__ == '__main__':
     from docopt import docopt
     import json
 
     args = docopt(__doc__)
+    sys.argv = [sys.argv[0], "-b"]
 
     sig_file = args['<signal_file>']
 
@@ -98,6 +138,8 @@ if __name__ == '__main__':
     for m1,m2 in masses:
         try:
             create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), chans)
+            break
         except:
             continue
+
 

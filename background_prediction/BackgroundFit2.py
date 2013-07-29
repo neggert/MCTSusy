@@ -29,7 +29,9 @@ r.gSystem.Load("libRooStats")
 
 def do_bkg_fit2(data, mc, mctcut=100., flavor='sf', plot=False) :
 
-      mczz = mc[(mc.mc_cat=='ZZ')]
+      wz_sf = (mc.mc_cat=="WZ") & abs(mc.parentParentPdg1).isin([22,23]) & abs(mc.parentParentPdg1).isin([22,23])
+
+      mczz = mc[(mc.mc_cat=='ZZ') | wz_sf]
       mcz = mc[mc.mc_cat=='DY']
 
       # <markdowncell>
@@ -44,6 +46,12 @@ def do_bkg_fit2(data, mc, mctcut=100., flavor='sf', plot=False) :
       sel = get_samples( data, cut)
       selzz = get_samples( mczz, cut)
       selz = get_samples( mcz, cut)
+
+      sel['sig_mct_low'+flavor] = sel['sig_mct_low'+flavor] & (data.mctperp < cut)
+      sel['sig_mct_low_of'] = sel['sig_mct_low_of'] & (data.mctperp < cut)
+      sel['wjets_mct_low'+flavor] = sel['wjets_mct_low'+flavor] & (data.mctperp < cut)
+      selzz['sig_mct_low'+flavor] = selzz['sig_mct_low'+flavor] & (mczz.mctperp < cut)
+      selz['sig_mct_low'+flavor] = selz['sig_mct_low'+flavor] & (mcz.mctperp < cut)
 
       # <markdowncell>
 

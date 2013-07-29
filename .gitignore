@@ -1,5 +1,8 @@
 *.pyc
 *.so
+*.o
+*.d
+*.pdf
 *.sublime-*
 work/*
 limits/*
@@ -7,3 +10,6 @@ limits/*
 *.json
 2012HCP
 batch/*.sh.*
+batch/LSF*
+limit_batch/LSF*
+*~

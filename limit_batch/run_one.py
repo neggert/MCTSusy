@@ -10,7 +10,8 @@ Options:
 
 import ROOT as R
 
-def run_one_point(filename, poi_val):
+def run_one_point(filename, poi_val, seed):
+    R.RooRandom.randomGenerator().SetSeed(seed)
     rfile = R.TFile(filename)
     print filename
     print poi_val
@@ -59,6 +60,9 @@ def run_one_point(filename, poi_val):
     return res
 
 if __name__ == '__main__':
+    import sys
+    print sys.argv
+
     from docopt import docopt
     import re
     args = docopt(__doc__)
@@ -75,7 +79,7 @@ if __name__ == '__main__':
         poi = args['<poi_val>']
         output_file = args['<output_file>']
 
-    res = run_one_point(model_file, float(poi))
+    res = run_one_point(model_file, float(poi), 12345678+int(args['<batch_num>']))
 
     f = R.TFile(output_file, "RECREATE")
     f.cd()

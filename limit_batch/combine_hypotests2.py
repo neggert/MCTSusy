@@ -19,8 +19,9 @@ import scipy.optimize
 import scipy.stats
 import sklearn.gaussian_process as gp
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pylab as plt
-plt.switch_backend("agg")
 
 
 
@@ -89,11 +90,9 @@ def main(input_files, output_file, plot):
 
 
                 continue
-            if any([do_plot_a, do_plot_b, do_plot_c, do_plot_d]):
-                do_plot = True
-            
-        	if any(map(np.isnan, [obs, exp, expp1, expm1]) ) or do_plot:
-                    fig = plt.figure()
+            if any([do_plot_a, do_plot_b, do_plot_c, do_plot_d]) or do_plot:
+
+	        fig = plt.figure()
                 plt.plot(pois, obs_CLs_vs_poi)
                 plt.plot(pois, exp_CLs_vs_poi)
                 plt.plot(pois, expp1_CLs_vs_poi)
@@ -106,7 +105,7 @@ def main(input_files, output_file, plot):
                 plt.savefig("figs/{0}_{1}_cls.png".format(m1, m2))
                 fig = plt.figure()
 
-                cls_all = np.linspace(min(exp_CLs_vs_poi), max(exp_CLs_vs_poi), 100)
+                cls_all = np.linspace(min(pois), max(pois), 100)
                 plt.plot(cls_all, map(obs_limit.interp.predict, cls_all))
                 plt.plot(cls_all, map(exp_limit.interp.predict, cls_all))
                 plt.plot(cls_all, map(expp1_limit.interp.predict, cls_all))

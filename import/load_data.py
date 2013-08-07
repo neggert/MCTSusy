@@ -5,38 +5,20 @@ from data_handling import *
 
 print sys.argv
 
-files = []
+import json
 
-ds = sys.argv[1]
-
-
+input_json = sys.argv[1]
 outfile=sys.argv[2]
-mctype=sys.argv[3]
-mc_cat = sys.argv[4]
 
-try :
-	xsec=float(sys.argv[5])
-except IndexError :
-	xsec = 1.
+with open(input_json) as f:
+	params = json.load(f)
 
-# get effective cross-section
-x_eff = get_weights.get_eff_xsec( ds, xsec)
+mctype = params['mctype']
+mc_cat = params['mc_cat']
+x_eff = params['x_eff']
+files = map(str, params['files'])
 
 logging.basicConfig(filename='/home/uscms33/'+mctype+".log", level=logging.INFO)
-
-logging.info( "Dataset: "+ds )
-logging.info( "Output File"+outfile )
-logging.info( "MCType"+mctype )
-
-files = []
-prefix = "root://osg-se.cac.cornell.edu//xrootd/path/cms"
-files.extend(das_utils.get_files_from_dataset(ds))
-
-logging.info( str(len(files))+ " files")
-
-files = [prefix+f for f in files]
-
-logging.debug(files)
 
 from itertools import *
 
@@ -46,7 +28,7 @@ def grouper(n, iterable, fillvalue=None):
     args = [iter(iterable)] * n
     return izip_longest(fillvalue=fillvalue, *args)
 
-for group in grouper(100, files) :
+for group in grouper(10, files) :
 	thesefiles = list(filter(None,group))
 	logging.info( "Starting new file group" )
 	logging.info( thesefiles[0])

@@ -32,13 +32,15 @@ def get_parent( gen_particle ) :
 
 def save_data_pandas( input_files, output_file, mctype="mc", mc_cat="mc_cat", x_eff=1.):
     """Load all of the relevant data from the CMSSW files and save it using pandas"""
-    getter = CMSPyLibs.events.CMSDileptonEventGetter(input_files)
+    getter = CMSPyLibs.events.CMSEventGetter(input_files)
     getter.set_electron_collection("nonIsolatedPatElectrons")
     getter.set_muon_collection("nonIsolatedPatMuons")
     getter.set_jet_collection("selectedPatJets")
     getter.vertex_collection = "offlinePrimaryVertices"
     getter.set_met_collection("patMETs")
-    getter.do_PU = (mctype != 'data')
+    getter.do_PU = ('data' not in mctype)
+    getter.do_genparticles = ('data' not in mctype)
+
     getter.do_SMS = ('sms' in mctype)
 
     jec_parameters = ROOT.JetCorrectorParameters("/home/uscms33/MCTSusy/JEC/Summer12_V2_DATA_AK5PF_UncertaintySources.txt", "SubTotalDataMC")
@@ -72,7 +74,7 @@ def save_data_pandas( input_files, output_file, mctype="mc", mc_cat="mc_cat", x_
         datarow['lumi'] = event.eventID.luminosity_block
         datarow['event'] = event.eventID.event_number
 
-        if mctype == 'data':
+        if 'data' in mctype:
             datarow['DoubleEle_Trigger'] = event.passes_HLT("HLT_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_Ele8_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_v*")
             datarow['DoubleMu_Trigger'] = event.passes_HLT("HLT_Mu17_Mu8_v*")
             datarow['EMu_Trigger'] = event.passes_HLT("HLT_Mu8_Ele17_CaloIdT_CaloIsoVL_TrkIdVL_TrkIsoVL_v*")\
@@ -82,12 +84,21 @@ def save_data_pandas( input_files, output_file, mctype="mc", mc_cat="mc_cat", x_
 
         if 'num_pu_vertices' in event.metadata.keys() :
             datarow['nPuVertices'] = event.metadata['num_pu_vertices']
+            datarow['nTruePuVertices'] = event.metadata['num_true_pu_vertices']
 
         if 'modelParams' in event.metadata.keys() :
-            datarow['mass1'] = event.metadata['modelParams'][0]
-            datarow['mass2'] = event.metadata['modelParams'][1]
+            datarow['mass1'] = event.metadata['modelParams']
+            #datarow['mass2'] = event.metadata['modelParams'][1]
 
-        # lepton info
+        # generator level info
+        if mctype != 'data':
+            neutrinos = [12, 14, 16]
+            datarow['gen_neutrinos'] = 0
+            for n in event.get_genparticles():
+                if abs(n.pdgId()) in neutrinos and n.status()==3:
+                    datarow['gen_neutrinos'] += 1
+
+        # # lepton info
         get_isolation = functools.partial(get_5_X_isolation, rho = event.metadata['rho'])
         leptons = event.get_leptons()
         leptons.sort(key = get_isolation)
@@ -106,11 +117,21 @@ def save_data_pandas( input_files, output_file, mctype="mc", mc_cat="mc_cat", x_
             datarow['parentPdg2'] = get_parent(leptons[1].genParticle()).pdgId()
         except ReferenceError :
             pass
+        try :
+            datarow['parentParentPdg1'] = get_parent(leptons[0].genParticle()).mother().pdgId()
+            datarow['parentParentPdg2'] = get_parent(leptons[1].genParticle()).mother().pdgId()
+        except ReferenceError :
+            pass
         # is there a third isolated lepton?
         datarow['ThirdLepton'] = False
         if len(leptons) > 2:
             if get_isolation(leptons[2]) < 0.15:
                 datarow['ThirdLepton'] = True
+                datarow['relIso3'] = get_isolation(leptons[2])
+                datarow['pt3'] = leptons[2].pt()
+                datarow['pdg3'] = leptons[2].pdgId()
+                datarow['phi3'] = leptons[2].phi()
+                datarow['eta3'] = leptons[2].eta()
 
         # jets
         datarow['njets'] = len(event.get_jets())

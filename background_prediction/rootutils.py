@@ -14,7 +14,10 @@ def create_TH1( data, weights, name="hist", nbins=19, range=(5,100), norm=False)
     h = r.TH1D(name, name, nbins, range[0], range[1])
     h.Sumw2()
     for d, w in zip(data, weights) :
+        if d > range[1]: # put overflows in the highest bin
+            d = range[1] - 0.000001
         h.Fill(d, w)
     if norm:
         h.Scale(1./h.Integral())
+
     return h

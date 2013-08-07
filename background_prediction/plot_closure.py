@@ -55,8 +55,8 @@ def plot_top_closure(flavor):
     fig.set_ylim(0.001, 10000)
     fig.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
 
-    nbins = 29
-    nrange = (10., 300.)
+    nbins = 19
+    nrange = (10., 200.)
     f = figure(figsize=(6,6))
     f.set_facecolor('w')
     fig = subplot2grid((4,1),(0,0), rowspan=3)
@@ -67,7 +67,9 @@ def plot_top_closure(flavor):
     x = []
     w = []
     for t in truths:
-        x.append(mc[truth[t]].mctperp)
+        vals = mc[truth[t]].mctperp.values
+        vals[vals > nrange[1]] = nrange[1]-1e-6
+        x.append(vals)
         w.append(mc[truth[t]].weight)
 
     c = [(.9,.6,0),
@@ -81,9 +83,11 @@ def plot_top_closure(flavor):
     #     normed=True, label="Top MC Truth", color=(.9,.6,0), linewidth=2)
     # hist( mc[twtruth].mctperp, weights=mc[twtruth].weight, bins=nbins, range=nrange, histtype="step", fill=False, rwidth=1.,\
     #     normed=True, label="tW MC Truth", color=(0,.45,.7), linewidth=2)
-    h1 = hist(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels)
+    h1 = hist_errorbars(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels, plotstyle="filled")
 
-    he = hist_errorbars( mc[smc['top_mct_low_'+flavor]].mctperp.values, weights=mc[smc['top_mct_low_'+flavor]].weight.values, bins=nbins, range=nrange, normed=True,\
+    values = mc[smc['top_mct_low_'+flavor]].mctperp.values
+    values[values>nrange[1]] = nrange[1]-1e-6
+    he = hist_errorbars( values, weights=mc[smc['top_mct_low_'+flavor]].weight.values, bins=nbins, range=nrange, normed=True,\
         xerrs=False, color="k")[2]
 
     he.set_label("$\geq$1 b-tags MC")
@@ -103,7 +107,12 @@ def plot_top_closure(flavor):
 
     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
 
-    hist_ratio(mc[smc['top_ctrl_'+flavor]].mctperp, mc[all_truth].mctperp, mc[all_truth].weight, mc[smc['top_ctrl_'+flavor]].weight, bins=nbins, range=nrange, normed=True)
+    v1 = mc[smc['top_ctrl_'+flavor]].mctperp.values
+    v1[v1>nrange[1]] = nrange[1] -1.e-6
+    v2 = mc[all_truth].mctperp.values
+    v2[v2>nrange[1]] = nrange[1]-1.e-6
+
+    hist_ratio(v1, v2, mc[all_truth].weight, mc[smc['top_ctrl_'+flavor]].weight, bins=nbins, range=nrange, normed=True)
     axhline(1, color="k")
     fig2.set_ylim(0,2)
     fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')
@@ -203,8 +212,8 @@ def plot_fake_closure():
     all_truth = truth['wjets'] | truth['top']
 
 
-    nbins = 29
-    nrange = (10., 300.)
+    nbins = 19
+    nrange = (10., 200.)
     f = figure(figsize=(6,6))
     f.set_facecolor('w')
     fig = subplot2grid((4,1),(0,0), rowspan=3)
@@ -215,7 +224,9 @@ def plot_fake_closure():
     x = []
     w = []
     for t in truths:
-        x.append(mc[truth[t]].mctperp)
+        vals = mc[truth[t]].mctperp.values
+        vals[vals > nrange[1]] = nrange[1]-1e-6
+        x.append(vals)
         w.append(mc[truth[t]].weight)
 
     c = [bkg_colors['fake'], bkg_colors['top']
@@ -226,32 +237,12 @@ def plot_fake_closure():
     #     normed=True, label="Top MC Truth", color=(.9,.6,0), linewidth=2)
     # hist( mc[twtruth].mctperp, weights=mc[twtruth].weight, bins=nbins, range=nrange, histtype="step", fill=False, rwidth=1.,\
     #     normed=True, label="tW MC Truth", color=(0,.45,.7), linewidth=2)
-    h1 = hist(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels)
-    wjets_nom = h1[0][0]
-
-    # find statistical uncertainties
-    unweighted_hist, bins = np.histogram(mc[all_truth].mctperp, bins=nbins, range=nrange)
-    weighted_hist, bins = np.histogram(mc[all_truth].mctperp, weights=mc[all_truth].weight, bins=nbins, range=nrange)
-
-    print unweighted_hist
-
-    # import pdb; pdb.set_trace()
-
-    uncertainties = np.sqrt(unweighted_hist)
-    uncertainties[unweighted_hist==0] = 0.
-    weight_scale = weighted_hist/unweighted_hist
+    h1 = hist_errorbars(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels, plotstyle="filled")
 
 
-    norm_scale = 1./np.sum(weighted_hist)/((nrange[1]-nrange[0])/nbins)
-
-    scaled_uncertainties = uncertainties*weight_scale*norm_scale
-
-    scaled_uncertainties[np.isnan(scaled_uncertainties)] = 0.
-
-    fill(*get_step_fill_between(bins[:-1], wjets_nom+scaled_uncertainties, wjets_nom-scaled_uncertainties), color='r', alpha=0.3)
-
-
-    he = hist_errorbars( mc[smc['wjets_mct_low']].mctperp.values, weights=mc[smc['wjets_mct_low']].weight.values, bins=nbins, range=nrange, normed=True,\
+    values = mc[smc['wjets_mct_low']].mctperp.values
+    values[values>nrange[1]] = nrange[1]-1e-6
+    he = hist_errorbars( values, weights=mc[smc['wjets_mct_low']].weight.values, bins=nbins, range=nrange, normed=True,\
         xerrs=False, color="k")[2]
 
     he.set_label("Control Region MC")
@@ -271,7 +262,12 @@ def plot_fake_closure():
 
     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
 
-    h2 = hist_ratio(mc[smc['wjets_ctrl']].mctperp, mc[all_truth].mctperp, mc[all_truth].weight, mc[smc['wjets_ctrl']].weight, bins=nbins, range=nrange, normed=True)
+    v1 = mc[smc['wjets_ctrl']].mctperp.values
+    v1[v1>nrange[1]] = nrange[1] -1.e-6
+    v2 = mc[all_truth].mctperp.values
+    v2[v2>nrange[1]] = nrange[1]-1.e-6
+
+    hist_ratio(v1, v2, mc[all_truth].weight, mc[smc['wjets_ctrl']].weight, bins=nbins, range=nrange, normed=True)
     axhline(1, color="k")
     fig2.set_ylim(0,2)
     fig2.set_ylabel("ratio", fontproperties=fontpb, color='k')
@@ -365,7 +361,9 @@ def plot_fs_closure():
     x = []
     w = []
     for t in truths:
-        x.append(mc[truth[t]].mctperp)
+        vals = mc[truth[t]].mctperp.values
+        vals[vals > nrange[1]] = nrange[1]-1e-6
+        x.append(vals)
         w.append(mc[truth[t]].weight)
 
     c = [(.9,.6,0),
@@ -376,8 +374,10 @@ def plot_fs_closure():
     labels = [r'Top', r'WW', r'WZ', r'H$\rightarrow$WW', 'VVV']
 
 
-    hist(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels)
-    he = hist_errorbars( mc[smc['sig_mct_low_of']].mctperp.values, weights=mc[smc['sig_mct_low_of']].weight.values, bins=nbins, range=nrange, normed=True,\
+    h1 = hist_errorbars(x, weights=w, color=c, bins=nbins, range=nrange, normed=True, stacked=True, histtype="step", label=labels, plotstyle="filled")
+    values = mc[smc['sig_mct_low_of']].mctperp.values
+    values[values>nrange[1]] = nrange[1]-1e-6
+    he = hist_errorbars( values, weights=mc[smc['sig_mct_low_of']].weight.values, bins=nbins, range=nrange, normed=True,
         xerrs=False, label="Control", color='k')[2]
     he.set_label("Control Region MC")
     ylim(1.e-7, .1)
@@ -395,7 +395,12 @@ def plot_fs_closure():
 
     fig2 = subplot2grid((4,1),(3,0), sharex=fig)
 
-    hist_ratio(mc[smc['sig_mct_low_of']].mctperp, mc[fstruth].mctperp, mc[fstruth].weight,mc[smc['sig_mct_low_of']].weight,
+    v1 = mc[smc['sig_mct_low_of']].mctperp.values
+    v1[v1>nrange[1]] = nrange[1] -1.e-6
+    v2 = mc[fstruth].mctperp.values
+    v2[v2>nrange[1]] = nrange[1]-1.e-6
+
+    hist_ratio(v1, v2, mc[fstruth].weight,mc[smc['sig_mct_low_of']].weight,
                bins=nbins, range=nrange, normed=True)
     axhline(1, color="k")
     fig2.set_ylim(0,2)

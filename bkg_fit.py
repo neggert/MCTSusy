@@ -294,6 +294,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 def get_p_value_dist(ws, n):
     model = ws.obj("ModelConfig")
 
+    R.RooRandom.randomGenerator().SetSeed()
+
     AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
 
     sampler = R.RooStats.ToyMCSampler(AD, n)

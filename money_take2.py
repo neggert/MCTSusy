@@ -20,7 +20,7 @@ def get_step_fill_between(x, y1, y2):
     fill_x = np.zeros(2*len(x))
     fill_x[::2] = x
     fill_x[1:-1:2] = x[1:]
-    fill_x[-1] = 300
+    fill_x[-1] = 200
     fill_y1 = np.zeros(fill_x.shape)
     fill_y1[::2] = y1
     fill_y1[1::2] = y1
@@ -87,7 +87,7 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
     fontp = FontProperties(family="Helvetica", size=12)
     fontpb = FontProperties(family="Helvetica", size=10, weight="book")
 
-    x = np.arange(10, 300, 10)
+    x = np.arange(10, 200, 10)
     bin_heights = [np.zeros(x.shape)]
     names = []
     for b in backgrounds:
@@ -122,14 +122,14 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
 
 
     # plot SMS
-    sms_file = R.TFile("sig_chi.root")
+    sms_file = R.TFile("chi_templates.root")
     sms1 = sms_file.Get("sms_template_{}_300_0".format(ch))
     sms2 = sms_file.Get("sms_template_{}_500_0".format(ch))
 
     sms1_points = extract_points_from_th1(sms1, x)
     sms2_points = extract_points_from_th1(sms2, x)
 
-    sms_x = np.append(x, 300)
+    sms_x = np.append(x, 200)
     sms1_points = np.append(sms1_points, sms1_points[-1])
     sms2_points = np.append(sms2_points, sms2_points[-1])
 
@@ -146,7 +146,7 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
 
 
     # aesthetics
-    ax.set_xlim(10, 300)
+    ax.set_xlim(10, 200)
     handles, labels = ax.get_legend_handles_labels()
     handles.reverse()
     labels.reverse()
@@ -162,7 +162,7 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
     ax2.errorbar(data_x[vals >0], vals[vals > 0], errs[vals>0], color='k', fmt='.')
     plt.axhline(1, color="k")
     ax2.set_ylim(0.5,1.5)
-    ax2.set_xlim(10, 300)
+    ax2.set_xlim(10, 200)
     ax2.set_ylabel("ratio", fontproperties=fontpb, color='k')
 
     plt.xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
@@ -174,6 +174,17 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
         plt.savefig("plots/money{}.pdf".format(ch))
     else:
         plt.savefig("plots/money{}_linear.pdf".format(ch))
+
+if __name__ == '__main__':
+    filename = sys.argv[1]
+    f = R.TFile(filename)
+    ws = f.Get("combined")
+    build_background_shape(ws, "sf", sf_backgrounds, True)
+    build_background_shape(ws, "sf", sf_backgrounds, False)
+    build_background_shape(ws, "of", of_backgrounds, True)
+    build_background_shape(ws, "of", of_backgrounds, False)
+
+
 
 
 

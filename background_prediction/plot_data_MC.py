@@ -4,7 +4,7 @@ import CMSPyLibs.plot
 reload(CMSPyLibs.plot)
 # from CMSPyLibs.plot import *
 from config.data import *
-from config.parameters import bkg_colors, bkg_labels
+from config.parameters import bkg_colors, bkg_labels, lumi
 from prettytable import PrettyTable
 
 
@@ -19,6 +19,19 @@ switch_backend("pdf")
 
 fontp = FontProperties(family="Helvetica", size=12)
 fontpb = FontProperties(family="Helvetica", size=10, weight="book")
+
+def load_xsec(filename):
+    """
+    load cross-sections for a file. Returns a dictionary describing cross-sections on their uncertainties.
+    The dictionary is indexed by the particle mass, and each element is a tuple containing (xsec, uncertainty)
+    """
+    f = open(filename)
+    xsec_dict = {}
+    for line in f:
+        mass, xsec, err = line.split()
+        xsec_dict[float(mass)] = (float(xsec), float(err))
+    f.close()
+    return xsec_dict
 
 def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumulative=False):
     """
@@ -39,6 +52,7 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
     # groups = selected.groupby('mc_cat')
 
     group_order = ['top', 'WW', 'WZ', 'ZZ', 'Rare', 'DY', 'fake']
+    group_order.reverse()
 
     bkgtpl = []
     bkgwtpl = []
@@ -279,6 +293,7 @@ def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     # groups = selected.groupby('mc_cat')
 
     group_order = ['top', 'WW', 'WZ', 'ZZ', 'Rare', 'DY', 'fake']
+    group_order.reverse()
 
     bkgtpl = []
     bkgwtpl = []
@@ -306,15 +321,39 @@ def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     print sum([sum(weights) for weights in bkgwtpl])
 
     # plot some example signals on top
+
+
+    hist_filename = "limits/TChipmSlepSnu_Nevents.root"
+    xsec_filename = "limits/8TeVc1c1.xsec"
+    if not os.path.exists(hist_filename):
+        raise IOError(hist_filename+" does not exist.")
+    nevents_file = R.TFile(hist_filename)
+    nevents_hist = nevents_file.Get("ScanValidator/NEvents_histo")
+    xsec_dict = load_xsec(xsec_filename)
+
     sms1 = chi[sel_chi[selection_name] & (chi.mass1==200) & (chi.mass2==25)]
+    sms1.weight *= xsec_dict[200][0] / nevents_hist.GetBinContent(nevents_hist.FindBin(200, 25)) * lumi
     sms3 = chi[sel_chi[selection_name] & (chi.mass1==400) & (chi.mass2==100)]
+    sms3.weight *= xsec_dict[400][0] / nevents_hist.GetBinContent(nevents_hist.FindBin(400, 100)) * lumi
+
 
     x = [sms1.mctperp, sms3.mctperp]
     w = [sms1.weight, sms3.weight]
     c = ['b','r']
     labels = [r'\noindent$m_{\chi^\pm}=200$ GeV, $m_{\chi^0}=25$ GeV', r'\noindent$m_{\chi^\pm}=400$ GeV, $m_{\chi^0}=100$ GeV']
 
-    hist(x, histtype="step", weights=w, color=c, label=labels, bins=h[1], bottom=h[0][0], ls='dotted', zorder=0.5, lw=2)
+    print h[0][-1]
+    print hist(x, histtype="step", weights=w, color=c, label=labels, bins=h[1], bottom=h[0][-1], ls='dashed', zorder=0.5, lw=2)
+    # m, bins = np.histogram(sms1.mctperp, weights=sms1.mctperp, bins=h[1])
+    # m += h[0][-1]
+    # # draw by hand
+    # x = np.zeros(2 * len(bins) - 1, np.float)
+    # x[0:2*len(bins)-1:2], x[1:2*len(bins)-1:2] = bins, bins[:-1]
+    # y = np.zeros(2 * len(bins) - 1, np.float)
+    # y[1:2*len(bins)-1:2], y[2:2*len(bins):2] = m, m
+    # fill(x, y, closed=False, edgecolor="b", fill=False)
+
+    # print x, y
 
     handles, labels = fig.get_legend_handles_labels()
 
@@ -414,7 +453,7 @@ def print_WZ_datamc():
 
 
 if __name__ == '__main__':
-    make_data_mc_plots()
+    # make_data_mc_plots()
     plot_mc('sig_mct_low_sf', 'mctperp', 29, (10,300))
     savefig("plots/mc_only_sf.pdf")
     plot_mc('sig_mct_low_of', 'mctperp', 29, (10,300))

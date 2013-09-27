@@ -100,7 +100,7 @@ if __name__ == '__main__':
     bins = int(args['--bins'])
     histrange = (float(args['--low']), float(args['--high']))
 
-    create_data_file("data.root", bins, histrange)
+    create_data_file("data2.root", bins, histrange)
     create_template_file("templates2.root", bins, histrange)
     create_signal_file(args['<signal_file>'], args['<signal_output>'], args['<nevents_file>'], args['<xsec_file>'],
                        float(args['--xsec_multiplier']), bins, histrange)

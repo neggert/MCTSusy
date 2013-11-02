@@ -175,16 +175,3 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
     else:
         plt.savefig("plots/money{}_linear.pdf".format(ch))
 
-if __name__ == '__main__':
-    filename = sys.argv[1]
-    f = R.TFile(filename)
-    ws = f.Get("combined")
-    build_background_shape(ws, "sf", sf_backgrounds, True)
-    build_background_shape(ws, "sf", sf_backgrounds, False)
-    build_background_shape(ws, "of", of_backgrounds, True)
-    build_background_shape(ws, "of", of_backgrounds, False)
-
-
-
-
-

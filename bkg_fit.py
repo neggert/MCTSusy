@@ -77,8 +77,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     constr = model.GetNuisanceParameters()
     R.RooStats.RemoveConstantParameters(constr)
 
-    model.GetParametersOfInterest().first().setVal(0.)
-    model.GetParametersOfInterest().first().setConstant()
+    # model.GetParametersOfInterest().first().setVal(0.)
+    # model.GetParametersOfInterest().first().setConstant()
 
     pars = model.GetNuisanceParameters()
 
@@ -120,36 +120,21 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     print t
 
     #find the actual parameter vlaues
-    par = R.RooArgList(ws.obj("n_top_sf"), ws.obj("alpha_top_ratio"))
-    n_top_sf_real = R.RooFormulaVar("n_top_sf_real", "n_top_sf_real", "n_top_sf*(1-0.1*alpha_top_ratio)", par)
-    scale = ws.obj("n_top_of_scale").getVal()
-    n_top_of = R.RooFormulaVar("n_top_of", "n_top_of", "n_top_sf*{0}*(1+0.1*alpha_top_ratio)".format(scale), par)
+    # par = R.RooArgList(ws.obj("n_top_sf"), ws.obj("alpha_top_ratio"))
+    # n_top_sf_real = R.RooFormulaVar("n_top_sf_real", "n_top_sf_real", "n_top_sf*(1-0.1*alpha_top_ratio)", par)
+    # scale = ws.obj("n_top_of_scale").getVal()
+    # n_top_of = R.RooFormulaVar("n_top_of", "n_top_of", "n_top_sf*{0}*(1+0.1*alpha_top_ratio)".format(scale), par)
 
-    par = R.RooArgList(ws.obj("n_vv_sf"), ws.obj("alpha_vv_ratio"))
-    vv_ratio = ws.obj("alpha_vv_ratio")
-    n_vv_sf = ws.obj("n_vv_sf")
-    n_vv_sf_real = R.RooFormulaVar("n_vv_sf_real", "n_vv_sf_real", "n_vv_sf*(1-0.1*alpha_vv_ratio)", par)
-    n_vv_sf_err = n_vv_sf_real.getVal()*np.sqrt((n_vv_sf.getError()/n_vv_sf.getVal())**2+(0.1*vv_ratio.getError()/(1-0.1*vv_ratio.getVal()))**2)
+    # par = R.RooArgList(ws.obj("n_vv_sf"), ws.obj("alpha_vv_ratio"))
+    # vv_ratio = ws.obj("alpha_vv_ratio")
+    # n_vv_sf = ws.obj("n_vv_sf")
+    # n_vv_sf_real = R.RooFormulaVar("n_vv_sf_real", "n_vv_sf_real", "n_vv_sf*(1-0.1*alpha_vv_ratio)", par)
+    # n_vv_sf_err = n_vv_sf_real.getVal()*np.sqrt((n_vv_sf.getError()/n_vv_sf.getVal())**2+(0.1*vv_ratio.getError()/(1-0.1*vv_ratio.getVal()))**2)
 
-    scale = ws.obj("n_vv_of_scale").getVal()
-    n_vv_of = R.RooFormulaVar("n_vv_of", "n_vv_of", "n_vv_sf*{0}*(1+0.1*alpha_vv_ratio)".format(scale), par)
+    # scale = ws.obj("n_vv_of_scale").getVal()
+    # n_vv_of = R.RooFormulaVar("n_vv_of", "n_vv_of", "n_vv_sf*{0}*(1+0.1*alpha_vv_ratio)".format(scale), par)
 
-    n_vv_of_err = n_vv_of.getVal()*np.sqrt((n_vv_sf.getError()/n_vv_sf.getVal())**2+(0.1*vv_ratio.getError()/(1+0.1*vv_ratio.getVal()))**2)
-
-    # fitresults = defaultdict(dict)
-    # chans = ['of','sf']
-    # for ch in chans:
-    #     for b in ['z', 'wjets']:
-    #         fitvar = fitPars.find('n_{}_{}'.format(ch, b))
-    #         if b == 'z':
-    #             b = "DY"
-    #         elif b == 'wjets':
-    #             b = 'fake'
-    #         fitresults[ch][b] = (fitvar.getVal(), fitvar.getError())
-    # fitresults['sf']['top'] = (n_top_sf_real.getVal(), n_top_sf_real.getPropagatedError(res))
-    # fitresults['of']['top'] = (n_top_of.getVal(), n_top_of.getPropagatedError(res))
-    # fitresults['sf']['vv'] = (n_vv_sf_real.getVal(), n_vv_sf_err)
-    # fitresults['of']['vv'] = (n_vv_of.getVal(), n_vv_of_err)
+    # n_vv_of_err = n_vv_of.getVal()*np.sqrt((n_vv_sf.getError()/n_vv_sf.getVal())**2+(0.1*vv_ratio.getError()/(1+0.1*vv_ratio.getVal()))**2)
 
     f = open("fit_results.json", 'w')
 
@@ -246,7 +231,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     # # get the test statistic on data    
     R.gROOT.ProcessLineSync(".L KS/AndersonDarlingTestStat.cc+")
     AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
-    ts = AD.Evaluate(data, model.GetParametersOfInterest())
+    ts = AD.Evaluate(data)
 
     # # import IPython
     # # IPython.embed()
@@ -255,8 +240,6 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     # calculate a p-value
     if get_p:
 
-
-
         results = []
         from IPython.parallel import Client
 
@@ -264,9 +247,11 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
         dview = rc[:]
         # with dview.sync_imports(): 
         #     import ROOT as R
-        dview.execute("import ROOT as R")
-        dview.execute("R.gROOT.ProcessLineSync('.L KS/AndersonDarlingTestStat.cc+')")
+        dview.execute("import ROOT")
+        dview.execute("ROOT.gROOT.ProcessLineSync('.L KS/AndersonDarlingTestStat.cc+')")
         lview = rc.load_balanced_view()
+
+        get_p_value_dist(ws, 2)
 
         for i in xrange(50):
             r = lview.apply_async(get_p_value_dist, ws, 100)
@@ -279,7 +264,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
             sampDist.Add(r.result)
 
 
-        f = R.TFile("BkgADDist_test.root", "RECREATE")
+        f = ROOT.TFile("BkgADDist_test.root", "RECREATE")
         sampDist.Write("sampDist")
         f.Close()
 
@@ -294,15 +279,15 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 def get_p_value_dist(ws, n):
     model = ws.obj("ModelConfig")
 
-    R.RooRandom.randomGenerator().SetSeed()
+    ROOT.RooRandom.randomGenerator().SetSeed()
 
-    AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
+    AD = ROOT.RooStats.AndersonDarlingTestStat(model.GetPdf())
 
-    sampler = R.RooStats.ToyMCSampler(AD, n)
+    sampler = ROOT.RooStats.ToyMCSampler(AD, n)
     sampler.SetPdf(model.GetPdf())
     sampler.SetObservables(model.GetObservables())
     sampler.SetGlobalObservables(model.GetGlobalObservables())
-    sampler.SetParametersForTestStat(model.GetParametersOfInterest())
+    sampler.SetParametersForTestStat(ROOT.RooArgSet())
 
     sampDist = sampler.GetSamplingDistribution(model.GetSnapshot())
 

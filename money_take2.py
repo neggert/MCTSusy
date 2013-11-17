@@ -102,6 +102,8 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
             bin_heights.append(shape)
             names.append(b['name'])
 
+    make_result_table(bin_heights, names)
+
     fig = plt.figure(figsize=(6,6))
     fig.set_facecolor('w')
     ax = plt.subplot2grid((4,1),(0,0), rowspan=3)
@@ -174,17 +176,4 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
         plt.savefig("plots/money{}.pdf".format(ch))
     else:
         plt.savefig("plots/money{}_linear.pdf".format(ch))
-
-if __name__ == '__main__':
-    filename = sys.argv[1]
-    f = R.TFile(filename)
-    ws = f.Get("combined")
-    build_background_shape(ws, "sf", sf_backgrounds, True)
-    build_background_shape(ws, "sf", sf_backgrounds, False)
-    build_background_shape(ws, "of", of_backgrounds, True)
-    build_background_shape(ws, "of", of_backgrounds, False)
-
-
-
-
 

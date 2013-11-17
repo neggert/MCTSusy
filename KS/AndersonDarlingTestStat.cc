@@ -11,7 +11,7 @@ typedef pair<Double_t, Double_t> double_pair;
 
 bool sort_pairs (double_pair i, double_pair j) {return (i.first < j.first);}
 
-Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSet& paramsOfInterest) {
+Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data) {
     /*
     Find the Anderson-Darling difference between fPdf and the data. This is just
     the maximum over data points of the distance between the CDF and the emprical
@@ -24,7 +24,7 @@ Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSe
     }
 
 
-    RooRealVar* poi = dynamic_cast<RooRealVar*>(paramsOfInterest.first());
+    // RooRealVar* poi = dynamic_cast<RooRealVar*>(paramsOfInterest.first());
 
     RooFit::MsgLevel msglevel = RooMsgService::instance().globalKillBelow();
     RooMsgService::instance().setGlobalKillBelow(RooFit::FATAL);
@@ -40,9 +40,9 @@ Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSe
 
     //First, find the best fit values
     RooArgSet* pdfParams = fPdf->getParameters(data);
-    RooRealVar* pdfPOI= dynamic_cast<RooRealVar*>(pdfParams->find(poi->GetName()));
-    pdfPOI->setVal(poi->getVal());
-    pdfPOI->setConstant();
+    // RooRealVar* pdfPOI= dynamic_cast<RooRealVar*>(pdfParams->find(poi->GetName()));
+    // pdfPOI->setVal(poi->getVal());
+    // pdfPOI->setConstant();
     RooStats::RemoveConstantParameters(pdfParams);
     fPdf->fitTo(data, RooFit::Constrain(*pdfParams), RooFit::PrintLevel(-1), RooFit::Verbose(kFALSE));
 
@@ -90,6 +90,18 @@ Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data, RooArgSe
 
     return test_stat;
 }
+
+Double_t RooStats::AndersonDarlingTestStat::Evaluate(RooAbsData& data, RooArgSet& paramsOfInterest) {
+    if (paramsOfInterest.getSize() > 0) {
+        RooRealVar* poi = dynamic_cast<RooRealVar*>(paramsOfInterest.first());
+        RooArgSet* pdfParams = fPdf->getParameters(data);
+        RooRealVar* pdfPOI= dynamic_cast<RooRealVar*>(pdfParams->find(poi->GetName()));
+        pdfPOI->setVal(poi->getVal());
+        pdfPOI->setConstant();
+    }
+    return Evaluate(data);
+}
+
 
 Double_t RooStats::AndersonDarlingTestStat::EvaluateADDistance( RooAbsPdf& pdf, RooAbsData& data, RooRealVar& observable) {
 

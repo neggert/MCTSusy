@@ -54,7 +54,7 @@ for m1, m2 in masses:
     if m1-m2 <= 50:
         continue
     try:
-	xsec_hist.SetBinContent(xsec_hist.FindBin(m1, m2), xsecs[float(m1)][0]*2)
+	xsec_hist.SetBinContent(xsec_hist.FindBin(m1, m2), xsecs[float(m1)][0])
     except KeyError:
 	print "No limits for", m1, m2
         continue

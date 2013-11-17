@@ -92,11 +92,13 @@ Double_t RooStats::AndersonDarlingTestStat::Evaluate( RooAbsData& data) {
 }
 
 Double_t RooStats::AndersonDarlingTestStat::Evaluate(RooAbsData& data, RooArgSet& paramsOfInterest) {
-    RooRealVar* poi = dynamic_cast<RooRealVar*>(paramsOfInterest.first());
-    RooArgSet* pdfParams = fPdf->getParameters(data);
-    RooRealVar* pdfPOI= dynamic_cast<RooRealVar*>(pdfParams->find(poi->GetName()));
-    pdfPOI->setVal(poi->getVal());
-    pdfPOI->setConstant();
+    if (paramsOfInterest.getSize() > 0) {
+        RooRealVar* poi = dynamic_cast<RooRealVar*>(paramsOfInterest.first());
+        RooArgSet* pdfParams = fPdf->getParameters(data);
+        RooRealVar* pdfPOI= dynamic_cast<RooRealVar*>(pdfParams->find(poi->GetName()));
+        pdfPOI->setVal(poi->getVal());
+        pdfPOI->setConstant();
+    }
     return Evaluate(data);
 }
 

@@ -102,6 +102,8 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
             bin_heights.append(shape)
             names.append(b['name'])
 
+    make_result_table(bin_heights, names)
+
     fig = plt.figure(figsize=(6,6))
     fig.set_facecolor('w')
     ax = plt.subplot2grid((4,1),(0,0), rowspan=3)

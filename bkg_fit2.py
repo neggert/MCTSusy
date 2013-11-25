@@ -57,8 +57,8 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     constr = model.GetNuisanceParameters()
     R.RooStats.RemoveConstantParameters(constr)
 
-    model.GetParametersOfInterest().first().setVal(0.)
-    model.GetParametersOfInterest().first().setConstant()
+    # model.GetParametersOfInterest().first().setVal(0.)
+    # model.GetParametersOfInterest().first().setConstant()
 
     pars = model.GetNuisanceParameters()
 
@@ -138,7 +138,7 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     AD = R.RooStats.AndersonDarlingTestStat(model.GetPdf())
 
     # get the test statistic on data
-    ts = AD.Evaluate(data, model.GetParametersOfInterest())
+    ts = AD.Evaluate(data)
 
     if get_p:
 

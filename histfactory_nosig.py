@@ -3,7 +3,7 @@
 """Create the model
 
 Usage:
-    histfactory.py <template_file> [<signal_file>] [<mass_file>] [-h] [--channels=<c1,c2>]
+    histfactory.py <signal_file> <template_file> <mass_file> [-h] [--channels=<c1,c2>]
 
 Options:
     -h --help        Show this screen.
@@ -16,20 +16,17 @@ import sys
 backgrounds = ['top', 'vv', 'wjets', 'z']
 
 
-def create_histfactory(template_file, channels, data_file_name="data.root", signal_file=None, m1=0, m2=0):
-    data_prefix="data"
+def create_histfactory(template_file, signal_file, m1, m2, channels, data_file_name="data.root", data_prefix="data"):
+    prefix = "limits/"+signal_file[:-5]+"_{0}_{1}".format(m1, m2)
+
     meas = R.RooStats.HistFactory.Measurement("meas", "meas")
 
-    if signal_file:
-        prefix = "limits/"+signal_file[:-5]+"_{0}_{1}".format(m1, m2)
-        meas.SetOutputFilePrefix(prefix)
-    else:
-        meas.SetOutputFilePrefix("limits/chi_bkg_only")
+    meas.SetOutputFilePrefix(prefix)
+    meas.SetPOI("sig_strength")
     # meas.AddConstantParam("n_of_top")
     # meas.AddConstantParam("n_sf_top")
-    meas.SetPOI("sig_strength") 
 
-    temp_file = R.TFile(template_file)
+    temp_file = R.TFile("templates.root")
 
     meas.SetLumi(1.0)
     meas.SetLumiRelErr(0.04)
@@ -44,17 +41,16 @@ def create_histfactory(template_file, channels, data_file_name="data.root", sign
         channel_confs[ch].SetStatErrorConfig(0.1, "Poisson")
 
         # signal sample
-        if signal_file:
-            signal = R.RooStats.HistFactory.Sample("signal_"+ch, "sms_template_{0}_{1}_{2}".format(ch, m1, m2), signal_file)
-            signal.SetNormalizeByTheory(True)
-            signal.AddNormFactor("sig_strength", 1., 0., 1000.)
-            signal.ActivateStatError()
-            signal.AddOverallSys("trigger", 0.95, 1.05)
-            signal.AddOverallSys("id_and_selection", 0.976, 1.024)
-            signal.AddOverallSys("b_veto", 0.95, 1.05)
-            signal.AddHistoSys("jes", "sms_template_jes_down_{0}_{1}_{2}".format(ch, m1, m2), signal_file, "",
-                               "sms_template_jes_up_{0}_{1}_{2}".format(ch, m1, m2), signal_file, "")
-            channel_confs[ch].AddSample(signal)
+        signal = R.RooStats.HistFactory.Sample("signal_"+ch, "sms_template_{0}_{1}_{2}".format(ch, m1, m2), signal_file)
+        signal.SetNormalizeByTheory(True)
+        signal.AddNormFactor("sig_strength", 1., 0., 1000.)
+        signal.ActivateStatError()
+        signal.AddOverallSys("trigger", 0.95, 1.05)
+        signal.AddOverallSys("id_and_selection", 0.98, 1.02)
+        signal.AddOverallSys("b_veto", 0.95, 1.05)
+        signal.AddHistoSys("jes", "sms_template_jes_down_{0}_{1}_{2}".format(ch, m1, m2), signal_file, "",
+                           "sms_template_jes_up_{0}_{1}_{2}".format(ch, m1, m2), signal_file, "")
+        channel_confs[ch].AddSample(signal)
 
         # add the background samples
         for bkg in backgrounds:
@@ -130,23 +126,20 @@ if __name__ == '__main__':
 
     sig_file = args['<signal_file>']
 
+
+    with open(args['<mass_file>']) as f:
+        masses = json.load(f)
+
     try:
         chans = args['--channels'].split(",")
     except AttributeError:
         chans = ['of', 'sf']
 
-    if sig_file:
-        with open(args['<mass_file>']) as f:
-            masses = json.load(f)
-
-        for m1,m2 in masses:
-            try:
-                create_histfactory(args['<template_file>'], chans, "data.root", args['<signal_file>'], int(m1), int(m2))
-                break
-            except:
-                continue
-    else:
-        create_histfactory(args['<template_file>'], chans, "data.root")
-
+    for m1,m2 in masses:
+        try:
+            create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), chans)
+            break
+        except:
+            continue
 
 

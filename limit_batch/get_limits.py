@@ -1,5 +1,6 @@
 import threading
 import cls_finder
+import Queue
 import ROOT
 import logging
 logging.basicConfig(level=logging.DEBUG)
@@ -13,10 +14,11 @@ class BracketValues(object):
         self.high_poi_cls = 0.
 
     def new_val(self, poi, cls):
-        if cls < 0.05:
+        if cls > 0.05:
             self.new_low(poi, cls)
         else:
             self.new_high(poi, cls)
+        logging.debug("Low: {0}, High: {1}".format((self.low_poi, self.low_poi_cls), (self.high_poi, self.high_poi_cls)))
 
     def new_low(self, poi, cls):
         if self.low_poi_cls < 0.05:
@@ -26,6 +28,8 @@ class BracketValues(object):
         elif cls < self.low_poi_cls:
             self.low_poi = poi
             self.low_poi_cls = cls
+        elif cls == self.low_poi_cls:
+            self.low_poi = max(poi, self.low_poi)
 
     def new_high(self, poi, cls):
         if self.high_poi_cls > 0.05:
@@ -35,6 +39,8 @@ class BracketValues(object):
         elif cls > self.high_poi_cls:
             self.high_poi = poi
             self.high_poi_cls = cls
+        elif cls == self.high_poi_cls:
+            self.high_poi = min(poi, self.high_poi)
 
     def suggest_poi(self):
         if self.low_poi_cls < 0.05:
@@ -42,8 +48,7 @@ class BracketValues(object):
         elif self.high_poi_cls > 0.05:
             return self.high_poi * 2
         else:
-            return (self.low_poi * (0.05 - self.high_poi_cls)
-                    + self.high_poi * (self.low_poi_cls - 0.05)) / (self.low_poi_cls - self.high_poi_cls)
+            return (self.low_poi + self.high_poi) / 2
 
 
 class LimitFinder(threading.Thread):
@@ -61,10 +66,17 @@ class LimitFinder(threading.Thread):
         self.get_cls(low_poi, 0)
         self.get_cls(high_poi, 0)
 
+        last_poi = 0.
         for i in [2, 3, 1, 0]:
-            while self.bracket_values[i].high_poi_cls - self.bracket_values[i].low_poi_cls > 0.001:
+            end = self.bracket_values[i].high_poi_cls - self.bracket_values[i].low_poi_cls > 0.001 or\
+                  self.bracket_values[i].high_poi - self.bracket_values[i].low_poi < 0.01
+            while not end:
                 new_poi = self.bracket_values[i].suggest_poi()
+                if new_poi == last_poi:
+                    logging.warn("Stuck at poi {0}".format(new_poi))
+                    break
                 self.get_cls(new_poi, i)
+                last_poi = new_poi
 
         self.result_queue.put((self.model_file,
                                self.get_obs_limit(),

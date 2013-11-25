@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
     for m1,m2 in masses:
         try:
-            create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2))
+            create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), "data2.root")
             # break
         except:
             continue

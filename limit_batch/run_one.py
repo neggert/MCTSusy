@@ -2,13 +2,14 @@
 """Run one point
 
 Usage:
-    run_one.py batch <batch_file> <batch_num> <label> <output_folder>
+    run_one.py <model_file> <poi_val> <job_num> <output_file>
 
 Options:
 
 """
 
 import ROOT as R
+import os
 
 def run_one_point(filename, poi_val, seed):
     R.RooRandom.randomGenerator().SetSeed(seed)
@@ -69,17 +70,14 @@ if __name__ == '__main__':
 
     print args
 
-    if args['batch']:
-        with open(args['<batch_file>']) as bf:
-            model_file, poi = bf.readlines()[int(args['<batch_num>'])/50].split()
-        m1, m2 = map(int, re.search("_(\d+)_(\d+)_", model_file).groups())
-        output_file = args['<output_folder>']+"/{0}_{1}_{2}_exp{3}.root".format(args["<label>"], m1, m2, int(args['<batch_num>']))
-    else :
-        model_file = args['<model_file>']
-        poi = args['<poi_val>']
-        output_file = args['<output_file>']
+    model_file = args['<model_file>']
+    poi = args['<poi_val>']
+    
+    job_num = args['<job_num>']
 
-    res = run_one_point(model_file, float(poi), 12345678+int(args['<batch_num>']))
+    res = run_one_point(model_file, float(poi), int(job_num))
+
+    output_file = args['<output_file>']
 
     f = R.TFile(output_file, "RECREATE")
     f.cd()

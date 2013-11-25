@@ -3,7 +3,7 @@
 Combine hypothesis test results
 
 Usage:
-    combine_hypotests2.py [-p] <output_file> <input_files>... 
+    find_limits.py [-p] <output_file> <input_files>... 
 
 Options:
     -p          Make plots
@@ -23,6 +23,9 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pylab as plt
 
+import warnings
+warnings.simplefilter("ignore", DeprecationWarning)
+
 
 
 def main(input_files, output_file, plot):
@@ -30,7 +33,7 @@ def main(input_files, output_file, plot):
     tests = {}
 
     for f in input_files:
-        m1, m2 = map(int, re.search("_(\d+)_(\d+)_", f).groups())
+        m1, m2 = map(int, re.search("_(\d+)_(\d+)[_\.]", f).groups())
         rf = R.TFile(f)
         if (m1,m2) not in tests.keys():
             tests[(m1,m2)] = rf.Get("result_sig_strength")
@@ -53,8 +56,8 @@ def main(input_files, output_file, plot):
                 obs_cls = res.CLs(i)
                 exp_cls_dist = res.GetExpectedPValueDist(i)
                 size = exp_cls_dist.GetSize()
-                if size < 2500:
-                    print "Only {} toys at point".format(size), poi, m1, m2
+                # if size > 2000:
+                #     print "{0} toys at point".format(size), poi, m1, m2
                 exp_cls = exp_cls_dist.InverseCDF(0.5)
                 expp1_cls = exp_cls_dist.InverseCDF(0.84)
                 expm1_cls = exp_cls_dist.InverseCDF(0.16)
@@ -90,32 +93,32 @@ def main(input_files, output_file, plot):
 
 
                 continue
-            if any([do_plot_a, do_plot_b, do_plot_c, do_plot_d]) or do_plot:
+            # if any([do_plot_a, do_plot_b, do_plot_c, do_plot_d]) or do_plot:
 
-	        fig = plt.figure()
-                plt.plot(pois, obs_CLs_vs_poi)
-                plt.plot(pois, exp_CLs_vs_poi)
-                plt.plot(pois, expp1_CLs_vs_poi)
-                plt.plot(pois, expm1_CLs_vs_poi)
-                plt.xlabel("Signal Strength")
-                plt.ylabel("CLs")
-                plt.yscale("log")
-                plt.axhline(0.05)
-                plt.legend(['Observed', 'Expected', "+1 sigma", "-1 sigma"])
-                plt.savefig("figs/{0}_{1}_cls.png".format(m1, m2))
-                fig = plt.figure()
+	    #     fig = plt.figure()
+            #     plt.plot(pois, obs_CLs_vs_poi)
+            #     plt.plot(pois, exp_CLs_vs_poi)
+            #     plt.plot(pois, expp1_CLs_vs_poi)
+            #     plt.plot(pois, expm1_CLs_vs_poi)
+            #     plt.xlabel("Signal Strength")
+            #     plt.ylabel("CLs")
+            #     plt.yscale("log")
+            #     plt.axhline(0.05)
+            #     plt.legend(['Observed', 'Expected', "+1 sigma", "-1 sigma"])
+            #     plt.savefig("figs/{0}_{1}_cls.png".format(m1, m2))
+            #     fig = plt.figure()
 
-                cls_all = np.linspace(min(pois), max(pois), 100)
-                plt.plot(cls_all, map(obs_limit.interp.predict, cls_all))
-                plt.plot(cls_all, map(exp_limit.interp.predict, cls_all))
-                plt.plot(cls_all, map(expp1_limit.interp.predict, cls_all))
-                plt.plot(cls_all, map(expm1_limit.interp.predict, cls_all))
-                plt.xlabel("Signal Strength")
-                plt.ylabel("CLs")
-                plt.yscale("log")
-                plt.axhline(0.05)
-                plt.legend(['Observed', 'Expected', "+1 sigma", "-1 sigma"])
-                plt.savefig("figs/{0}_{1}_cls_interpolated.png".format(m1, m2))
+            #     cls_all = np.linspace(min(pois), max(pois), 100)
+            #     plt.plot(cls_all, map(obs_limit.interp.predict, cls_all))
+            #     plt.plot(cls_all, map(exp_limit.interp.predict, cls_all))
+            #     plt.plot(cls_all, map(expp1_limit.interp.predict, cls_all))
+            #     plt.plot(cls_all, map(expm1_limit.interp.predict, cls_all))
+            #     plt.xlabel("Signal Strength")
+            #     plt.ylabel("CLs")
+            #     plt.yscale("log")
+            #     plt.axhline(0.05)
+            #     plt.legend(['Observed', 'Expected', "+1 sigma", "-1 sigma"])
+            #     plt.savefig("figs/{0}_{1}_cls_interpolated.png".format(m1, m2))
 
             f.write("{0}\t{1}\t{2:.3f}\t{3:.3f}\t{4:.3f}\t{5:.3f}\n".format(m1, m2, float(exp), float(expm1), float(expp1), float(obs)))
 

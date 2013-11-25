@@ -3,7 +3,7 @@
 """Prepare histograms
 
 Usage:
-    prep_hists.py <signal_file> <signal_output> <xsec_file> <nevents_file> [-b bins] [-l LOW] [-u high] [-x xsec]
+    prep_hists.py <signal_model> <signal_output> <xsec_file> <nevents_file> [-b bins] [-l LOW] [-u high] [-x xsec]
 
 Options:
     -h --help               Show this help information
@@ -291,6 +291,49 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
     weight.name="weight"
     sms = sms.join(weight)
 
+    # pu reweighting
+    sms_pu_hist, _ = np.histogram(sms.nTruePuVertices, bins=101, range=(0, 101))
+    sms_pu_hist = np.asarray(sms_pu_hist, dtype=np.float)
+
+    pu_file = R.TFile("config/TruePU.root")
+    pu_th1 = pu_file.Get("pileup")
+    data_pu_hist = np.zeros(sms_pu_hist.shape)
+
+    for i in xrange(len(data_pu_hist)):
+        data_pu_hist[i] = pu_th1.GetBinContent(i+1)
+
+    # normalize the histograms
+    sms_pu_hist *= 1./np.sum(sms_pu_hist)
+    data_pu_hist *= 1./np.sum(data_pu_hist)
+
+    # calculate weights
+    pu_weights = data_pu_hist/sms_pu_hist
+
+    # apply the weights
+    sms.nTruePuVertices[sms.nTruePuVertices > 100] = 100
+    event_pu_weights = sms.nTruePuVertices.apply(lambda n: pu_weights.item(int(n)))
+    sms.weight *= event_pu_weights
+
+    # FastSim -> FullSim reweighting
+    mu_weight_file = R.TFile("config/muon_FastSim_EWKino.root")
+    mu_fastsim_weights = mu_weight_file.Get("SF")
+    ele_weight_file = R.TFile("config/electron_FastSim_EWKino.root")
+    ele_fastsim_weights = mu_weight_file.Get("SF")
+
+    def fastsim_weight(row):
+        if abs(row['pdg1']) == 13:
+            s1 = mu_fastsim_weights.GetBinContent(mu_fastsim_weights.GetXaxis().FindBin(row['pt1']), mu_fastsim_weights.GetYaxis().FindBin(abs(row['eta1'])))
+        else:
+            s1 = ele_fastsim_weights.GetBinContent(ele_fastsim_weights.GetXaxis().FindBin(row['pt1']), ele_fastsim_weights.GetYaxis().FindBin(abs(row['eta1'])))
+        if abs(row['pdg2']) == 13:
+            s2 = mu_fastsim_weights.GetBinContent(mu_fastsim_weights.GetXaxis().FindBin(row['pt2']), mu_fastsim_weights.GetYaxis().FindBin(abs(row['eta2'])))
+        else:
+            s2 = ele_fastsim_weights.GetBinContent(ele_fastsim_weights.GetXaxis().FindBin(row['pt2']), ele_fastsim_weights.GetYaxis().FindBin(abs(row['eta2'])))
+
+        return s1 * s2
+
+    sms.weight *= sms.apply(fastsim_weight, axis=1)
+
     # check to see if the file exists, since ROOT will happily continue along with a non-existent file
     if not os.path.exists(hist_filename):
         raise IOError(hist_filename+" does not exist.")
@@ -420,6 +463,6 @@ if __name__ == '__main__':
 
     create_data_file("data.root", bins, histrange)
     create_template_file("templates.root", bins, histrange)
-    create_signal_file(args['<signal_file>'], args['<signal_output>'], args['<nevents_file>'], args['<xsec_file>'],
+    create_signal_file(args['<signal_model>'], args['<signal_output>'], args['<nevents_file>'], args['<xsec_file>'],
                        float(args['--xsec_multiplier']), bins, histrange)
 

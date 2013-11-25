@@ -92,14 +92,42 @@ weight = (sel_chi['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta
 weight.name="weight"
 chi = chi.join(weight)
 
+# FastSim -> FullSim reweighting
+mu_weight_file = R.TFile("config/muon_FastSim_EWKino.root")
+mu_fastsim_weights = mu_weight_file.Get("SF")
+ele_weight_file = R.TFile("config/electron_FastSim_EWKino.root")
+ele_fastsim_weights = mu_weight_file.Get("SF")
+
+def fastsim_weight(row):
+    if abs(row['pdg1']) == 13:
+        s1 = mu_fastsim_weights.GetBinContent(mu_fastsim_weights.GetXaxis().FindBin(row['pt1']), mu_fastsim_weights.GetYaxis().FindBin(abs(row['eta1'])))
+    else:
+        s1 = ele_fastsim_weights.GetBinContent(ele_fastsim_weights.GetXaxis().FindBin(row['pt1']), ele_fastsim_weights.GetYaxis().FindBin(abs(row['eta1'])))
+    if abs(row['pdg2']) == 13:
+        s2 = mu_fastsim_weights.GetBinContent(mu_fastsim_weights.GetXaxis().FindBin(row['pt2']), mu_fastsim_weights.GetYaxis().FindBin(abs(row['eta2'])))
+    else:
+        s2 = ele_fastsim_weights.GetBinContent(ele_fastsim_weights.GetXaxis().FindBin(row['pt2']), ele_fastsim_weights.GetYaxis().FindBin(abs(row['eta2'])))
+
+    return s1 * s2
+
+chi.weight *= chi.apply(fastsim_weight, axis=1)
+
+# add PU reweighting
+
 sslep = HDFStore("work/sms/sms_slep.hdf5")
 slep = sslep['data']
 sel_slep = selection.get_samples(slep)
 mumu_high_eta_slep = sel_slep['opposite_sign_mumu'] & (abs(slep.eta2) > 1.)
 mumu_low_eta_slep = sel_slep['opposite_sign_mumu'] & (abs(slep.eta2) < 1.)
 
-# slep.weight *= (sel_slep['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta_slep.astype(float)*mumu_high_eta_trigger_eff
-              # +mumu_low_eta_slep.astype(float)*mumu_low_eta_trigger_eff + sel_slep['opposite_sign_emu'].astype(float)*emu_trigger_eff)
+weight = (sel_slep['opposite_sign_ee'].astype(float)*ee_trigger_eff+mumu_high_eta_slep.astype(float)*mumu_high_eta_trigger_eff
+              +mumu_low_eta_slep.astype(float)*mumu_low_eta_trigger_eff + sel_slep['opposite_sign_emu'].astype(float)*emu_trigger_eff)
+weight.name="weight"
+
+slep = slep.join(weight)
+
+slep.weight *= slep.apply(fastsim_weight, axis=1)
+
 
 stchiww = HDFStore("work/sms/sms_tchiww.hdf5")
 tchiww = stchiww['data']

@@ -140,6 +140,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
                 syst = ww_systematic[j]*ww_frac[i]
                 if np.isnan(syst): syst = 0.
             rhist.SetBinContent(i+1, syst)
+        
         templates['ww_syst_'+ch] = rhist
 
         # shape systematic
@@ -292,8 +293,69 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
     sms = sms.join(weight)
 
     # pu reweighting
-    sms_pu_hist, _ = np.histogram(sms.nTruePuVertices, bins=101, range=(0, 101))
-    sms_pu_hist = np.asarray(sms_pu_hist, dtype=np.float)
+    # sms_pu_hist, _ = np.histogram(sms.nTruePuVertices, bins=101, range=(0, 101))
+    # sms_pu_hist = np.asarray(sms_pu_hist, dtype=np.float)
+
+    sms_pu_hist = np.asarray([2.344E-05,
+                                  2.344E-05,
+                                  2.344E-05,
+                                  2.344E-05,
+                                  4.687E-04,
+                                  4.687E-04,
+                                  7.032E-04,
+                                  9.414E-04,
+                                  1.234E-03,
+                                  1.603E-03,
+                                  2.464E-03,
+                                  3.250E-03,
+                                  5.021E-03,
+                                  6.644E-03,
+                                  8.502E-03,
+                                  1.121E-02,
+                                  1.518E-02,
+                                  2.033E-02,
+                                  2.608E-02,
+                                  3.171E-02,
+                                  3.667E-02,
+                                  4.060E-02,
+                                  4.338E-02,
+                                  4.520E-02,
+                                  4.641E-02,
+                                  4.735E-02,
+                                  4.816E-02,
+                                  4.881E-02,
+                                  4.917E-02,
+                                  4.909E-02,
+                                  4.842E-02,
+                                  4.707E-02,
+                                  4.501E-02,
+                                  4.228E-02,
+                                  3.896E-02,
+                                  3.521E-02,
+                                  3.118E-02,
+                                  2.702E-02,
+                                  2.287E-02,
+                                  1.885E-02,
+                                  1.508E-02,
+                                  1.166E-02,
+                                  8.673E-03,
+                                  6.190E-03,
+                                  4.222E-03,
+                                  2.746E-03,
+                                  1.698E-03,
+                                  9.971E-04,
+                                  5.549E-04,
+                                  2.924E-04,
+                                  1.457E-04,
+                                  6.864E-05,
+                                  3.054E-05,
+                                  1.282E-05,
+                                  5.081E-06,
+                                  1.898E-06,
+                                  6.688E-07,
+                                  2.221E-07,
+                                  6.947E-08,
+                                  2.047E-08])
 
     pu_file = R.TFile("config/TruePU.root")
     pu_th1 = pu_file.Get("pileup")
@@ -310,7 +372,7 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
     pu_weights = data_pu_hist/sms_pu_hist
 
     # apply the weights
-    sms.nTruePuVertices[sms.nTruePuVertices > 100] = 100
+    sms.nTruePuVertices[sms.nTruePuVertices > 60] = 60
     event_pu_weights = sms.nTruePuVertices.apply(lambda n: pu_weights.item(int(n)))
     sms.weight *= event_pu_weights
 
@@ -333,6 +395,7 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
         return s1 * s2
 
     sms.weight *= sms.apply(fastsim_weight, axis=1)
+
 
     # check to see if the file exists, since ROOT will happily continue along with a non-existent file
     if not os.path.exists(hist_filename):

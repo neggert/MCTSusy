@@ -142,7 +142,7 @@ if __name__ == '__main__':
         for m1,m2 in masses:
             try:
                 create_histfactory(args['<template_file>'], chans, "data.root", args['<signal_file>'], int(m1), int(m2))
-                break
+                # break
             except:
                 continue
     else:

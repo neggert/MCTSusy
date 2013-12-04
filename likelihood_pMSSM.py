@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import ROOT as R
 import json
 import re
@@ -47,4 +49,5 @@ if __name__ == '__main__':
         for model_file in files:
             data = process_model(model_file)
             f.write("\t".join(map(str, data)) + "\n")
+
 

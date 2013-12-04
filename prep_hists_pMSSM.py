@@ -3,7 +3,7 @@
 """Prepare histograms
 
 Usage:
-    prep_hists.py <signal_model> <signal_output> [-b bins] [-l LOW] [-u high] [-x xsec]
+    prep_hists.py <signal_file> <signal_output> [-b bins] [-l LOW] [-u high] [-x xsec]
 
 Options:
     -h --help               Show this help information
@@ -242,5 +242,5 @@ if __name__ == '__main__':
     bins = int(args['--bins'])
     histrange = (float(args['--low']), float(args['--high']))
 
-    create_signal_file(args['<signal_model>'], args['<signal_output>'], bins, histrange)
+    create_signal_file(args['<signal_file>'], args['<signal_output>'], bins, histrange)
 

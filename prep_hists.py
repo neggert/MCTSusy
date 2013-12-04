@@ -112,6 +112,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     for ch in channels:
         top = data[sd['top_ctrl_'+ch]]
         templates['top_'+ch] = rootutils.create_TH1(top.mctperp, top.weight, "top_template_"+ch, bins, histrange, True)
+        templates['top_'+ch].Scale(mc[smc['sig_mct_low_'+ch] & (mc.mc_cat=="top")].weight.sum())
 
         wjets = data[sd['wjets_ctrl_'+ch]]
         templates['wjets_'+ch] = rootutils.create_TH1(wjets.mctperp, wjets.weight, "wjets_template_"+ch, bins, histrange, True)
@@ -121,9 +122,12 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
             # if templates['wjets_'+ch].GetBinContent(i+1) > 0: #only do non-zero bins
             rhist.SetBinContent(i+1, 0.3) # 50% systematic
         templates['wjets_syst_'+ch] = rhist
+        templates['wjets_'+ch].Scale(mc[smc['sig_mct_low_'+ch] & (mc.mc_cat=="fake")].weight.sum())
+
 
         vv = mcvv[selvv['sig_'+ch]]
         templates['vv_'+ch] = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template_"+ch, bins, histrange, True)
+        templates['vv_'+ch].Scale(mc[smc['sig_mct_low_'+ch] & ((mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=='WZ') | (mc.mc_cat=='VVV') | (mc.mc_cat=='HWW'))].weight.sum())
 
         ww_hist, template_bins = np.histogram(ww.mctperp, weights=ww.weight, bins=bins, range=histrange)
         vv_hist, template_bins = np.histogram(vv.mctperp, weights=vv.weight, bins=bins, range=histrange)
@@ -171,6 +175,8 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
         z = mcz[selz['sig_'+ch]]
         templates['z_'+ch] = rootutils.create_TH1(z.mctperp, z.weight, "z_template_"+ch, bins, histrange, True)
+        templates['z_'+ch].Scale(mc[smc['sig_mct_low_'+ch] & (mc.mc_cat=="DY")].weight.sum())
+
 
         if ch == 'sf':
             # systematic on Z monte carlo
@@ -293,8 +299,8 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
     sms = sms.join(weight)
 
     # pu reweighting
-    # sms_pu_hist, _ = np.histogram(sms.nTruePuVertices, bins=101, range=(0, 101))
-    # sms_pu_hist = np.asarray(sms_pu_hist, dtype=np.float)
+    sms_pu_hist, _ = np.histogram(sms.nTruePuVertices, bins=101, range=(0, 101))
+    sms_pu_hist = np.asarray(sms_pu_hist, dtype=np.float)
 
     sms_pu_hist = np.asarray([2.344E-05,
                                   2.344E-05,

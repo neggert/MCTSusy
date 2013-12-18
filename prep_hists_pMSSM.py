@@ -3,7 +3,7 @@
 """Prepare histograms
 
 Usage:
-    prep_hists.py <signal_model> <signal_output> [-b bins] [-l LOW] [-u high] [-x xsec]
+    prep_hists.py <signal_file> <signal_output> [-b bins] [-l LOW] [-u high] [-x xsec]
 
 Options:
     -h --help               Show this help information
@@ -188,9 +188,13 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
 
         try:
             events_per_point = nevents_dict[str(m1)]
+        except KeyError:
+            print "Could not find events per point", m1
+            continue
+        try:
             xsec= xsec_dict[m1]
         except KeyError:
-            continue
+            print "Could not find xsection", m1
 
         xsec *= xsec_multiplier
 
@@ -242,5 +246,5 @@ if __name__ == '__main__':
     bins = int(args['--bins'])
     histrange = (float(args['--low']), float(args['--high']))
 
-    create_signal_file(args['<signal_model>'], args['<signal_output>'], bins, histrange)
+    create_signal_file(args['<signal_file>'], args['<signal_output>'], bins, histrange)
 

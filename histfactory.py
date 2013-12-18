@@ -3,7 +3,7 @@
 """Create the model
 
 Usage:
-    histfactory.py <template_file> [<signal_file>] [<mass_file>] [-h] [--channels=<c1,c2>]
+    histfactory.py <template_file> [<signal_file>] [<output>] [-h] [--channels=<c1,c2>]
 
 Options:
     -h --help        Show this screen.
@@ -13,6 +13,7 @@ Options:
 import ROOT as R
 from collections import defaultdict
 import sys
+import re
 backgrounds = ['top', 'vv', 'wjets', 'z']
 
 
@@ -62,7 +63,7 @@ def create_histfactory(template_file, channels, data_file_name="data.root", sign
             template.SetNormalizeByTheory(False)
             template.ActivateStatError()
             if bkg=="top":
-                template.AddNormFactor("n_top_sf".format(ch, bkg), 2000, 0, 10000)
+                template.AddNormFactor("n_top_sf".format(ch, bkg), 1, 0, 10000)
                 if ch=="of":
                     top_ratio_val = temp_file.Get("top_ratio")[0]
                     template.AddNormFactor("n_top_of_scale", top_ratio_val, top_ratio_val, top_ratio_val, True)
@@ -70,7 +71,7 @@ def create_histfactory(template_file, channels, data_file_name="data.root", sign
                 else:
                     template.AddOverallSys("top_ratio", 1.1, 0.9)
             elif bkg=="vv":
-                template.AddNormFactor("n_vv_sf".format(ch, bkg), 2000, 0, 10000)
+                template.AddNormFactor("n_vv_sf".format(ch, bkg), 1, 0, 10000)
                 if ch=="of":
                     vv_ratio_val = temp_file.Get("vv_ratio")[0]
                     template.AddNormFactor("n_vv_of_scale", vv_ratio_val, vv_ratio_val, vv_ratio_val, True)
@@ -78,7 +79,7 @@ def create_histfactory(template_file, channels, data_file_name="data.root", sign
                 else:
                     template.AddOverallSys("vv_ratio", 1.1, 0.9)
             else:
-                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 2000, 0, 10000)
+                template.AddNormFactor("n_{0}_{1}".format(ch, bkg), 1, 0, 10000)
 
             if bkg == 'vv':
                 template.AddShapeSys("ww_syst_"+ch, 0, "ww_syst_"+ch, "templates.root")
@@ -136,15 +137,10 @@ if __name__ == '__main__':
         chans = ['of', 'sf']
 
     if sig_file:
-        with open(args['<mass_file>']) as f:
-            masses = json.load(f)
+        m1, m2 = re.search("_(\d*?)_(\d*?)_", args['<output>']).groups()[:2]
 
-        for m1,m2 in masses:
-            try:
-                create_histfactory(args['<template_file>'], chans, "data.root", args['<signal_file>'], int(m1), int(m2))
-                break
-            except:
-                continue
+        create_histfactory(args['<template_file>'], chans, "data.root", args['<signal_file>'], int(m1), int(m2))
+
     else:
         create_histfactory(args['<template_file>'], chans, "data.root")
 

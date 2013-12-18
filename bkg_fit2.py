@@ -5,11 +5,12 @@
 """Set limits on the specified model
 
 Usage:
-    bkg_fit2.py <filename> [-pm] [--ncpu=<c>]
+    bkg_fit2.py <filename> <outfile> [-pm] [--ncpu=<c>]  [--cut=<cut>]
 
 Options:
     -h --help        Show this screen.
     --ncpu=<c>       Number sf CPUs to use [default: 1]
+    --cut=<cut>      MCTPerp value specifying signal region in counting analysis [default: 200]
     -p               Get p value (slow)
     -m               Run MINOS (slow)
 
@@ -27,6 +28,7 @@ from matplotlib.ticker import IndexLocator, FixedFormatter
 from bkg_fit import get_step_fill_between
 from prettytable import PrettyTable
 import ROOT
+import sys
 
 import money_take2_2 as money_take2
 
@@ -44,8 +46,9 @@ def results_to_dict(r):
 
     return results
 
-def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="data.root", do_minos=False):
+def run_bonly_fit(file_name, out_file, ncpu, get_p, data_prefix="data", data_file_name="data.root", do_minos=False, cut=None):
 
+    high = 300.
     rfile = R.TFile(file_name)
 
     ws = rfile.Get("combined")
@@ -63,10 +66,13 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
     pars = model.GetNuisanceParameters()
 
     # run the fit
-    R.RooMsgService.instance().setGlobalKillBelow(R.RooFit.ERROR)
-    res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0))
+    if cut:
+        ws.obj("obs_x_sf").setRange("fit", 10, cut)
     if do_minos:
-        res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.Minos())
+        res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0), R.RooFit.Minos(), R.RooFit.Hesse(), R.RooFit.Range("fit"))
+    else: 
+        res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0), R.RooFit.Range("fit"))
+
 
     fitPars = res.floatParsFinal()
 
@@ -92,10 +98,10 @@ def run_bonly_fit(file_name, ncpu, get_p, data_prefix="data", data_file_name="da
 
     print t
 
-    r = ROOT.get_results2(ws, res)
+    r = ROOT.get_results2(ws, res, cut, high)
     data_results = results_to_dict(r)
 
-    f = open("fit_results2.json", 'w')
+    f = open(out_file, 'w')
 
     json.dump(data_results, f, indent=3)
 
@@ -421,14 +427,21 @@ if __name__ == '__main__':
 
     args = docopt(__doc__)
     print args
+    sys.argv = [sys.argv[0], "-b"]
+
 
     file_name = args['<filename>']
+    out_file = args['<outfile>']
 
-
+    cut_str = args['--cut']
+    if cut_str == "None":
+        cut = None
+    else:
+        cut = float(cut_str)
 
     ncpu = int(args['--ncpu'])
 
     get_p = bool(args['-p'])
     do_minos = bool(args['-m'])
 
-    res = run_bonly_fit(file_name, ncpu, get_p, do_minos=do_minos)
+    res = run_bonly_fit(file_name, out_file, ncpu, get_p, do_minos=do_minos, cut=cut)

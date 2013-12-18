@@ -10,12 +10,13 @@ Options:
 
 """
 import ROOT as R
+import sys
 
 backgrounds = ['of', 'vv', 'wjets', 'z']
 
-def create_histfactory(template_file, signal_file=None, m1=0, m2=0):
+def create_histfactory(template_file, channels, data_file_name="data.root", signal_file=None, m1=0, m2=0):
+
     data_prefix="data"
-    data_file_name="data.root"
     meas = R.RooStats.HistFactory.Measurement("meas", "meas")
 
     if signal_file:
@@ -77,11 +78,17 @@ if __name__ == '__main__':
     import json
 
     args = docopt(__doc__)
+    sys.argv = [sys.argv[0], "-b"]
 
-    for m1,m2 in masses:
-        try:
-            create_histfactory(args['<template_file>'], args['<signal_file>'], int(m1), int(m2), "data2.root")
-            # break
-        except:
-            continue
+    sig_file = args['<signal_file>']
+
+    chans = ['sf',]
+
+    if sig_file:
+        m1, m2 = re.search("_(\d*?)_(\d*?)_", args['<output>']).groups()[:2]
+
+        create_histfactory(args['<template_file>'], chans, "data.root", args['<signal_file>'], int(m1), int(m2))
+
+    else:
+        create_histfactory(args['<template_file>'], chans, "data.root")
 

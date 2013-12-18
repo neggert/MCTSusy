@@ -102,14 +102,12 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
             bin_heights.append(shape)
             names.append(b['name'])
 
-    make_result_table(bin_heights, names)
-
     fig = plt.figure(figsize=(6,6))
     fig.set_facecolor('w')
     ax = plt.subplot2grid((4,1),(0,0), rowspan=3)
     if log:
         ax.set_yscale('log', nonposy='clip')
-        ax.set_ylim(1e-4, 50000)
+        ax.set_ylim(1e-3, 50000)
     else:
         ax.set_ylim(0., 1500)
     ax.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')

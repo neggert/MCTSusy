@@ -7,7 +7,7 @@ import numpy as np
 import ROOT as R
 
 # background MC
-s = HDFStore("work/mc/mc_20130308.hdf5")
+s = HDFStore("work/mc/mc_20131217.hdf5")
 mc = s['data']
 mc = mc[mc.mctype != "WGStarToLNu2E"]
 

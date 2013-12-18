@@ -107,7 +107,7 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
     ax = plt.subplot2grid((4,1),(0,0), rowspan=3)
     if log:
         ax.set_yscale('log', nonposy='clip')
-        ax.set_ylim(1e-4, 50000)
+        ax.set_ylim(1e-3, 50000)
     else:
         ax.set_ylim(0., 1500)
     ax.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')

@@ -3,7 +3,7 @@
 """Create the model
 
 Usage:
-    histfactory.py <template_file> [<signal_file>] [<mass_file>] [-h] [--channels=<c1,c2>]
+    histfactory.py <template_file> [<signal_file>] [<output>] [-h] [--channels=<c1,c2>]
 
 Options:
     -h --help        Show this screen.
@@ -13,6 +13,7 @@ Options:
 import ROOT as R
 from collections import defaultdict
 import sys
+import re
 backgrounds = ['top', 'vv', 'wjets', 'z']
 
 
@@ -136,15 +137,10 @@ if __name__ == '__main__':
         chans = ['of', 'sf']
 
     if sig_file:
-        with open(args['<mass_file>']) as f:
-            masses = json.load(f)
+        m1, m2 = re.search("_(\d*?)_(\d*?)_", args['<output>']).groups()[:2]
 
-        for m1,m2 in masses:
-            try:
-                create_histfactory(args['<template_file>'], chans, "data.root", args['<signal_file>'], int(m1), int(m2))
-                # break
-            except:
-                continue
+        create_histfactory(args['<template_file>'], chans, "data.root", args['<signal_file>'], int(m1), int(m2))
+
     else:
         create_histfactory(args['<template_file>'], chans, "data.root")
 

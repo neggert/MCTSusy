@@ -188,9 +188,13 @@ def create_signal_file(input_file, out_filename, hist_filename, xsec_filename, x
 
         try:
             events_per_point = nevents_dict[str(m1)]
+        except KeyError:
+            print "Could not find events per point", m1
+            continue
+        try:
             xsec= xsec_dict[m1]
         except KeyError:
-            continue
+            print "Could not find xsection", m1
 
         xsec *= xsec_multiplier
 

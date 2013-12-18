@@ -45,7 +45,7 @@ struct result {
 	channel sf;
 };
 
-channel get_results2(RooWorkspace* wspace, RooFitResult* res) {
+channel get_results2(RooWorkspace* wspace, RooFitResult* res, float cut, float upper) {
 
     RooRealVar *obs_sf = (RooRealVar*)wspace->obj("obs_x_sf");
 
@@ -64,10 +64,10 @@ channel get_results2(RooWorkspace* wspace, RooFitResult* res) {
 
     TF1* sum_tf = sum_shape_sf->asTF(RooArgList(*obs_sf), RooArgList(*sum_params_sf));
 
-    double sum_sf_low = sum_tf->Integral(10, 300);
-    double sum_sf_low_err = sum_tf->IntegralError(10, 300, 0, res->reducedCovarianceMatrix(*sum_params_sf).GetMatrixArray());
-    double sum_sf_high = sum_tf->Integral(300, 300);
-    double sum_sf_high_err = sum_tf->IntegralError(300, 300, 0, res->reducedCovarianceMatrix(*sum_params_sf).GetMatrixArray());
+    double sum_sf_low = sum_tf->Integral(10, cut);
+    double sum_sf_low_err = sum_tf->IntegralError(10, cut, 0, res->reducedCovarianceMatrix(*sum_params_sf).GetMatrixArray());
+    double sum_sf_high = sum_tf->Integral(cut, upper);
+    double sum_sf_high_err = sum_tf->IntegralError(cut, upper, 0, res->reducedCovarianceMatrix(*sum_params_sf).GetMatrixArray());
 
     cout << "Total: " << sum_sf_low << " +/- " << sum_sf_low_err << "\t\t" << sum_sf_high << " +/- " << sum_sf_high_err << endl;
     val_with_error low = {sum_sf_low, sum_sf_low_err};
@@ -81,10 +81,10 @@ channel get_results2(RooWorkspace* wspace, RooFitResult* res) {
 
     TF1* top_tf = top_shape_sf->asTF(RooArgList(*obs_sf), RooArgList(*top_params));
 
-    double top_sf_low = top_tf->Integral(10, 300)/10;
-    double top_sf_low_err = top_tf->IntegralError(10, 300, 0, res->reducedCovarianceMatrix(*top_params).GetMatrixArray()) /10.;
-    double top_sf_high = top_tf->Integral(300, 300)/10;
-    double top_sf_high_err = top_tf->IntegralError(300, 300, 0, res->reducedCovarianceMatrix(*top_params).GetMatrixArray()) /10.;
+    double top_sf_low = top_tf->Integral(10, cut)/10;
+    double top_sf_low_err = top_tf->IntegralError(10, cut, 0, res->reducedCovarianceMatrix(*top_params).GetMatrixArray()) /10.;
+    double top_sf_high = top_tf->Integral(cut, upper)/10;
+    double top_sf_high_err = top_tf->IntegralError(cut, upper, 0, res->reducedCovarianceMatrix(*top_params).GetMatrixArray()) /10.;
 
     cout << "Top: " << top_sf_low << " +/- " << top_sf_low_err << "\t\t" << top_sf_high << " +/- " << top_sf_high_err << endl;
     val_with_error s_top_sf_low = {top_sf_low, top_sf_low_err};
@@ -98,10 +98,10 @@ channel get_results2(RooWorkspace* wspace, RooFitResult* res) {
     RemoveConstantParameters(vv_params);
     TF1* vv_tf = vv_shape_sf->asTF(RooArgList(*obs_sf), RooArgList(*vv_params));
 
-    double vv_sf_low = vv_tf->Integral(10, 300)/10;
-    double vv_sf_low_err = vv_tf->IntegralError(10, 300, 0, res->reducedCovarianceMatrix(*vv_params).GetMatrixArray()) /10.;
-    double vv_sf_high = vv_tf->Integral(300, 300)/10;
-    double vv_sf_high_err = vv_tf->IntegralError(300, 300, 0, res->reducedCovarianceMatrix(*vv_params).GetMatrixArray()) /10.;
+    double vv_sf_low = vv_tf->Integral(10, cut)/10;
+    double vv_sf_low_err = vv_tf->IntegralError(10, cut, 0, res->reducedCovarianceMatrix(*vv_params).GetMatrixArray()) /10.;
+    double vv_sf_high = vv_tf->Integral(cut, upper)/10;
+    double vv_sf_high_err = vv_tf->IntegralError(cut, upper, 0, res->reducedCovarianceMatrix(*vv_params).GetMatrixArray()) /10.;
 
     cout << "VV: " << vv_sf_low << " +/- " << vv_sf_low_err << "\t\t" << vv_sf_high << " +/- " << vv_sf_high_err << endl;
     val_with_error s_vv_sf_low = {vv_sf_low, vv_sf_low_err};
@@ -114,10 +114,10 @@ channel get_results2(RooWorkspace* wspace, RooFitResult* res) {
     RemoveConstantParameters(z_params);
     TF1* z_tf = z_shape_sf->asTF(RooArgList(*obs_sf), RooArgList(*z_params));
 
-    double z_sf_low = z_tf->Integral(10, 300)/10;
-    double z_sf_low_err = z_tf->IntegralError(10, 300, 0, res->reducedCovarianceMatrix(*z_params).GetMatrixArray()) /10.;
-    double z_sf_high = z_tf->Integral(300, 300)/10;
-    double z_sf_high_err = z_tf->IntegralError(300, 300, 0, res->reducedCovarianceMatrix(*z_params).GetMatrixArray()) /10.;
+    double z_sf_low = z_tf->Integral(10, cut)/10;
+    double z_sf_low_err = z_tf->IntegralError(10, cut, 0, res->reducedCovarianceMatrix(*z_params).GetMatrixArray()) /10.;
+    double z_sf_high = z_tf->Integral(cut, upper)/10;
+    double z_sf_high_err = z_tf->IntegralError(cut, upper, 0, res->reducedCovarianceMatrix(*z_params).GetMatrixArray()) /10.;
 
     cout << "z: " << z_sf_low << " +/- " << z_sf_low_err << "\t\t" << z_sf_high << " +/- " << z_sf_high_err << endl;
     val_with_error s_z_sf_low = {z_sf_low, z_sf_low_err};
@@ -130,10 +130,10 @@ channel get_results2(RooWorkspace* wspace, RooFitResult* res) {
     RemoveConstantParameters(fake_params);
     TF1* fake_tf = fake_shape_sf->asTF(RooArgList(*obs_sf), RooArgList(*fake_params));
 
-    double fake_sf_low = fake_tf->Integral(10, 300)/10;
-    double fake_sf_low_err = fake_tf->IntegralError(10, 300, 0, res->reducedCovarianceMatrix(*fake_params).GetMatrixArray()) /10.;
-    double fake_sf_high = fake_tf->Integral(300, 300)/10;
-    double fake_sf_high_err = fake_tf->IntegralError(300, 300, 0, res->reducedCovarianceMatrix(*fake_params).GetMatrixArray()) /10.;
+    double fake_sf_low = fake_tf->Integral(10, cut)/10;
+    double fake_sf_low_err = fake_tf->IntegralError(10, cut, 0, res->reducedCovarianceMatrix(*fake_params).GetMatrixArray()) /10.;
+    double fake_sf_high = fake_tf->Integral(cut, upper)/10;
+    double fake_sf_high_err = fake_tf->IntegralError(cut, upper, 0, res->reducedCovarianceMatrix(*fake_params).GetMatrixArray()) /10.;
 
     cout << "fake: " << fake_sf_low << " +/- " << fake_sf_low_err << "\t\t" << fake_sf_high << " +/- " << fake_sf_high_err << endl;
     val_with_error s_fake_sf_low = {fake_sf_low, fake_sf_low_err};

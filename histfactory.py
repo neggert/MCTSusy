@@ -3,11 +3,12 @@
 """Create the model
 
 Usage:
-    histfactory.py <template_file> [<signal_file>] [<output>] [-h] [--channels=<c1,c2>]
+    histfactory.py <template_file> [<signal_file>] [<output>] [-h] [--channels=<c1,c2>] [-c | --constrain]
 
 Options:
     -h --help        Show this screen.
     --channels=<c1,c2> Channels to use [default: of,sf]
+    -c --constrain      Produce model with top and vv ratios constrained
 
 """
 import ROOT as R
@@ -17,15 +18,15 @@ import re
 backgrounds = ['top', 'vv', 'wjets', 'z']
 
 
-def create_histfactory(template_file, channels, data_file_name="data.root", signal_file=None, m1=0, m2=0):
+def create_histfactory(template_file, channels, data_file_name="data.root", signal_file=None, m1=0, m2=0, make_constrained=False):
     data_prefix="data"
     meas = R.RooStats.HistFactory.Measurement("meas", "meas")
 
     if signal_file:
         prefix = "limits/"+signal_file[:-5]+"_{0}_{1}".format(m1, m2)
-        meas.SetOutputFilePrefix(prefix)
     else:
-        meas.SetOutputFilePrefix("limits/chi_bkg_only")
+        prefix = "limits/chi_bkg_only"
+    meas.SetOutputFilePrefix(prefix)
     # meas.AddConstantParam("n_of_top")
     # meas.AddConstantParam("n_sf_top")
     meas.SetPOI("sig_strength") 
@@ -105,28 +106,27 @@ def create_histfactory(template_file, channels, data_file_name="data.root", sign
 
     ws = R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
 
-    # top_ratio_val = temp_file.Get("top_ratio")[0]
-    # ws.factory('expr::top_ratio("n_of_top/n_sf_top", n_of_top, n_sf_top)')
-    # ws.factory('RooGaussian::top_ratio_constraint(top_ratio, nom_top_ratio[{0}], {1})'.format(top_ratio_val, top_ratio_val*0.1))
-    # vv_ratio_val = temp_file.Get("vv_ratio")[0]
-    # ws.factory('expr::vv_ratio("n_of_vv/n_sf_vv", n_of_vv, n_sf_vv)')
-    # ws.factory('RooGaussian::vv_ratio_constraint(vv_ratio, nom_vv_ratio[{0}], {1})'.format(vv_ratio_val, vv_ratio_val*0.1))
-    # ws.factory('PROD:constrPdf(simPdf, top_ratio_constraint, vv_ratio_constraint)')
+    if make_constrained:
+        top_vv_ratio_val = 1. #temp_file.Get("top_vv_ratio_sf")[0]
+        ws.factory('expr::top_vv_ratio("n_top_sf/n_vv_sf", n_top_sf, n_vv_sf)')
+        ws.factory('RooGaussian::top_vv_ratio_constraint(top_vv_ratio, nom_top_vv_ratio[{0}], {1})'.format(top_vv_ratio_val, top_vv_ratio_val*0.1))
+        ws.factory('PROD:constrPdf(simPdf, top_vv_ratio_constraint)')
 
-    # model = ws.obj("ModelConfig")
-    # model.SetPdf(ws.obj("constrPdf"))
+        model = ws.obj("ModelConfig")
+        model.SetPdf(ws.obj("constrPdf"))
 
-    # # ws.Print()
+        # ws.Print()
 
-    # rfile = R.TFile(prefix+"_constrained.root", "RECREATE")
-    # ws.Write()
-    # rfile.Close()
+        rfile = R.TFile(prefix+"_constrained.root", "RECREATE")
+        ws.Write()
+        rfile.Close()
 
 if __name__ == '__main__':
     from docopt import docopt
     import json
 
     args = docopt(__doc__)
+    print args
     sys.argv = [sys.argv[0], "-b"]
 
     sig_file = args['<signal_file>']
@@ -139,10 +139,10 @@ if __name__ == '__main__':
     if sig_file:
         m1, m2 = re.search("_(\d*?)_(\d*?)_", args['<output>']).groups()[:2]
 
-        create_histfactory(args['<template_file>'], chans, "data.root", args['<signal_file>'], int(m1), int(m2))
+        create_histfactory(args['<template_file>'], chans, "data.root", args['<signal_file>'], int(m1), int(m2), args['--constrain'])
 
     else:
-        create_histfactory(args['<template_file>'], chans, "data.root")
+        create_histfactory(args['<template_file>'], chans, "data.root", make_constrained=args['--constrain'])
 
 
 

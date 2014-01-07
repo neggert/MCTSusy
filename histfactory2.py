@@ -54,7 +54,7 @@ def create_histfactory(template_file, channels, data_file_name="data.root", sign
         template = R.RooStats.HistFactory.Sample("{0}".format(bkg), "{0}_template".format(bkg), template_file)
         template.SetNormalizeByTheory(False)
         template.ActivateStatError()
-        template.AddNormFactor("n_{0}".format(bkg), 2000, 0, 10000)
+        template.AddNormFactor("n_{0}".format(bkg), 1, 0, 10000)
 
         if bkg == 'z':
             template.AddShapeSys("z_syst", 0, "z_syst", template_file)

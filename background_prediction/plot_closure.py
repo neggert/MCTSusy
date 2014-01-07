@@ -42,7 +42,7 @@ def plot_top_closure(flavor):
     """Make closure plot for the top control sample"""
     truths = ['ttbar', 'tW', 'ttV', 'ttVV']
     truth = {}
-    truth['ttbar'] = smc['sig_mct_low_'+flavor] & ((mc.mctype=='TTbar') | (mc.mctype=='TTG'))
+    truth['ttbar'] = smc['sig_mct_low_'+flavor] & ((mc.mctype=='ttbar') | (mc.mctype=='TTG'))
     truth['tW'] = smc['sig_mct_low_'+flavor] & (mc.mctype=='tW')
     truth['ttV'] = smc['sig_mct_low_'+flavor] & ((mc.mctype=='ttw')|(mc.mctype=="TTZ"))
     truth ['ttVV'] = smc['sig_mct_low_'+flavor] & (mc.mctype=="TTWW")

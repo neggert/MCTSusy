@@ -41,9 +41,14 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
     of = data[sd['sig_of']]
     templates['of'] = rootutils.create_TH1(of.mctperp, of.weight, "of_template", bins, histrange, True)
+    wz_fs = (mc.mc_cat=="WZ") & ~(abs(mc.parentParentPdg1).isin([22,23]) & abs(mc.parentParentPdg1).isin([22,23]))
+    fs_mc_yield = mc[smc['sig_mct_low_sf'] & (((mc.mc_cat=="top") & (mc['gen_neutrinos'] >= 2)) | (mc.mc_cat=="WW") | wz_fs | (mc.mc_cat=="HWW") | (mc.mc_cat=="VVV"))].weight.sum()
+    templates['of'].Scale(fs_mc_yield)
 
     wjets = data[sd['wjets_ctrl_sf']]
     templates['wjets'] = rootutils.create_TH1(wjets.mctperp, wjets.weight, "wjets_template", bins, histrange, True)
+    templates['wjets'].Scale(mc[smc['sig_mct_low_sf'] & ((mc['mc_cat']=='fake') | ((mc['mc_cat']=='top') & (mc['gen_neutrinos'] < 2)))].weight.sum())
+    
     # systematic on w+jets template
     rhist = R.TH1D("wjets_syst", "wjets_syst", bins, histrange[0], histrange[1])
     for i in xrange(bins):
@@ -52,20 +57,21 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
     templates['wjets_syst'] = rhist
 
     vv = mcvv[selvv['sig_sf']]
-    templates['vv'] = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template", bins, histrange, True)
+    templates['vv'] = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template", bins, histrange, False)
+
 
     weights = vv.weight*(1+(vv.mc_cat=="WZ")*0.10)
-    templates['vv_syst_WZ_Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WZ_Up", bins, histrange, True)
+    templates['vv_syst_WZ_Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WZ_Up", bins, histrange, False)
     weights = vv.weight*(1-(vv.mc_cat=="WZ")*0.10)
-    templates['vv_syst_WZ_Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WZ_Down", bins, histrange, True)
+    templates['vv_syst_WZ_Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WZ_Down", bins, histrange, False)
 
     weights = vv.weight*(1+(vv.mc_cat=="ZZ")*0.10)
-    templates['vv_syst_ZZ_Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_Up", bins, histrange, True)
+    templates['vv_syst_ZZ_Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_Up", bins, histrange, False)
     weights = vv.weight*(1-(vv.mc_cat=="ZZ")*0.10)
-    templates['vv_syst_ZZ_Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_Down", bins, histrange, True)
+    templates['vv_syst_ZZ_Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_Down", bins, histrange, False)
 
     z = mcz[selz['sig_sf']]
-    templates['z'] = rootutils.create_TH1(z.mctperp, z.weight, "z_template", bins, histrange, True)
+    templates['z'] = rootutils.create_TH1(z.mctperp, z.weight, "z_template", bins, histrange, False)
 
     # systematic on Z monte carlo
     mc_onz = mc[smc['z_ctrl_sf']]

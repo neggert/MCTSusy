@@ -433,11 +433,11 @@ if __name__ == '__main__':
     file_name = args['<filename>']
     out_file = args['<outfile>']
 
-    cut_str = args['--cut']
-    if cut_str == "None":
+    cut_val = float(args['--cut'])
+    if cut_val < 0:
         cut = None
     else:
-        cut = float(cut_str)
+        cut = cut_val
 
     ncpu = int(args['--ncpu'])
 

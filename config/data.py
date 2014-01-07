@@ -7,7 +7,7 @@ import numpy as np
 import ROOT as R
 
 # background MC
-s = HDFStore("work/mc/mc_20131217.hdf5")
+s = HDFStore("work/mc/mc_20131227.hdf5")
 mc = s['data']
 mc = mc[mc.mctype != "WGStarToLNu2E"]
 
@@ -32,6 +32,51 @@ mc.weight *= (smc['ee'].astype(float)*ee_trigger_eff+mumu_high_eta.astype(float)
 # cat[mc.mctype=="WWZNoGstar"] = "VVV"
 # cat[mc.mctype=="WWW"] = 'VVV'
 # mc = mc.join(cat)
+
+# b-tag reweighting
+jet0 = mc[['jet0pt', 'jet0_istagged']][~np.isnan(mc['jet0pt'])]
+jet1 = mc[['jet1pt', 'jet1_istagged']][~np.isnan(mc['jet1pt'])]
+jet2 = mc[['jet2pt', 'jet2_istagged']][~np.isnan(mc['jet2pt'])]
+jet0.columns = ['jetpt', 'istagged']
+jet1.columns = ['jetpt', 'istagged']
+jet2.columns = ['jetpt', 'istagged']
+
+jets = jet0.append(jet1, ignore_index=True).append(jet2, ignore_index=True)
+
+def eff(df):
+    return 1. * df[df.istagged].istagged.count() / df.istagged.count()
+
+bins = np.arange(20, 810, 10)
+effs = jets.groupby(np.digitize(jets.jetpt, bins)).agg(eff)['jetpt']
+
+effs[effs > 0.99] = 0.99
+
+def get_eff(pt):
+    return effs[int(pt) / 10]
+
+def sf(x):
+    return (0.938887+(0.00017124*x))+(-2.76366e-07*(x*x))
+
+def get_weight(data):
+    w = 1.
+    for i in xrange(3):
+        pt = data['jet'+str(i)+'pt']
+        if not pt:
+            continue
+        if pt < 20 or pt > 800 or np.isnan(pt):
+            continue
+        if data['jet'+str(i)+'_istagged']:
+            w *= sf(pt)
+        else:
+            w *= (1 - get_eff(pt)*sf(pt)) / (1 - get_eff(pt))
+
+    if (np.isnan(w)):
+        raise RuntimeError()
+    return w
+
+b_weights = mc.apply(get_weight, axis=1)
+
+mc['weight'] *= b_weights
 
 # pileup reweighting
 mc_pu_hist = np.asarray([                         2.560E-06,

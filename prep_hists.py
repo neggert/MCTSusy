@@ -110,9 +110,11 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
 
     for ch in channels:
+
         top = data[sd['top_ctrl_'+ch]]
         templates['top_'+ch] = rootutils.create_TH1(top.mctperp, top.weight, "top_template_"+ch, bins, histrange, True)
-        templates['top_'+ch].Scale(mc[smc['sig_mct_low_'+ch] & (mc.mc_cat=="top")].weight.sum())
+
+        templates['top_'+ch].Scale(mc[smc['sig_mct_low_'+ch] & (mc.mc_cat=="top") & (mc['gen_neutrinos'] >= 2)].weight.sum())
 
         wjets = data[sd['wjets_ctrl_'+ch]]
         templates['wjets_'+ch] = rootutils.create_TH1(wjets.mctperp, wjets.weight, "wjets_template_"+ch, bins, histrange, True)
@@ -122,12 +124,15 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
             # if templates['wjets_'+ch].GetBinContent(i+1) > 0: #only do non-zero bins
             rhist.SetBinContent(i+1, 0.3) # 50% systematic
         templates['wjets_syst_'+ch] = rhist
-        templates['wjets_'+ch].Scale(mc[smc['sig_mct_low_'+ch] & (mc.mc_cat=="fake")].weight.sum())
+        templates['wjets_'+ch].Scale(mc[smc['sig_mct_low_'+ch] & ((mc['mc_cat']=='fake') | ((mc['mc_cat']=='top') & (mc['gen_neutrinos'] < 2)))].weight.sum())
 
 
         vv = mcvv[selvv['sig_'+ch]]
-        templates['vv_'+ch] = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template_"+ch, bins, histrange, True)
-        templates['vv_'+ch].Scale(mc[smc['sig_mct_low_'+ch] & ((mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=='WZ') | (mc.mc_cat=='VVV') | (mc.mc_cat=='HWW'))].weight.sum())
+        templates['vv_'+ch] = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template_"+ch, bins, histrange, False)
+
+        # top to vv ratio
+        constraints['top_vv_ratio_'+ch] = R.TVectorD(1)
+        constraints['top_vv_ratio_'+ch][0] = mc[smc['sig_mct_low_'+ch] & (mc.mc_cat=="top")].weight.sum() / mc[smc['sig_mct_low_'+ch] & ((mc.mc_cat=='WW') | (mc.mc_cat=='ZZ') | (mc.mc_cat=='WZ') | (mc.mc_cat=='VVV') | (mc.mc_cat=='HWW'))].weight.sum()
 
         ww_hist, template_bins = np.histogram(ww.mctperp, weights=ww.weight, bins=bins, range=histrange)
         vv_hist, template_bins = np.histogram(vv.mctperp, weights=vv.weight, bins=bins, range=histrange)
@@ -149,33 +154,32 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
         # shape systematic
         weights = vv.weight*(1+(vv.mc_cat=="WW")*0.10)
-        templates['vv_syst_WW_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WW_"+ch+"Up", bins, histrange, True)
+        templates['vv_syst_WW_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WW_"+ch+"Up", bins, histrange, False)
         weights = vv.weight*(1-(vv.mc_cat=="WW")*0.10)
-        templates['vv_syst_WW_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WW_"+ch+"Down", bins, histrange, True)
+        templates['vv_syst_WW_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WW_"+ch+"Down", bins, histrange, False)
 
         weights = vv.weight*(1+(vv.mc_cat=="WZ")*0.10)
-        templates['vv_syst_WZ_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WZ_"+ch+"Up", bins, histrange, True)
+        templates['vv_syst_WZ_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WZ_"+ch+"Up", bins, histrange, False)
         weights = vv.weight*(1-(vv.mc_cat=="WZ")*0.10)
-        templates['vv_syst_WZ_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WZ_"+ch+"Down", bins, histrange, True)
+        templates['vv_syst_WZ_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_WZ_"+ch+"Down", bins, histrange, False)
 
         weights = vv.weight*(1+(vv.mc_cat=="ZZ")*0.10)
-        templates['vv_syst_ZZ_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_"+ch+"Up", bins, histrange, True)
+        templates['vv_syst_ZZ_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_"+ch+"Up", bins, histrange, False)
         weights = vv.weight*(1-(vv.mc_cat=="ZZ")*0.10)
-        templates['vv_syst_ZZ_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_"+ch+"Down", bins, histrange, True)
+        templates['vv_syst_ZZ_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_ZZ_"+ch+"Down", bins, histrange, False)
 
         weights = vv.weight*(1+(vv.mc_cat=="VVV")*0.50)
-        templates['vv_syst_VVV_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_VVV_"+ch+"Up", bins, histrange, True)
+        templates['vv_syst_VVV_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_VVV_"+ch+"Up", bins, histrange, False)
         weights = vv.weight*(1-(vv.mc_cat=="VVV")*0.50)
-        templates['vv_syst_VVV_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_VVV_"+ch+"Down", bins, histrange, True)
+        templates['vv_syst_VVV_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_VVV_"+ch+"Down", bins, histrange, False)
 
         weights = vv.weight*(1+(vv.mc_cat=="HWW")*0.50)
-        templates['vv_syst_HWW_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_HWW_"+ch+"Up", bins, histrange, True)
+        templates['vv_syst_HWW_'+ch+'Up'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_HWW_"+ch+"Up", bins, histrange, False)
         weights = vv.weight*(1-(vv.mc_cat=="HWW")*0.50)
-        templates['vv_syst_HWW_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_HWW_"+ch+"Down", bins, histrange, True)
+        templates['vv_syst_HWW_'+ch+'Down'] = rootutils.create_TH1(vv.mctperp, weights, "vv_syst_HWW_"+ch+"Down", bins, histrange, False)
 
         z = mcz[selz['sig_'+ch]]
         templates['z_'+ch] = rootutils.create_TH1(z.mctperp, z.weight, "z_template_"+ch, bins, histrange, True)
-        templates['z_'+ch].Scale(mc[smc['sig_mct_low_'+ch] & (mc.mc_cat=="DY")].weight.sum())
 
 
         if ch == 'sf':
@@ -197,17 +201,13 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
             templates['z_syst'] = rhist
 
-        n_1tag = sum(mc[smc['1tag_ctrl_'+ch] & (mc.mctperp>5.)].weight)
-        n_2tag = sum(mc[smc['2tag_ctrl_'+ch] & (mc.mctperp>5.)].weight)
-        eff = 2.*n_2tag/(n_1tag+2*n_2tag)*1.06
-        ntop_pred = n_1tag/2.*(1-eff)/eff
-
 
     constraints['top_ratio'] = R.TVectorD(1)
     constraints['top_ratio'][0] = mc[smc['sig_mct_low_of'] & (mc.mc_cat=="top")].weight.sum()/mc[smc['sig_mct_low_sf'] & (mc.mc_cat=="top")].weight.sum()
     constraints['vv_ratio'] = R.TVectorD(1)
     constraints['vv_ratio'][0] = (mc[smc['sig_mct_low_of'] & (mc.mc_cat=="WW")].weight.sum()/mc[smc['sig_mct_low_sf'] & (mc.mc_cat=="WW")].weight.sum())\
                                  * mcvv[selvv['sig_mct_low_sf']].weight.sum()/mcvv[selvv['sig_mct_low_of']].weight.sum()
+
 
     for k in templates.keys():
         templates[k].Write()

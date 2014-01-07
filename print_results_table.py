@@ -20,26 +20,35 @@ sf_mc = mc['sf']
 
 def format_result(tpl):
     val, err = tpl
+    if val == 0. and err == 0.:
+        return "$< 0.01$"
     digits = -int(floor(log10(err)))
-    digits = max(digits, 0)
-    if digits == 0:
-        val, err = int(round(val, digits)), int(round(err, digits))
+    # digits = max(digits, 0)
+    if digits <= 0:
+        val, err = int(round(val, 0)), int(round(err, 0))
+    else:
+        val, err = round(val, digits), round(err, digits)
+
     if val > err:
-        s = "${0}\pm${1}$".format(val, err)
+        s = "${0}\pm{1}$".format(val, err)
     else:
         s = "${0}^{{+{1}}}_{{-{2}}}$".format(val, err, val)
     return s
 
-for channel in ['top', 'vv', 'z', 'fake', 'sum']:
-    # s = name_to_nicename[channel]
-    s = name_to_nicename[channel]
-    s += " & "
-    s += format_result(of[channel])
-    s += " & "
-    s += str(int(round(of_mc[channel], 0)))
-    s += " & "
-    s += format_result(sf[channel])
-    s += " & "
-    s += str(int(round(sf_mc[channel], 0)))
-    s += "\\\\"
-    print s
+def main():
+    for channel in ['top', 'vv', 'z', 'fake', 'sum']:
+        # s = name_to_nicename[channel]
+        s = name_to_nicename[channel]
+        s += " & "
+        s += format_result(of[channel])
+        s += " & "
+        s += str(int(round(of_mc[channel], 0)))
+        s += " & "
+        s += format_result(sf[channel])
+        s += " & "
+        s += str(int(round(sf_mc[channel], 0)))
+        s += "\\\\"
+        print s
+
+if __name__ == '__main__':
+    main()

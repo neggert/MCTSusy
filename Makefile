@@ -1,6 +1,7 @@
 CONFIG=config/data.py config/parameters.py
 
 NO_SIG_MODEL_CHI=limits/chi_bkg_only_combined_meas_model.root
+NO_SIG_MODEL_CHI_CONSTRAINED=limits/chi_bkg_only_constrained.root
 NO_SIG_MODEL_SLEP=limits/slep_bkg_only_combined_meas_model.root
 
 PMSSM_MODELS=$(shell python list_models.py work/pMSSM.hdf5 pMSSM_templates)
@@ -13,6 +14,9 @@ AD=KS/AndersonDarlingTestStat.cc KS/AndersonDarlingTestStat.h
 # models
 $(NO_SIG_MODEL_CHI): histfactory.py templates.root data.root
 	./histfactory.py templates.root
+
+$(NO_SIG_MODEL_CHI_CONSTRAINED): histfactory.py templates.root data.root
+	./histfactory.py templates.root --constrain
 
 $(NO_SIG_MODEL_SLEP): histfactory2.py templates2.root data.root
 	./histfactory2.py templates2.root
@@ -51,8 +55,8 @@ MONEY2_REQS=money_take2_2.py diboson_fracs2.json slep_templates.root config/para
 fit_results.json: $(NO_SIG_MODEL_CHI) $(MONEY_REQS) $(AD) IntegralError.C bkg_fit.py
 	python bkg_fit.py -m $(NO_SIG_MODEL_CHI) $@
 
-count_fit_results.json: $(NO_SIG_MODEL_CHI) $(MONEY_REQS) $(AD) IntegralError.C bkg_fit.py
-	python bkg_fit.py $(NO_SIG_MODEL_CHI) $@ --cut=120
+count_fit_results.json: $(NO_SIG_MODEL_CHI_CONSTRAINED) $(MONEY_REQS) $(AD) IntegralError.C bkg_fit.py
+	python bkg_fit.py $(NO_SIG_MODEL_CHI_CONSTRAINED) $@ -m --cut=120
 
 fit_results2.json: $(NO_SIG_MODEL_SLEP) $(MONEY2_REQS) $(AD) IntegralError.C bkg_fit2.py
 	python bkg_fit2.py $(NO_SIG_MODEL_SLEP) $@
@@ -62,12 +66,14 @@ count_fit_results2.json: $(NO_SIG_MODEL_SLEP) $(MONEY2_REQS) $(AD) IntegralError
 
 p-value: $(NO_SIG_MODEL_CHI) $(MONEY_REQS) $(AD)
 	ipcluster start -n 8 --daemonize
-	python bkg_fit.py $(NO_SIG_MODEL_CHI) -p
+	python bkg_fit.py $(NO_SIG_MODEL_CHI) tmp.json -p
+	rm tmp.json
 	ipcluster stop
 
 p-value2: $(NO_SIG_MODEL_SLEP) $(MONEY2_REQS) $(AD)
 	ipcluster start -n 8 --daemonize
-	python bkg_fit2.py $(NO_SIG_MODEL_SLEP) -p
+	python bkg_fit2.py $(NO_SIG_MODEL_SLEP) tmp.json -p
+	rm tmp.json
 	ipcluster stop
 
 
@@ -75,10 +81,14 @@ p-value2: $(NO_SIG_MODEL_SLEP) $(MONEY2_REQS) $(AD)
 mc_preds.json: $(CONFIG) mc_preds.py selection.py
 	python mc_preds.py
 
+mc_preds2.json: $(CONFIG) mc_preds2.py selection.py
+	python mc_preds2.py
+
 table: fit_results.json mc_preds.json print_results_table.py
 	python print_results_table.py
 
-
+table2: fit_results2.json mc_preds2.json print_results_table2.py
+	python print_results_table2.py
 
 # shortcuts
 models_chi: $(SIG_MODELS_CHI)

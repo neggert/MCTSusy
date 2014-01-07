@@ -11,7 +11,7 @@ Options:
     -h --help        Show this screen.
     --ncpu=<c>       Number of CPUs to use [default: 1]
     --channels=<c1,c2> Channels to use [default: of,sf]
-    --cut=<cut>      MCTPerp value specifying signal region in counting analysis [default: 200]
+    --cut=<cut>      MCTPerp value specifying signal region in counting analysis [default: -1]
     -p               Get p value (slow)
     -m               Run MINOS (slow)
 
@@ -66,6 +66,32 @@ def results_to_dict(r):
 
     return results
 
+def results_to_dict_counting(r):
+    results = defaultdict(lambda: defaultdict(dict))
+    results['sf']['sum']['low'] = (r.sf.sum.low.val, r.sf.sum.low.error)
+    results['sf']['vv']['low'] = (r.sf.vv.low.val, r.sf.vv.low.error)
+    results['sf']['top']['low'] = (r.sf.top.low.val, r.sf.top.low.error)
+    results['sf']['z']['low'] = (r.sf.z.low.val, r.sf.z.low.error)
+    results['sf']['fake']['low'] = (r.sf.fake.low.val, r.sf.fake.low.error)
+    results['of']['sum']['low'] = (r.of.sum.low.val, r.of.sum.low.error)
+    results['of']['vv']['low'] = (r.of.vv.low.val, r.of.vv.low.error)
+    results['of']['top']['low'] = (r.of.top.low.val, r.of.top.low.error)
+    results['of']['z']['low'] = (r.of.z.low.val, r.of.z.low.error)
+    results['of']['fake']['low'] = (r.of.fake.low.val, r.of.fake.low.error)
+
+    results['sf']['sum']['high'] = (r.sf.sum.high.val, r.sf.sum.high.error)
+    results['sf']['vv']['high'] = (r.sf.vv.high.val, r.sf.vv.high.error)
+    results['sf']['top']['high'] = (r.sf.top.high.val, r.sf.top.high.error)
+    results['sf']['z']['high'] = (r.sf.z.high.val, r.sf.z.high.error)
+    results['sf']['fake']['high'] = (r.sf.fake.high.val, r.sf.fake.high.error)
+    results['of']['sum']['high'] = (r.of.sum.high.val, r.of.sum.high.error)
+    results['of']['vv']['high'] = (r.of.vv.high.val, r.of.vv.high.error)
+    results['of']['top']['high'] = (r.of.top.high.val, r.of.top.high.error)
+    results['of']['z']['high'] = (r.of.z.high.val, r.of.z.high.error)
+    results['of']['fake']['high'] = (r.of.fake.high.val, r.of.fake.high.error)
+
+    return results
+
 def run_bonly_fit(file_name, out_file, ncpu, get_p, data_prefix="data", data_file_name="data.root", do_minos=False, cut=None):
 
     high = 200.
@@ -90,16 +116,23 @@ def run_bonly_fit(file_name, out_file, ncpu, get_p, data_prefix="data", data_fil
 
     # run the fit
     R.RooMsgService.instance().setGlobalKillBelow(R.RooFit.ERROR)
+    counting = False
     if cut:
         ws.obj("obs_x_sf").setRange("fit", 10, cut)
         ws.obj("obs_x_of").setRange("fit", 10, cut)
+        counting = True
+    else:
+        cut = high
     if do_minos:
         res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0), R.RooFit.Minos(), R.RooFit.Hesse(), R.RooFit.Range("fit"))
     else: 
         res = model.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0), R.RooFit.Range("fit"))
 
     r = ROOT.get_results(ws, res, cut, high)
-    data_results = results_to_dict(r)
+    # import pdb
+    # pdb.set_trace()
+    data_results = results_to_dict_counting(r) if counting else results_to_dict(r)
+
 
     fitPars = res.floatParsFinal()
 
@@ -827,11 +860,11 @@ if __name__ == '__main__':
     file_name = args['<filename>']
     out_file = args['<outfile>']
 
-    cut_str = args['--cut']
-    if cut_str == "None":
+    cut_val = float(args['--cut'])
+    if cut_val < 0:
         cut = None
     else:
-        cut = float(cut_str)
+        cut = cut_val
 
     ncpu = int(args['--ncpu'])
 

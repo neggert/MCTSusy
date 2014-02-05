@@ -16,6 +16,7 @@ printenv
 
 echo $(which python)
 
+kinit neggert@CERN.CH -k -t $HOME/user.keytab
 
 cd $HOME/work/MCTSusy/limit_batch
 python run_one.py $FILE $VAL $LSB_JOBID $HOME/work/MCTSusy/limit_batch/tmp/$LSB_JOBID.root

@@ -33,12 +33,17 @@ def main(input_files, output_file, plot):
     tests = {}
 
     for f in input_files:
-        m1, m2 = map(int, re.search("_(\d+)_(\d+)[_\.]", f).groups())
+        m1, m2 = map(int, re.search("(\d+)_(\d+)[_\.]", f).groups())
+	print m1, m2
         rf = R.TFile(f)
-        if (m1,m2) not in tests.keys():
-            tests[(m1,m2)] = rf.Get("result_sig_strength")
-        else:
-            tests[(m1,m2)].Add(rf.Get("result_sig_strength"))
+	try:
+            if (m1,m2) not in tests.keys():
+                tests[(m1,m2)] = rf.Get("result_sig_strength")
+            else:
+                tests[(m1,m2)].Add(rf.Get("result_sig_strength"))
+        except:
+            print f
+            raise
 
     with open(output_file, 'w') as f:
         for masses in tests.keys():

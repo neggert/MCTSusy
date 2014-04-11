@@ -96,19 +96,16 @@ def run_sig_pulls(model_file, npoints, tries_per_point):
     avg_err_down_list = np.asarray(avg_err_down_list)
 
     # plot pull
-    plt.figure()
-    plt.hist(pulls, range=(-3, 3), bins=30, histtype="stepfilled")
-    plt.xlabel("Pull")
+    # plt.figure()
+    # plt.hist(pulls, range=(-3, 3), bins=30, histtype="stepfilled")
+    # plt.xlabel("Pull")
 
     # plot NLL for last toy
-    nll = model.GetPdf().createNLL(toy_data, R.RooFit.Constrain(constr))
-    poi = model.GetParametersOfInterest().first()
-    f = poi.frame(sig_strength/10, sig_strength*10)
-    nll.plotOn(f)
-    f.Draw()
-
-    import IPython
-    IPython.embed()
+    # nll = model.GetPdf().createNLL(toy_data, R.RooFit.Constrain(constr))
+    # poi = model.GetParametersOfInterest().first()
+    # f = poi.frame(sig_strength/10, sig_strength*10)
+    # nll.plotOn(f)
+    # f.Draw()
 
 
     avg_list = np.asarray(avg_list)
@@ -118,11 +115,9 @@ def run_sig_pulls(model_file, npoints, tries_per_point):
     plt.fill_between(pois, avg_err_down_list, avg_err_up_list, alpha=0.3)
     plt.xlabel("Input Signal Strength")
     plt.ylabel("Fitted Signal Strength")
-    plt.show()
+    # plt.show()
 
     plt.savefig("plots/toymc.pdf")
-
-    raw_input("...")
 
 
     # mc.fitParDataSet().Print()

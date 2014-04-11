@@ -343,7 +343,7 @@ def plot_mc(selection_name, variable, bins=20, plotrange=(0,100)):
     labels = [r'\noindent$m_{\chi^\pm}=200$ GeV, $m_{\chi^0}=25$ GeV', r'\noindent$m_{\chi^\pm}=400$ GeV, $m_{\chi^0}=100$ GeV']
 
     print h[0][-1]
-    print hist(x, histtype="step", weights=w, color=c, label=labels, bins=h[1], bottom=h[0][-1], ls='dashed', zorder=0.5, lw=2)
+    print hist(x, histtype="step", weights=w, color=c, label=labels, bins=h[1], bottom=h[0][-1], ls='dashed', zorder=10, lw=2)
     # m, bins = np.histogram(sms1.mctperp, weights=sms1.mctperp, bins=h[1])
     # m += h[0][-1]
     # # draw by hand
@@ -454,9 +454,9 @@ def print_WZ_datamc():
 
 if __name__ == '__main__':
     # make_data_mc_plots()
-    plot_mc('sig_mct_low_sf', 'mctperp', 29, (10,300))
+    f = plot_mc('sig_mct_low_sf', 'mctperp', 29, (10,300))
     savefig("plots/mc_only_sf.pdf")
-    plot_mc('sig_mct_low_of', 'mctperp', 29, (10,300))
+    f = plot_mc('sig_mct_low_of', 'mctperp', 29, (10,300))
     savefig("plots/mc_only_of.pdf")
 
 

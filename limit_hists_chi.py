@@ -2,7 +2,7 @@ import sys
 import numpy as np
 import ROOT as R
 
-def load_xsec(filename):
+def load_xsec(filename, multiplier=1):
     """
     load cross-sections for a file. Returns a dictionary describing cross-sections on their uncertainties.
     The dictionary is indexed by the particle mass, and each element is a tuple containing (xsec, uncertainty)
@@ -11,17 +11,18 @@ def load_xsec(filename):
     xsec_dict = {}
     for line in f:
         mass, xsec, err = line.split()
-        xsec_dict[float(mass)] = (float(xsec), float(err))
+        xsec_dict[float(mass)] = (float(xsec)*multiplier, float(err)*multiplier)
     f.close()
     return xsec_dict
 
 filename = sys.argv[1]
 
-xsec_name = sys.argv[2]
 
-xsecs = load_xsec( xsec_name)
+old_xsecs = load_xsec( "limits/8TeVc1c1.xsec")
+new_xsecs = load_xsec( "limits/8TeVc1c1_Fuks.xsec", multiplier=1./1000)
 
-out_filename = sys.argv[3]
+
+out_filename = sys.argv[2]
 
 data = np.loadtxt(filename)
 
@@ -31,6 +32,7 @@ bin_spacing=25.
 
 m1_low = min(mass1)-bin_spacing/2
 m1_high = max(mass1)+bin_spacing/2
+m1_high = 775
 m2_low = min(mass2)-bin_spacing/2
 m2_high = max(mass2)+bin_spacing/2
 
@@ -65,9 +67,9 @@ for m1, m2 in masses:
     if m1-m2 <= 50:
         continue
     try:
-	xsec_hist.SetBinContent(xsec_hist.FindBin(m1, m2), xsecs[float(m1)][0])
+    	xsec_hist.SetBinContent(xsec_hist.FindBin(m1, m2), new_xsecs[float(m1)][0])
     except KeyError:
-	print "No limits for", m1, m2
+    	print "No limits for", m1, m2
         continue
 
     try:
@@ -75,11 +77,12 @@ for m1, m2 in masses:
     except KeyError:
         continue
 
-    observed_hist.SetBinContent(observed_hist.FindBin(m1,m2), obs)
-    observed_hist_smooth.SetBinContent(observed_hist_smooth.FindBin(m1,m2), obs)
-    expected_hist.SetBinContent(expected_hist.FindBin(m1,m2), exp)
-    expected_m1_hist.SetBinContent(expected_m1_hist.FindBin(m1,m2), exp_m1)
-    expected_p1_hist.SetBinContent(expected_p1_hist.FindBin(m1,m2), exp_p1)
+    sf = 1./ old_xsecs[float(m1)][0] * new_xsecs[float(m1)][0]
+    observed_hist.SetBinContent(observed_hist.FindBin(m1,m2), obs/sf)
+    observed_hist_smooth.SetBinContent(observed_hist_smooth.FindBin(m1,m2), obs/sf)
+    expected_hist.SetBinContent(expected_hist.FindBin(m1,m2), exp/sf)
+    expected_m1_hist.SetBinContent(expected_m1_hist.FindBin(m1,m2), exp_m1/sf)
+    expected_p1_hist.SetBinContent(expected_p1_hist.FindBin(m1,m2), exp_p1/sf)
 
 # R.gROOT.ProcessLineSync(".L repare_holes.C+")
 # 
@@ -89,10 +92,10 @@ for m1, m2 in masses:
 # R.repareHoles(expected_m1_hist)
 # R.repareHoles(expected_p1_hist)
 
-observed_hist_smooth.Smooth(1,"k3a")
-expected_hist.Smooth(1,"k3a")
-expected_p1_hist.Smooth(1,"k3a")
-expected_m1_hist.Smooth(1,"k3a")
+# observed_hist_smooth.Smooth(1,"k3a")
+# expected_hist.Smooth(1,"k3a")
+# expected_p1_hist.Smooth(1,"k3a")
+# expected_m1_hist.Smooth(1,"k3a")
 
 
 xsec_hist.Write()

@@ -3,7 +3,7 @@
 """Create the model
 
 Usage:
-    histfactory2.py <template_file> [<signal_file>] [<mass_file>] [-h] 
+    histfactory2.py <template_file> [<signal_file>] [<output>] [-h] [-c | --constrain]
 
 Options:
     -h --help        Show this screen.
@@ -11,6 +11,7 @@ Options:
 """
 import ROOT as R
 import sys
+import re
 
 backgrounds = ['of', 'vv', 'wjets', 'z']
 

@@ -47,7 +47,6 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
 
     wjets = data[sd['wjets_ctrl_sf']]
     templates['wjets'] = rootutils.create_TH1(wjets.mctperp, wjets.weight, "wjets_template", bins, histrange, True)
-    templates['wjets'].Scale(mc[smc['sig_mct_low_sf'] & ((mc['mc_cat']=='fake') | ((mc['mc_cat']=='top') & (mc['gen_neutrinos'] < 2)))].weight.sum())
     
     # systematic on w+jets template
     rhist = R.TH1D("wjets_syst", "wjets_syst", bins, histrange[0], histrange[1])
@@ -55,6 +54,7 @@ def create_template_file(filename="templates.root", bins=19, histrange=(10, 200)
         # if templates['wjets'].GetBinContent(i+1) > 0: #only do non-zero bins
         rhist.SetBinContent(i+1, 0.3) # 50% systematic
     templates['wjets_syst'] = rhist
+    templates['wjets'].Scale(mc[smc['sig_mct_low_sf'] & ((mc['mc_cat']=='fake') | ((mc['mc_cat']=='top') & (mc['gen_neutrinos'] < 2)))].weight.sum())
 
     vv = mcvv[selvv['sig_sf']]
     templates['vv'] = rootutils.create_TH1(vv.mctperp, vv.weight, "vv_template", bins, histrange, False)

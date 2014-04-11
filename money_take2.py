@@ -2,9 +2,14 @@ import numpy as np
 from config.parameters import *
 
 from matplotlib import rc
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'weight':'bold'})
 rc('text', usetex=True)
-rc('text.latex', preamble = '\usepackage{amsmath}\usepackage{hepnicenames}\usepackage{hepunits}')
+rc('text.latex', preamble = '\usepackage{amsmath}\usepackage{hepnicenames}\usepackage{hepunits}\usepackage{sansmath}\sansmath')
+rc('xtick.major', size=7, width=1)
+rc('xtick.minor', size=3, width=1)
+rc('ytick.major', size=7, width=1)
+rc('ytick.minor', size=3, width=1)
+
 from matplotlib.ticker import MultipleLocator
 
 import simplejson as json
@@ -84,7 +89,7 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
         diboson_fracs = json.load(f)[ch]
     dibosons = ['Rare', 'ZZ', 'WZ', 'WW']
 
-    fontp = FontProperties(family="Helvetica", size=12)
+    fontp = FontProperties(family="Helvetica", size=14, weight="bold")
     fontpb = FontProperties(family="Helvetica", size=10, weight="book")
 
     x = np.arange(10, 200, 10)
@@ -110,7 +115,7 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
         ax.set_ylim(1e-3, 50000)
     else:
         ax.set_ylim(0., 1500)
-    ax.set_ylabel("entries / 10 GeV", fontproperties=fontpb, color='k')
+    ax.set_ylabel("Entries / 10 GeV", fontproperties=fontp, color='k')
 
 
     top = bin_heights[0]
@@ -150,25 +155,47 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
     handles, labels = ax.get_legend_handles_labels()
     handles.reverse()
     labels.reverse()
-    ax.legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1, ncol=2)
+    ax.legend(handles, labels, frameon=False, prop=fontpb, borderaxespad=1, ncol=2, numpoints=1)
     ax.set_axisbelow(False)
     minorticks = MultipleLocator(10)
     ax.xaxis.set_minor_locator(minorticks)
+    plt.setp(ax.get_xticklabels(), visible=False)
 
     # ratio plot
     ax2 = plt.subplot2grid((4,1),(3,0))
+    xerrs = np.ones_like(data_x)*5
+
+    for i in reversed(xrange(1, len(top))):
+        if top[i] < 3:
+            top[i-1] += top[i]
+            top[i] = 0
+            data_height[i-1] += data_height[i]
+            data_height[i] = 0
+            data_x[i-1] = data_x[i] - 5
+            data_x[i] = 0
+            xerrs[i-1] = xerrs[i] + 5
+            xerrs[i] = 0
+
     vals = data_height/top
     errs = np.sqrt(data_height)/top
-    ax2.errorbar(data_x[vals >0], vals[vals > 0], errs[vals>0], color='k', fmt='.')
+    ax2.errorbar(data_x[vals >0], vals[vals > 0], errs[vals>0], xerrs[vals > 0], color='k', fmt='.')
     plt.axhline(1, color="k")
-    ax2.set_ylim(0.5,1.5)
+    ax2.set_ylim(0.,2.0)
     ax2.set_xlim(10, 200)
-    ax2.set_ylabel("ratio", fontproperties=fontpb, color='k')
+    ax2.set_ylabel("Ratio", fontproperties=fontp, color='k')
 
-    plt.xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
+    plt.xlabel("$M_{\mathrm{CT}\perp}$ [\GeV]", fontproperties=fontp, color='k')
 
-    plt.figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=19.5\;\text{fb}^{-1}$", color='k',
-             fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
+    plt.figtext(0.12, 0.92, r"\textbf{CMS}", color='k',
+             fontproperties=FontProperties(family="Helvetica", size=12, weight="bold"))
+    plt.figtext(0.90, 0.92, r"$\sqrt{\text{s}}=8\;\TeV,$\quad L$_{\text{int}}=19.5\;\text{fb}^{-1}$", color='k', ha='right',
+             fontproperties=FontProperties(family="Helvetica", size=12, weight="bold"))
+    if ch == "sf":
+        chan_txt = r"$\Pepm\Pemp/\Pmupm\Pmump$"
+    else:
+        chan_txt = r"$\Pepm\Pmump$"
+    plt.figtext(0.35, 0.92, chan_txt, color='k', ha='center',
+             fontproperties=FontProperties(family="Helvetica", size=12, weight="bold"))
 
     if log:
         plt.savefig("plots/money{}.pdf".format(ch))

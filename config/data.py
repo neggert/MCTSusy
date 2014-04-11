@@ -232,6 +232,6 @@ slep = slep.join(weight)
 slep.weight *= slep.apply(fastsim_weight, axis=1)
 
 
-stchiww = HDFStore("work/sms/sms_tchiww.hdf5")
-tchiww = stchiww['data']
-sel_tchiww = selection.get_samples(tchiww)
+# stchiww = HDFStore("work/sms/sms_tchiww.hdf5")
+# tchiww = stchiww['data']
+# sel_tchiww = selection.get_samples(tchiww)

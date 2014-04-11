@@ -6,7 +6,7 @@ NO_SIG_MODEL_SLEP=limits/slep_bkg_only_combined_meas_model.root
 
 PMSSM_MODELS=$(shell python list_models.py work/pMSSM.hdf5 pMSSM_templates)
 SIG_MODELS_CHI=$(shell python list_models.py work/sms/sms_chi_201311.hdf5 chi_templates)
-SIG_MODELS_SLEP=$(shell python list_models.py work/sms/sms_slep_201311.hdf5 slep_templates)
+SIG_MODELS_SLEP=$(shell python list_models.py work/sms/sms_slep_201311.hdf5 slep_templates True)
 
 
 AD=KS/AndersonDarlingTestStat.cc KS/AndersonDarlingTestStat.h
@@ -24,7 +24,7 @@ $(NO_SIG_MODEL_SLEP): histfactory2.py templates2.root data.root
 $(SIG_MODELS_CHI): histfactory.py templates.root data.root chi_templates.root
 	./histfactory.py templates.root chi_templates.root $@ > /dev/null
 
-$(SIG_MODELS_SLEP): histfactory2.py templates2.root data.root slep_templates.root
+$(SIG_MODELS_SLEP): histfactory2.py templates2.root data2.root slep_templates.root
 	./histfactory2.py templates2.root slep_templates.root $@ > /dev/null
 
 $(PMSSM_MODELS): histfactory.py pMSSM_templates.root templates.root
@@ -38,7 +38,7 @@ diboson_fracs.json: one-offs/diboson_fracs.py $(CONFIG)
 chi_templates.root templates.root data.root: prep_hists.py $(CONFIG)
 	./prep_hists.py work/sms/sms_chi_201311.hdf5 chi_templates.root limits/8TeVc1c1.xsec limits/TChipmSlepSnu_Nevents.root --low=10 --high=200 --bins=19
 
-slep_templates.root templates2.root: prep_hists2.py $(CONFIG)
+slep_templates.root templates2.root data2.root: prep_hists2.py $(CONFIG)
 	./prep_hists2.py work/sms/sms_slep_201311.hdf5 slep_templates.root limits/8TeVeLeL.xsec limits/TSlepSlep_Nevents.root --low=10 --high=300 --bins=29 -x 2
 
 pMSSM_templates.root: prep_hists_pMSSM.py pMSSM_points.json limits/nevents_pMSSM.json work/pMSSM.hdf5
@@ -74,6 +74,13 @@ p-value2: $(NO_SIG_MODEL_SLEP) $(MONEY2_REQS) $(AD)
 	ipcluster start -n 8 --daemonize
 	python bkg_fit2.py $(NO_SIG_MODEL_SLEP) tmp.json -p
 	rm tmp.json
+	ipcluster stop
+
+
+# validation
+plots/adtest.pdf: sb_ad_test.py limits/chi_template_300_0_combined_meas_model.root
+	ipcluster start -n 8 --daemonize
+	python sb_ad_test.py limits/chi_template_300_0_combined_meas_model.root
 	ipcluster stop
 
 

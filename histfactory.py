@@ -107,7 +107,7 @@ def create_histfactory(template_file, channels, data_file_name="data.root", sign
     ws = R.RooStats.HistFactory.MakeModelAndMeasurementFast(meas)
 
     if make_constrained:
-        top_vv_ratio_val = 1. #temp_file.Get("top_vv_ratio_sf")[0]
+        top_vv_ratio_val = 1. # normalizations are already set to MC yields
         ws.factory('expr::top_vv_ratio("n_top_sf/n_vv_sf", n_top_sf, n_vv_sf)')
         ws.factory('RooGaussian::top_vv_ratio_constraint(top_vv_ratio, nom_top_vv_ratio[{0}], {1})'.format(top_vv_ratio_val, top_vv_ratio_val*0.1))
         ws.factory('PROD:constrPdf(simPdf, top_vv_ratio_constraint)')

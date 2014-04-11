@@ -51,7 +51,7 @@ def run_bonly_fit(file_name, ncpu, data_prefix="data", data_file_name="data.root
     bmodel.LoadSnapshot()
     res = bmodel.GetPdf().fitTo(data, R.RooFit.Constrain(constr), R.RooFit.Save(), R.RooFit.PrintLevel(0))
 
-    sbmodel.GetParametersOfInterest().first().setVal(1.)
+    sbmodel.GetParametersOfInterest().first().setVal(10.)
     sbmodel.GetParametersOfInterest().first().setConstant()
     # sbmodel.SetSnapshot(sbmodel.GetParametersOfInterest())    
 
@@ -73,8 +73,8 @@ def run_bonly_fit(file_name, ncpu, data_prefix="data", data_file_name="data.root
     dview.execute("R.gROOT.ProcessLineSync('.L KS/AndersonDarlingTestStat.cc+')")
     lview = rc.load_balanced_view()
 
-    for i in xrange(50):
-        r = lview.apply_async(get_sig_p_value, ws, 10)
+    for i in xrange(20):
+        r = lview.apply_async(get_sig_p_value, ws, 100)
         results.append(r)
 
     lview.wait(results)
@@ -111,6 +111,7 @@ def get_sig_p_value(ws, n):
     sampler.SetPdf(sbmodel.GetPdf())
     sampler.SetObservables(sbmodel.GetObservables())
     sampler.SetGlobalObservables(sbmodel.GetGlobalObservables())
+    
     bparams = bmodel.GetSnapshot()
     sampler.SetParametersForTestStat(bmodel.GetSnapshot())
     sampler.SetSamplingDistName("Signal+Background")

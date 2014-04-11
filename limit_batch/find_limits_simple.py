@@ -19,7 +19,8 @@ files = args['<input_files>']
 tests = {}
 
 for f in files:
-    m1, m2 = map(int, re.search("_(\d+)_(\d+)_", f).groups())
+    # m1, m2 = map(int, re.search("_(\d+)_(\d+)_", f).groups())
+    m1, m2 = map(int, re.search("_(\d+)_(\d+)[_\.]", f).groups())
     rf = R.TFile(f)
     if (m1,m2) not in tests.keys():
         tests[(m1,m2)] = rf.Get("result_sig_strength")

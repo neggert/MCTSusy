@@ -93,4 +93,3 @@ if __name__ == '__main__':
     else:
         create_histfactory(args['<template_file>'], chans, "data.root")
 
-

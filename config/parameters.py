@@ -38,5 +38,5 @@ bkg_labels = {"top": "Top",
               "VVV": "VVV",
               "wjets": "Non-prompt",
               "fake": "Non-prompt",
-              "FS": "Flavor-Symmetric"
+              "FS": "Flavor symmetric"
              }

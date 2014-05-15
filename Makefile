@@ -4,7 +4,8 @@ NO_SIG_MODEL_CHI=limits/chi_bkg_only_combined_meas_model.root
 NO_SIG_MODEL_CHI_CONSTRAINED=limits/chi_bkg_only_constrained.root
 NO_SIG_MODEL_SLEP=limits/slep_bkg_only_combined_meas_model.root
 
-PMSSM_MODELS=$(shell python list_models.py work/pMSSM.hdf5 pMSSM_templates)
+PMSSM_MODELS=$(shell python list_models_pMSSM.py work/pMSSM.hdf5 pMSSM_templates)
+PMSSM_LIKELIHOODS=$(foreach file, $(PMSSM_MODELS), $(patsubst limits/pMSSM_templates_%_combined_meas_model.root, pMSSM_likelihoods/%.txt, $(file)))
 SIG_MODELS_CHI=$(shell python list_models.py work/sms/sms_chi_201311.hdf5 chi_templates)
 SIG_MODELS_SLEP=$(shell python list_models.py work/sms/sms_slep_201311.hdf5 slep_templates True)
 
@@ -45,8 +46,11 @@ pMSSM_templates.root: prep_hists_pMSSM.py pMSSM_points.json limits/nevents_pMSSM
 	./prep_hists_pMSSM.py work/pMSSM.hdf5 pMSSM_templates.root --low=10 --high=200 --bins=19
 
 # results
-pMSSM_likelihoods.txt: $(PMSSM_MODELS) likelihood_pMSSM.py limits/nevents_pMSSM.json
-	./likelihood_pMSSM.py $(PMSSM_MODELS)
+pMSSM_likelihoods/%.txt: limits/pMSSM_templates_%_combined_meas_model.root likelihood_pMSSM.py limits/nevents_pMSSM.json
+	./likelihood_pMSSM.py $@ $<
+
+pMSSM_likelihoods.txt : $(PMSSM_LIKELIHOODS)
+	tail -q -n+2 $(PMSSM_LIKELIHOODS) | sort > $@
 
 # requirements for money plots
 MONEY_REQS=money_take2.py diboson_fracs.json chi_templates.root config/parameters.py

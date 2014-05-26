@@ -9,9 +9,13 @@ from prettytable import PrettyTable
 
 
 from matplotlib import rc
-rc('font',**{'family':'sans-serif','sans-serif':['Helvetica']})
+rc('font',**{'family':'sans-serif','sans-serif':['Helvetica'],'weight':'bold'})
 rc('text', usetex=True)
-rc('text.latex', preamble = '\usepackage{amsmath}')
+rc('text.latex', preamble = '\usepackage{amsmath}\usepackage{hepnicenames}\usepackage{hepunits}\usepackage{sansmath}\sansmath')
+rc('xtick.major', size=7, width=1)
+rc('xtick.minor', size=3, width=1)
+rc('ytick.major', size=7, width=1)
+rc('ytick.minor', size=3, width=1)
 
 from matplotlib.pyplot import *
 from matplotlib.font_manager import *
@@ -108,8 +112,8 @@ def compare_data_mc(selection_name, variable, bins=20, plotrange=(0,100), cumula
 
     xlabel("$M_{\mathrm{CT}\perp}$ (GeV)", fontproperties=fontp, color='k')
 
-    figtext(0.12, 0.92, r"CMS Preliminary $\sqrt{\text{s}}=8\;\text{TeV},$\quad L$_{\text{int}}=19.5\;\text{fb}^{-1}$", color='k',
-             fontproperties=FontProperties(family="Helvetica", size=12, weight="demi"))
+    figtext(0.5, 0.92, r"CMS Unpublished \hspace{3em} $\sqrt{\text{s}}=8\;\TeV \hspace{3em} \text{L}=19.5\;\text{fb}^{-1}$", color='k', ha='center',
+             fontproperties=FontProperties(family="Helvetica", size=12, weight="bold"))
 
     return fig, fig2
 

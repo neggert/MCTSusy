@@ -186,15 +186,13 @@ def build_background_shape(ws, ch='sf', backgrounds=sf_backgrounds, log=True):
 
     plt.xlabel("$M_{\mathrm{CT}\perp}$ [\GeV]", fontproperties=fontp, color='k')
 
-    plt.figtext(0.12, 0.92, r"\textbf{CMS}", color='k',
-             fontproperties=FontProperties(family="Helvetica", size=12, weight="bold"))
-    plt.figtext(0.90, 0.92, r"$\sqrt{\text{s}}=8\;\TeV,$\quad L$_{\text{int}}=19.5\;\text{fb}^{-1}$", color='k', ha='right',
+    plt.figtext(0.5, 0.92, r"CMS \hspace{3em} $\sqrt{\text{s}}=8\;\TeV \hspace{3em} \text{L}=19.5\;\text{fb}^{-1}$", color='k', ha='center',
              fontproperties=FontProperties(family="Helvetica", size=12, weight="bold"))
     if ch == "sf":
         chan_txt = r"$\Pepm\Pemp/\Pmupm\Pmump$"
     else:
         chan_txt = r"$\Pepm\Pmump$"
-    plt.figtext(0.35, 0.92, chan_txt, color='k', ha='center',
+    plt.figtext(0.3, 0.85, chan_txt, color='k', ha='center',
              fontproperties=FontProperties(family="Helvetica", size=12, weight="bold"))
 
     if log:

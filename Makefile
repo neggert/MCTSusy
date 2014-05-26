@@ -50,7 +50,7 @@ pMSSM_likelihoods/%.txt: limits/pMSSM_templates_%_combined_meas_model.root likel
 	./likelihood_pMSSM.py $@ $<
 
 pMSSM_likelihoods.txt : $(PMSSM_LIKELIHOODS)
-	tail -q -n+2 $(PMSSM_LIKELIHOODS) | sort > $@
+	tail -q -n+2 $(PMSSM_LIKELIHOODS) | sort >> $@
 
 # requirements for money plots
 MONEY_REQS=money_take2.py diboson_fracs.json chi_templates.root config/parameters.py
